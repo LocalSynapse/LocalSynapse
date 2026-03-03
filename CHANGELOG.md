@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.2] - 2026-03-03
+
+### Fixed
+- Search results no longer change when switching tabs and returning
+- Folder results no longer disappear due to race condition between quick and full search
+- Quick search (filename/folder) no longer returns unlimited results (LIMIT 200)
+
+### Improved
+- Search speed: filename/folder matches appear within ~100ms
+- Full search TopK reduced from 1000 to 300 for faster sorting and lower memory usage
+- Sequential Phase 1→Phase 2 execution ensures stable result merging
+
 ## [1.0.1] - 2026-02-27
 
 ### Fixed
