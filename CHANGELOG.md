@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3] - 2026-03-04
+
+### Improved
+- Push batch buffering for WebView2 IPC (200ms timer flush)
+- FTS5 filename search for faster results
+- Phase 1/Phase 2 parallel execution
+- 30-second LRU query cache
+
 ## [1.0.2] - 2026-03-03
 
 ### Fixed
