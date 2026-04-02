@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.localsynapse/localsynapse-mcp",
+  "title": "LocalSynapse - Local File Search MCP Server",
+  "description": "Offline AI-powered file search MCP server. Searches inside documents (Word, Excel, PDF, PowerPoint) using BM25 + dense vector hybrid search. 100% local, no cloud, no login.",
+  "version": "2.1.0",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/LocalSynapse/LocalSynapse/releases/download/v2.1.0/localsynapse-mcp.mcpb",
+      "fileSha256": "PLACEHOLDER_REPLACE_WITH_ACTUAL_HASH_FROM_CI",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

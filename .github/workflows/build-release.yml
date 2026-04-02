@@ -51,6 +51,33 @@ jobs:
             -p:Version=${{ steps.version.outputs.VERSION }} `
             -o ./publish/win-x64
 
+      - name: Create MCPB artifact
+        shell: pwsh
+        run: |
+          Copy-Item "publish\win-x64\LocalSynapse.exe" "publish\localsynapse-mcp.mcpb"
+          $hash = (Get-FileHash "publish\localsynapse-mcp.mcpb" -Algorithm SHA256).Hash
+          echo "MCPB_SHA256=$hash" >> $env:GITHUB_OUTPUT
+          Write-Host "MCPB SHA256: $hash"
+          # Generate server.json with actual hash
+          $json = @{
+            '$schema' = 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json'
+            name = 'io.github.localsynapse/localsynapse-mcp'
+            title = 'LocalSynapse - Local File Search MCP Server'
+            description = 'Offline AI-powered file search MCP server. Searches inside documents (Word, Excel, PDF, PowerPoint) using BM25 + dense vector hybrid search. 100% local, no cloud, no login.'
+            version = '${{ steps.version.outputs.VERSION }}'
+            packages = @(
+              @{
+                registryType = 'mcpb'
+                identifier = "https://github.com/LocalSynapse/LocalSynapse/releases/download/${{ steps.version.outputs.TAG }}/localsynapse-mcp.mcpb"
+                fileSha256 = $hash
+                transport = @{ type = 'stdio' }
+              }
+            )
+          } | ConvertTo-Json -Depth 4
+          $json | Out-File "publish\server.json" -Encoding UTF8
+          Write-Host "server.json generated"
+        id: mcpb
+
       - name: Build Installer (Inno Setup)
         shell: cmd
         run: |
@@ -60,9 +87,18 @@ jobs:
         shell: pwsh
         run: |
           $setupExe = "publish\installer\LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe"
-          $hash = (Get-FileHash $setupExe -Algorithm SHA256).Hash
-          "$hash  $(Split-Path $setupExe -Leaf)" | Out-File publish\installer\SHA256SUMS.txt
-          Write-Host "SHA256: $hash"
+          $mcpb = "publish\localsynapse-mcp.mcpb"
+          $lines = @()
+          if (Test-Path $setupExe) {
+            $hash = (Get-FileHash $setupExe -Algorithm SHA256).Hash
+            $lines += "$hash  $(Split-Path $setupExe -Leaf)"
+          }
+          if (Test-Path $mcpb) {
+            $hash = (Get-FileHash $mcpb -Algorithm SHA256).Hash
+            $lines += "$hash  localsynapse-mcp.mcpb"
+          }
+          $lines | Out-File publish\installer\SHA256SUMS.txt
+          Get-Content publish\installer\SHA256SUMS.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -71,6 +107,8 @@ jobs:
           path: |
             publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe
             publish/installer/SHA256SUMS.txt
+            publish/localsynapse-mcp.mcpb
+            publish/server.json
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -79,6 +117,8 @@ jobs:
           files: |
             publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe
             publish/installer/SHA256SUMS.txt
+            publish/localsynapse-mcp.mcpb
+            publish/server.json
           generate_release_notes: true
           draft: false
           prerelease: false
