@@ -38,38 +38,35 @@
                     <Border Classes="StatCard">
                         <StackPanel Spacing="6">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Right"
-                                           Text="{Binding ExePath}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontFamily="{StaticResource FontMono}"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           TextTrimming="CharacterEllipsis" />
                                 <TextBlock Text="Executable"
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Width="90" />
-                            </DockPanel>
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right"
-                                           Text="stdio (JSON-RPC)"
+                                <TextBlock Text="{Binding ExePath}"
                                            FontSize="{StaticResource FontSizeXs}"
                                            FontFamily="{StaticResource FontMono}"
-                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                            <DockPanel>
                                 <TextBlock Text="Transport"
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Width="90" />
-                            </DockPanel>
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right"
-                                           Text="LocalSynapse.exe mcp"
+                                <TextBlock Text="stdio (JSON-RPC)"
                                            FontSize="{StaticResource FontSizeXs}"
                                            FontFamily="{StaticResource FontMono}"
                                            Foreground="{StaticResource TextPrimaryBrush}" />
+                            </DockPanel>
+                            <DockPanel>
                                 <TextBlock Text="Command"
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Width="90" />
+                                <TextBlock Text="LocalSynapse.exe mcp"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
                             </DockPanel>
                         </StackPanel>
                     </Border>

@@ -8,7 +8,17 @@
     <ScrollViewer Margin="20,24"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="16">
+        <StackPanel Spacing="12" MaxWidth="720">
+
+            <!-- Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,4">
+                <TextBlock Text="Data &amp; Indexing"
+                           FontSize="{StaticResource FontSizeL}"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Manage file scanning and AI model for semantic search"
+                           FontSize="{StaticResource FontSizeS}"
+                           Foreground="{StaticResource TextSecondaryBrush}" />
+            </StackPanel>
 
             <!-- ═══════════════════════════════════════════ -->
             <!-- Pipeline Status Card                       -->
@@ -67,7 +77,7 @@
                             <StackPanel>
                                 <TextBlock Text="Files"
                                            FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="#AAAAAA"
+                                           Foreground="{StaticResource TextMutedBrush}"
                                            Margin="0,0,0,3" />
                                 <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
                                            FontSize="{StaticResource FontSizeL}"
@@ -80,7 +90,7 @@
                             <StackPanel>
                                 <TextBlock Text="Chunks"
                                            FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="#AAAAAA"
+                                           Foreground="{StaticResource TextMutedBrush}"
                                            Margin="0,0,0,3" />
                                 <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
                                            FontSize="{StaticResource FontSizeL}"
@@ -93,7 +103,7 @@
                             <StackPanel>
                                 <TextBlock Text="Indexed"
                                            FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="#AAAAAA"
+                                           Foreground="{StaticResource TextMutedBrush}"
                                            Margin="0,0,0,3" />
                                 <TextBlock Text="{Binding Stamps.IndexingPercent, StringFormat='{}{0:F1}%'}"
                                            FontSize="{StaticResource FontSizeL}"
@@ -106,7 +116,7 @@
                             <StackPanel>
                                 <TextBlock Text="Embedded"
                                            FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="#AAAAAA"
+                                           Foreground="{StaticResource TextMutedBrush}"
                                            Margin="0,0,0,3" />
                                 <TextBlock Text="{Binding Stamps.EmbeddingPercent, StringFormat='{}{0:F1}%'}"
                                            FontSize="{StaticResource FontSizeL}"
@@ -144,7 +154,7 @@
                                Foreground="{StaticResource TextMutedBrush}" />
 
                     <!-- ── Action Buttons ── -->
-                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,12,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
                         <Button Classes="BtnSecondary"
                                 Content="Scan now"
                                 Command="{Binding ScanNowCommand}"
@@ -194,7 +204,7 @@
                             <Border Grid.Column="0"
                                     Width="32" Height="32"
                                     CornerRadius="8"
-                                    Background="#F0F4FF"
+                                    Background="{StaticResource AccentLightBrush}"
                                     Margin="0,0,12,0">
                                 <PathIcon Width="16" Height="16"
                                           Foreground="{StaticResource AccentBrush}"
@@ -207,7 +217,7 @@
                                            FontWeight="Medium" />
                                 <TextBlock Text="~580 MB download · runs 100% locally"
                                            FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="#AAAAAA"
+                                           Foreground="{StaticResource TextMutedBrush}"
                                            Margin="0,2,0,0" />
                             </StackPanel>
                             <!-- Button -->

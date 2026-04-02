@@ -8,10 +8,20 @@
     <ScrollViewer Margin="20,24"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="16">
+        <StackPanel Spacing="12" MaxWidth="720">
+
+            <!-- Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,4">
+                <TextBlock Text="Settings"
+                           FontSize="{StaticResource FontSizeL}"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Configure LocalSynapse preferences"
+                           FontSize="{StaticResource FontSizeS}"
+                           Foreground="{StaticResource TextSecondaryBrush}" />
+            </StackPanel>
 
             <!-- Language -->
-            <Border Classes="Card">
+            <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <PathIcon Width="18" Height="18"
@@ -21,9 +31,19 @@
                                    FontSize="{StaticResource FontSizeM}"
                                    FontWeight="Medium" />
                     </StackPanel>
-                    <TextBlock Text="{Binding Language, StringFormat='Current: {0}'}"
-                               FontSize="{StaticResource FontSizeM}"
-                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <Border Classes="StatCard">
+                        <DockPanel>
+                            <TextBlock Text="{Binding Language}"
+                                       DockPanel.Dock="Right"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="Current"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                        </DockPanel>
+                    </Border>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Classes="BtnSecondary" Content="English"
                                 Command="{Binding ChangeLanguageCommand}" CommandParameter="en" />
@@ -34,8 +54,8 @@
             </Border>
 
             <!-- About -->
-            <Border Classes="Card">
-                <StackPanel Spacing="8">
+            <Border Classes="Card" Margin="0">
+                <StackPanel Spacing="12">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <PathIcon Width="18" Height="18"
                                   Foreground="{StaticResource TextPrimaryBrush}"
@@ -44,12 +64,86 @@
                                    FontSize="{StaticResource FontSizeM}"
                                    FontWeight="Medium" />
                     </StackPanel>
-                    <TextBlock Text="{Binding AppVersion, StringFormat='Version {0}'}"
-                               FontSize="{StaticResource FontSizeM}"
-                               Foreground="{StaticResource TextSecondaryBrush}" />
-                    <TextBlock Text="{Binding DataFolder}"
-                               FontSize="{StaticResource FontSizeXxs}"
-                               Foreground="{StaticResource TextMutedBrush}" />
+                    <Border Classes="StatCard">
+                        <StackPanel Spacing="6">
+                            <DockPanel>
+                                <TextBlock Text="{Binding AppVersion}"
+                                           DockPanel.Dock="Right"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="Version"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </DockPanel>
+                            <DockPanel>
+                                <TextBlock Text="{Binding DataFolder}"
+                                           DockPanel.Dock="Right"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="Data"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Width="60" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Links -->
+            <Border Classes="Card" Margin="0">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
+                        <TextBlock Text="Links"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <Border Classes="StatCard">
+                            <DockPanel>
+                                <TextBlock Text="localsynapse.com"
+                                           DockPanel.Dock="Right"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource AccentBrush}" />
+                                <TextBlock Text="Website"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </DockPanel>
+                        </Border>
+                        <Border Classes="StatCard">
+                            <DockPanel>
+                                <TextBlock Text="github.com/LocalSynapse/LocalSynapse"
+                                           DockPanel.Dock="Right"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource AccentBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="GitHub"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </DockPanel>
+                        </Border>
+                        <Border Classes="StatCard">
+                            <DockPanel>
+                                <TextBlock Text="Apache License 2.0"
+                                           DockPanel.Dock="Right"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="License"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

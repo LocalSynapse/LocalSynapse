@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>LocalSynapse.UI</RootNamespace>
     <AssemblyName>LocalSynapse</AssemblyName>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\LocalSynapse.Core\LocalSynapse.Core.csproj" />
