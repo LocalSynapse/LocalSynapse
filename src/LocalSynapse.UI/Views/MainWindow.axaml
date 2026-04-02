@@ -90,6 +90,35 @@
                         </Border>
                     </Grid>
 
+                    <!-- MCP -->
+                    <Grid Height="40">
+                        <Border Width="3" HorizontalAlignment="Left"
+                                CornerRadius="0,2,2,0"
+                                Background="{StaticResource AccentBrush}"
+                                IsVisible="{Binding CurrentPage, Converter={StaticResource NavActive}, ConverterParameter='McpSetup:Bar'}" />
+                        <Border Background="{Binding CurrentPage, Converter={StaticResource NavActive}, ConverterParameter='McpSetup:Bg'}"
+                                CornerRadius="{StaticResource RadiusMd}"
+                                Margin="8,0,8,0">
+                            <Button Command="{Binding NavigateToCommand}"
+                                    CommandParameter="{x:Static vm:PageType.McpSetup}"
+                                    Width="40" Height="40" Padding="0"
+                                    Background="Transparent" BorderThickness="0"
+                                    CornerRadius="{StaticResource RadiusMd}"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Cursor="Hand">
+                                <StackPanel HorizontalAlignment="Center" Spacing="2">
+                                    <PathIcon Width="18" Height="18"
+                                              Foreground="{Binding CurrentPage, Converter={StaticResource NavActive}, ConverterParameter='McpSetup:Fg'}"
+                                              Data="M8 16h8v2H8zm0-4h8v2H8zm6-10H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z" />
+                                    <TextBlock Text="MCP" FontSize="{StaticResource FontSizeNav}"
+                                               Foreground="{Binding CurrentPage, Converter={StaticResource NavActive}, ConverterParameter='McpSetup:Fg'}"
+                                               HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Border>
+                    </Grid>
+
                     <!-- Security -->
                     <Grid Height="40">
                         <Border Width="3" HorizontalAlignment="Left"
@@ -164,6 +193,9 @@
                 </DataTemplate>
                 <DataTemplate DataType="vm:DataSetupViewModel">
                     <views:DataSetupPage />
+                </DataTemplate>
+                <DataTemplate DataType="vm:McpViewModel">
+                    <views:McpPage />
                 </DataTemplate>
                 <DataTemplate DataType="vm:SecurityViewModel">
                     <views:SecurityPage />

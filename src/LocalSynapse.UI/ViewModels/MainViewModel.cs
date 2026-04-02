@@ -32,6 +32,7 @@ public partial class MainViewModel : ObservableObject
         {
             PageType.Search => _services.GetService(typeof(SearchViewModel)),
             PageType.DataSetup => _services.GetService(typeof(DataSetupViewModel)),
+            PageType.McpSetup => _services.GetService(typeof(McpViewModel)),
             PageType.Security => _services.GetService(typeof(SecurityViewModel)),
             PageType.Settings => _services.GetService(typeof(SettingsViewModel)),
             _ => null
@@ -46,6 +47,8 @@ public enum PageType
     Search,
     /// <summary>데이터 준비 페이지.</summary>
     DataSetup,
+    /// <summary>MCP 설정 페이지.</summary>
+    McpSetup,
     /// <summary>보안 페이지.</summary>
     Security,
     /// <summary>설정 페이지.</summary>

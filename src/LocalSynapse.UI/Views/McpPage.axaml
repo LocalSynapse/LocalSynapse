@@ -1,0 +1,308 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalSynapse.UI.ViewModels"
+             x:Class="LocalSynapse.UI.Views.McpPage"
+             x:DataType="vm:McpViewModel"
+             FontFamily="{StaticResource FontDefault}">
+
+    <ScrollViewer Margin="20,24"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16" MaxWidth="720">
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- HEADER                                  -->
+            <!-- ═══════════════════════════════════════ -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="MCP Server"
+                           FontSize="{StaticResource FontSizeL}"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Connect LocalSynapse to AI coding agents via Model Context Protocol"
+                           FontSize="{StaticResource FontSizeS}"
+                           Foreground="{StaticResource TextSecondaryBrush}" />
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- STATUS OVERVIEW                         -->
+            <!-- ═══════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource AccentBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        <TextBlock Text="Server Info"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+                    <Border Classes="StatCard">
+                        <StackPanel Spacing="6">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right"
+                                           Text="{Binding ExePath}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="Executable"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Width="90" />
+                            </DockPanel>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right"
+                                           Text="stdio (JSON-RPC)"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="Transport"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Width="90" />
+                            </DockPanel>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right"
+                                           Text="LocalSynapse.exe mcp"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="Command"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Width="90" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- CLAUDE DESKTOP — AUTO CONNECT           -->
+            <!-- ═══════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <PathIcon Width="18" Height="18"
+                                      Foreground="{StaticResource TextPrimaryBrush}"
+                                      Data="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z" />
+                            <TextBlock Text="Claude Desktop"
+                                       FontSize="{StaticResource FontSizeM}"
+                                       FontWeight="Medium" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Status -->
+                    <DockPanel>
+                        <Border DockPanel.Dock="Right"
+                                CornerRadius="4" Padding="8,2"
+                                IsVisible="False" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="8" Height="8"
+                                     VerticalAlignment="Center">
+                                <Ellipse.Styles>
+                                    <Style Selector="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource TextMutedBrush}" />
+                                    </Style>
+                                </Ellipse.Styles>
+                            </Ellipse>
+                            <TextBlock Text="{Binding ClaudeDesktopStatus}"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Connected state indicator -->
+                    <Border Background="{StaticResource AccentLightBrush}"
+                            CornerRadius="{StaticResource RadiusSm}"
+                            Padding="12,8"
+                            IsVisible="{Binding IsClaudeDesktopRegistered}">
+                        <TextBlock Text="✓ LocalSynapse is registered in Claude Desktop. Restart Claude Desktop to apply."
+                                   FontSize="{StaticResource FontSizeXs}"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <!-- Actions -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="BtnPrimary" Content="Connect"
+                                Command="{Binding RegisterClaudeDesktopCommand}"
+                                IsVisible="{Binding !IsClaudeDesktopRegistered}" />
+                        <Button Classes="BtnSecondary" Content="Disconnect"
+                                Command="{Binding UnregisterClaudeDesktopCommand}"
+                                IsVisible="{Binding IsClaudeDesktopRegistered}" />
+                        <Button Classes="BtnSecondary" Content="Open config folder"
+                                Command="{Binding OpenConfigFolderCommand}" />
+                    </StackPanel>
+
+                    <!-- Feedback message -->
+                    <TextBlock Text="{Binding ClaudeDesktopMessage}"
+                               FontSize="{StaticResource FontSizeXs}"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               IsVisible="{Binding ClaudeDesktopMessage.Length}" />
+
+                    <!-- Config file path -->
+                    <TextBlock Text="{Binding ConfigFilePath}"
+                               FontSize="{StaticResource FontSizeXxs}"
+                               FontFamily="{StaticResource FontMono}"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- CLAUDE CODE — MANUAL COMMAND            -->
+            <!-- ═══════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z" />
+                        <TextBlock Text="Claude Code / Cowork"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+
+                    <TextBlock Text="Run this command in your terminal to register:"
+                               FontSize="{StaticResource FontSizeXs}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+
+                    <!-- Add command -->
+                    <Border Background="{StaticResource BgPrimaryBrush}"
+                            CornerRadius="{StaticResource RadiusSm}"
+                            Padding="12,10">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Classes="BtnSecondary" Content="Copy"
+                                    Name="CopyAddCommandButton"
+                                    Click="CopyAddCommand_Click"
+                                    VerticalAlignment="Center"
+                                    Margin="8,0,0,0" />
+                            <TextBlock Text="{Binding ClaudeCodeAddCommand}"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       FontFamily="{StaticResource FontMono}"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+
+                    <TextBlock Text="To remove:"
+                               FontSize="{StaticResource FontSizeXs}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+
+                    <!-- Remove command -->
+                    <Border Background="{StaticResource BgPrimaryBrush}"
+                            CornerRadius="{StaticResource RadiusSm}"
+                            Padding="12,10">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Classes="BtnSecondary" Content="Copy"
+                                    Name="CopyRemoveCommandButton"
+                                    Click="CopyRemoveCommand_Click"
+                                    VerticalAlignment="Center"
+                                    Margin="8,0,0,0" />
+                            <TextBlock Text="{Binding ClaudeCodeRemoveCommand}"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       FontFamily="{StaticResource FontMono}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- AVAILABLE TOOLS                         -->
+            <!-- ═══════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" />
+                        <TextBlock Text="Available MCP Tools"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding AvailableTools}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10,8"
+                                        Margin="0,0,0,4"
+                                        Background="{StaticResource BgPrimaryBrush}"
+                                        CornerRadius="{StaticResource RadiusSm}">
+                                    <TextBlock Text="{Binding}"
+                                               FontSize="{StaticResource FontSizeXs}"
+                                               FontFamily="{StaticResource FontMono}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- QUICK START GUIDE                       -->
+            <!-- ═══════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                        <TextBlock Text="Quick Start Guide"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="10">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="1. Index your files"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       FontWeight="Medium" />
+                            <TextBlock Text="Go to the Data tab and let LocalSynapse scan your folders. Wait for indexing to complete."
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="2. Connect to Claude"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       FontWeight="Medium" />
+                            <TextBlock Text="Click 'Connect' above for Claude Desktop, or copy the command for Claude Code. Restart Claude after connecting."
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="3. Start asking questions"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       FontWeight="Medium" />
+                            <TextBlock Text="Ask Claude about your files. Try: &quot;Find all documents related to Q3 budget&quot; or &quot;What files did I work on last week?&quot;"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Background="{StaticResource BgPrimaryBrush}"
+                            CornerRadius="{StaticResource RadiusSm}"
+                            Padding="12,10">
+                        <TextBlock FontSize="{StaticResource FontSizeXs}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   TextWrapping="Wrap">
+                            <Run FontWeight="Medium" Foreground="{StaticResource TextSecondaryBrush}" Text="Note: " />
+                            <Run Text="LocalSynapse does not need to be running for MCP to work. The MCP server starts as a separate process managed by Claude." />
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

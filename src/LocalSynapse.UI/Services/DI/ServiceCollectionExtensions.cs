@@ -13,6 +13,7 @@ using LocalSynapse.Search.Services;
 using LocalSynapse.Mcp.Interfaces;
 using LocalSynapse.Mcp.Server;
 using LocalSynapse.UI.ViewModels;
+using LocalSynapse.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LocalSynapse.UI.Services.DI;
@@ -85,6 +86,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IPipelineStampRepository>(),
             sp.GetRequiredService<IFileRepository>(),
             sp.GetRequiredService<IChunkRepository>()));
+        services.AddSingleton<McpConfigService>();
+        services.AddTransient<McpViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SecurityViewModel>();
 
