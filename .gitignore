@@ -1,0 +1,22 @@
+# Build output
+bin/
+obj/
+
+# IDE
+.vs/
+*.user
+*.suo
+
+# Tests (private repo)
+tests/
+
+# Docs (internal)
+docs/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temp
+*.tmp
+*.bak

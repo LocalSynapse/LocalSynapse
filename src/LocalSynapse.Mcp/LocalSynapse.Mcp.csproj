@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>LocalSynapse.Mcp</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LocalSynapse.Core\LocalSynapse.Core.csproj" />
+    <ProjectReference Include="..\LocalSynapse.Search\LocalSynapse.Search.csproj" />
+  </ItemGroup>
+</Project>

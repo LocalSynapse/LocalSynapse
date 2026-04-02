@@ -1,0 +1,194 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="/Styles/DesignTokens.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+    <!-- Card -->
+    <Style Selector="Border.Card">
+        <Setter Property="Background" Value="White" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="20,18" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <!-- Stat Card -->
+    <Style Selector="Border.StatCard">
+        <Setter Property="Background" Value="{StaticResource BgPrimaryBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- Search Bar -->
+    <Style Selector="Border.SearchBar">
+        <Setter Property="Background" Value="{StaticResource BgPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusMd}" />
+        <Setter Property="Height" Value="{StaticResource SearchBarHeight}" />
+        <Setter Property="Padding" Value="14,0" />
+    </Style>
+    <!-- SearchBar focus: blue border -->
+    <Style Selector="Border.SearchBar:focus-within">
+        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+    <!-- Primary Button -->
+    <Style Selector="Button.BtnPrimary">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="18,0" />
+        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusSm}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.BtnPrimary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource AccentHoverBrush}" />
+    </Style>
+
+    <!-- Secondary Button -->
+    <Style Selector="Button.BtnSecondary">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeS}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusSm}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.BtnSecondary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource BgHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource AccentMutedBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+    <!-- Badge Scanning -->
+    <Style Selector="Border.BadgeScanning">
+        <Setter Property="Background" Value="{StaticResource AccentLightBrush}" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="8,2" />
+    </Style>
+    <Style Selector="Border.BadgeScanning TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXxs}" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <!-- Badge Ready -->
+    <Style Selector="Border.BadgeReady">
+        <Setter Property="Background" Value="{StaticResource SuccessLightBrush}" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="8,2" />
+    </Style>
+    <Style Selector="Border.BadgeReady TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXxs}" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <!-- Badge Warning -->
+    <Style Selector="Border.BadgeWarning">
+        <Setter Property="Background" Value="{StaticResource WarningLightBrush}" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="8,2" />
+    </Style>
+    <Style Selector="Border.BadgeWarning TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXxs}" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <!-- Progress Track -->
+    <Style Selector="Border.ProgressTrack">
+        <Setter Property="Background" Value="{StaticResource BgBadgeBrush}" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="Height" Value="4" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <!-- Section Header -->
+    <Style Selector="TextBlock.SectionHeader">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXs}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!-- Mono Text -->
+    <Style Selector="TextBlock.Mono">
+        <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    </Style>
+
+    <!-- Keyboard Badge -->
+    <Style Selector="Border.KbdBadge">
+        <Setter Property="Background" Value="{StaticResource BgBadgeBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="6,2" />
+    </Style>
+
+    <!-- Model Card -->
+    <Style Selector="Border.ModelCard">
+        <Setter Property="Background" Value="{StaticResource BgPrimaryBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="14,10" />
+    </Style>
+
+    <!-- Result Item (if using ListBox) -->
+    <Style Selector="ListBoxItem.ResultItem">
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector="ListBoxItem.ResultItem:pointerover">
+        <Setter Property="Background" Value="{StaticResource BgHoverBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem.ResultItem:selected">
+        <Setter Property="Background" Value="{StaticResource BgSelectedBrush}" />
+    </Style>
+
+    <!-- File Extension Badge -->
+    <Style Selector="Border.ExtBadge">
+        <Setter Property="Background" Value="{StaticResource BgBadgeBrush}" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="6,2" />
+    </Style>
+    <Style Selector="Border.ExtBadge TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeXxs}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+    </Style>
+
+    <!-- Tab Setup Badge (replaces full-width AI banner) -->
+    <Style Selector="Border.TabSetupBadge">
+        <Setter Property="Background" Value="{StaticResource AccentLightBrush}" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Padding" Value="5,1" />
+    </Style>
+    <Style Selector="Border.TabSetupBadge TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeNav}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+</Styles>

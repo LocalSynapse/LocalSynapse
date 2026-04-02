@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalSynapse.UI.ViewModels"
+             x:Class="LocalSynapse.UI.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             FontFamily="{StaticResource FontDefault}">
+
+    <ScrollViewer Margin="20,24"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16">
+
+            <!-- Language -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" />
+                        <TextBlock Text="Language"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Language, StringFormat='Current: {0}'}"
+                               FontSize="{StaticResource FontSizeM}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="BtnSecondary" Content="English"
+                                Command="{Binding ChangeLanguageCommand}" CommandParameter="en" />
+                        <Button Classes="BtnSecondary" Content="Korean"
+                                Command="{Binding ChangeLanguageCommand}" CommandParameter="ko-KR" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- About -->
+            <Border Classes="Card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                        <TextBlock Text="About"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding AppVersion, StringFormat='Version {0}'}"
+                               FontSize="{StaticResource FontSizeM}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding DataFolder}"
+                               FontSize="{StaticResource FontSizeXxs}"
+                               Foreground="{StaticResource TextMutedBrush}" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

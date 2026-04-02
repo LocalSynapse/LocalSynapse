@@ -1,0 +1,227 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalSynapse.UI.ViewModels"
+             x:Class="LocalSynapse.UI.Views.DataSetupPage"
+             x:DataType="vm:DataSetupViewModel"
+             FontFamily="{StaticResource FontDefault}">
+
+    <ScrollViewer Margin="20,24"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16">
+
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- Pipeline Status Card                       -->
+            <!-- ═══════════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="14">
+
+                    <!-- Header: icon + title + phase badge -->
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h6v7h6v9H6z" />
+                        <TextBlock Text="Pipeline status"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+
+                        <!-- Phase badge: scanning = blue, idle = green -->
+                        <Border Background="{StaticResource AccentLightBrush}"
+                                CornerRadius="{StaticResource RadiusSm}"
+                                Padding="10,4"
+                                IsVisible="{Binding IsCycleRunning}">
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource AccentBrush}">
+                                    <Ellipse.Styles>
+                                        <Style Selector="Ellipse">
+                                            <Style.Animations>
+                                                <Animation Duration="0:0:1.5" IterationCount="INFINITE">
+                                                    <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1"/></KeyFrame>
+                                                    <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0.3"/></KeyFrame>
+                                                    <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1"/></KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </Ellipse.Styles>
+                                </Ellipse>
+                                <TextBlock Text="{Binding CurrentPhase}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource AccentBrush}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource SuccessLightBrush}"
+                                CornerRadius="{StaticResource RadiusSm}"
+                                Padding="10,4"
+                                IsVisible="{Binding !IsCycleRunning}">
+                            <TextBlock Text="Idle"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource SuccessBrush}" />
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ── 4-Column Stats Grid ── -->
+                    <UniformGrid Columns="4" Rows="1">
+                        <!-- Files -->
+                        <Border Classes="StatCard" Margin="0,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="Files"
+                                           FontSize="{StaticResource FontSizeXxs}"
+                                           Foreground="#AAAAAA"
+                                           Margin="0,0,0,3" />
+                                <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
+                                           FontSize="{StaticResource FontSizeL}"
+                                           FontWeight="Medium"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Chunks -->
+                        <Border Classes="StatCard" Margin="5,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="Chunks"
+                                           FontSize="{StaticResource FontSizeXxs}"
+                                           Foreground="#AAAAAA"
+                                           Margin="0,0,0,3" />
+                                <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
+                                           FontSize="{StaticResource FontSizeL}"
+                                           FontWeight="Medium"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Indexing % -->
+                        <Border Classes="StatCard" Margin="5,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="Indexed"
+                                           FontSize="{StaticResource FontSizeXxs}"
+                                           Foreground="#AAAAAA"
+                                           Margin="0,0,0,3" />
+                                <TextBlock Text="{Binding Stamps.IndexingPercent, StringFormat='{}{0:F1}%'}"
+                                           FontSize="{StaticResource FontSizeL}"
+                                           FontWeight="Medium"
+                                           Foreground="{StaticResource WarningBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Embedding % -->
+                        <Border Classes="StatCard" Margin="5,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Embedded"
+                                           FontSize="{StaticResource FontSizeXxs}"
+                                           Foreground="#AAAAAA"
+                                           Margin="0,0,0,3" />
+                                <TextBlock Text="{Binding Stamps.EmbeddingPercent, StringFormat='{}{0:F1}%'}"
+                                           FontSize="{StaticResource FontSizeL}"
+                                           FontWeight="Medium"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- ── Scan Progress (visible when running) ── -->
+                    <StackPanel Spacing="4" IsVisible="{Binding IsCycleRunning}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}">
+                                <Run Text="{Binding ScanStatusText}" />
+                                <Run Text=" — " />
+                                <Run Text="{Binding ScanFilesFound, StringFormat='{}{0:N0}'}" />
+                                <Run Text=" files" />
+                            </TextBlock>
+                        </Grid>
+                        <Border Classes="ProgressTrack">
+                            <ProgressBar IsIndeterminate="True"
+                                         Height="4"
+                                         CornerRadius="2"
+                                         Foreground="{StaticResource AccentBrush}"
+                                         Background="Transparent" />
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Status text when paused/idle -->
+                    <TextBlock Text="{Binding ScanStatusText}"
+                               IsVisible="{Binding !IsCycleRunning}"
+                               FontSize="{StaticResource FontSizeXs}"
+                               Foreground="{StaticResource TextMutedBrush}" />
+
+                    <!-- ── Action Buttons ── -->
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,12,0,0">
+                        <Button Classes="BtnSecondary"
+                                Content="Scan now"
+                                Command="{Binding ScanNowCommand}"
+                                IsEnabled="{Binding !IsCycleRunning}" />
+                        <Button Classes="BtnSecondary"
+                                Content="Pause"
+                                Command="{Binding PausePipelineCommand}"
+                                IsVisible="{Binding !IsPipelinePaused}" />
+                        <Button Classes="BtnSecondary"
+                                Content="Resume"
+                                Command="{Binding ResumePipelineCommand}"
+                                IsVisible="{Binding IsPipelinePaused}" />
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════════════════════════════ -->
+            <!-- AI Semantic Search Card                    -->
+            <!-- ═══════════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+
+                    <!-- Header -->
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        <TextBlock Text="AI semantic search"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+
+                        <!-- Model status badge -->
+                        <Border Background="{StaticResource WarningLightBrush}"
+                                CornerRadius="{StaticResource RadiusSm}"
+                                Padding="10,4">
+                            <TextBlock Text="{Binding ModelStatus}"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource WarningBrush}" />
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Model download card -->
+                    <Border Classes="ModelCard">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <!-- Icon -->
+                            <Border Grid.Column="0"
+                                    Width="32" Height="32"
+                                    CornerRadius="8"
+                                    Background="#F0F4FF"
+                                    Margin="0,0,12,0">
+                                <PathIcon Width="16" Height="16"
+                                          Foreground="{StaticResource AccentBrush}"
+                                          Data="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                            </Border>
+                            <!-- Info -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="BGE-M3 embedding model"
+                                           FontSize="{StaticResource FontSizeS}"
+                                           FontWeight="Medium" />
+                                <TextBlock Text="~580 MB download · runs 100% locally"
+                                           FontSize="{StaticResource FontSizeXxs}"
+                                           Foreground="#AAAAAA"
+                                           Margin="0,2,0,0" />
+                            </StackPanel>
+                            <!-- Button -->
+                            <Button Grid.Column="2"
+                                    Classes="BtnPrimary"
+                                    Content="Install"
+                                    Command="{Binding DownloadModelCommand}"
+                                    VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalSynapse.UI.ViewModels"
+             x:Class="LocalSynapse.UI.Views.SecurityPage"
+             x:DataType="vm:SecurityViewModel"
+             FontFamily="{StaticResource FontDefault}">
+
+    <ScrollViewer Margin="20,24"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16">
+
+            <!-- Data Storage -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                        <TextBlock Text="Data storage"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+
+                    <Border Classes="StatCard">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}">
+                                <Run Text="Location: " />
+                                <Run Text="{Binding StorageLocation}" Foreground="{StaticResource TextPrimaryBrush}" />
+                            </TextBlock>
+                            <TextBlock FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}">
+                                <Run Text="Size: " />
+                                <Run Text="{Binding StorageSize}" FontWeight="Medium" Foreground="{StaticResource TextPrimaryBrush}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Classes="BtnSecondary" Content="Open data folder"
+                            Command="{Binding OpenDataFolderCommand}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Privacy guarantee -->
+            <Border Classes="Card" Background="{StaticResource SuccessLightBrush}"
+                    BorderBrush="{StaticResource SuccessBrush}">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource SuccessBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        <TextBlock Text="100% offline AI"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium"
+                                   Foreground="{StaticResource SuccessBrush}" />
+                    </StackPanel>
+                    <TextBlock Text="All data processing happens locally on your machine. No data is sent to external servers."
+                               TextWrapping="Wrap"
+                               FontSize="{StaticResource FontSizeM}"
+                               Foreground="{StaticResource SuccessBrush}" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

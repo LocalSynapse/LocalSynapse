@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>LocalSynapse.Search</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LocalSynapse.Core\LocalSynapse.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Porter2StemmerStandard" Version="1.0.0" />
+  </ItemGroup>
+</Project>
