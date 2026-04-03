@@ -214,12 +214,14 @@
         </Border>
 
         <!-- ═══════════════════════════════════════════════ -->
-        <!-- EMPTY STATES                                   -->
+        <!-- MAIN CONTENT — empty state + results overlap   -->
+        <!-- in a single Grid so DockPanel fills space       -->
         <!-- ═══════════════════════════════════════════════ -->
+        <Grid>
 
-        <!-- Initial state (no search yet) — Grid wrapper ensures true centering -->
-        <Grid IsVisible="{Binding !HasSearched}">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+            <!-- Initial state (no search yet) — centered in full remaining space -->
+            <StackPanel IsVisible="{Binding !HasSearched}"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
                         Spacing="6">
                 <Border Width="48" Height="48" CornerRadius="14"
                         Background="{StaticResource AccentLightBrush}"
@@ -238,13 +240,10 @@
                            Foreground="{StaticResource TextSecondaryBrush}"
                            HorizontalAlignment="Center" />
             </StackPanel>
-        </Grid>
 
-        <!-- ═══════════════════════════════════════════════ -->
-        <!-- C. SPLIT PANEL (results)                       -->
-        <!-- ═══════════════════════════════════════════════ -->
-        <Grid IsVisible="{Binding HasSearched}"
-              ColumnDefinitions="*,Auto,Auto">
+            <!-- C. SPLIT PANEL (results) — shares same Grid cell -->
+            <Grid IsVisible="{Binding HasSearched}"
+                  ColumnDefinitions="*,Auto,Auto">
 
             <!-- ═══ C1. LEFT PANEL ═══ -->
             <ScrollViewer Grid.Column="0">
@@ -729,6 +728,8 @@
             </Border>
 
         </Grid>
+
+        </Grid> <!-- closing wrapper Grid for empty state + results -->
 
     </DockPanel>
 </UserControl>

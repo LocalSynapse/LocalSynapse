@@ -6,8 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>LocalSynapse.UI</RootNamespace>
     <AssemblyName>LocalSynapse</AssemblyName>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
+    <ApplicationIcon>..\..\assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\assets\app-icon.ico">
+      <Link>Assets/app-icon.ico</Link>
+    </AvaloniaResource>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LocalSynapse.Core\LocalSynapse.Core.csproj" />
     <ProjectReference Include="..\LocalSynapse.Pipeline\LocalSynapse.Pipeline.csproj" />

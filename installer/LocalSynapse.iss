@@ -54,18 +54,18 @@ Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 ; Feature page
 english.FeatureTitle=Welcome to LocalSynapse
 english.FeatureDesc=AI Memory Layer for Your PC
-english.Feature1=Search inside files — not just filenames. Find documents by content across all your drives.
-english.Feature2=100%% offline — all AI processing runs locally. No cloud, no login, no data transfer.
-english.Feature3=MCP Server built-in — connect Claude, Cursor, or any AI coding agent to search your files.
-english.Feature4=Hybrid search — BM25 keyword + BGE-M3 semantic search combined for best results.
+english.Feature1=>> Search inside files%nFind documents by content across all your drives — not just filenames.
+english.Feature2=>> 100%% offline%nAll AI processing runs locally. No cloud, no login, no data transfer.
+english.Feature3=>> MCP Server built-in%nConnect Claude, Cursor, or any AI coding agent to search your local files.
+english.Feature4=>> Hybrid search%nBM25 keyword + BGE-M3 semantic search combined for best results.
 english.FeatureNote=System requirements: Windows 10+, 4 GB RAM, ~200 MB disk (+ 580 MB for optional AI model)
 
 korean.FeatureTitle=LocalSynapse에 오신 것을 환영합니다
 korean.FeatureDesc=PC를 위한 AI 메모리 레이어
-korean.Feature1=파일 이름이 아닌 내용으로 검색합니다. 모든 드라이브의 문서를 내용 기반으로 찾습니다.
-korean.Feature2=100%% 오프라인 — 모든 AI 처리가 로컬에서 실행됩니다. 클라우드 없음, 로그인 없음, 데이터 전송 없음.
-korean.Feature3=MCP 서버 내장 — Claude, Cursor 등 AI 코딩 에이전트와 연결하여 파일을 검색합니다.
-korean.Feature4=하이브리드 검색 — BM25 키워드 + BGE-M3 시맨틱 검색을 결합하여 최상의 결과를 제공합니다.
+korean.Feature1=>> 파일 내용 검색%n파일 이름이 아닌 내용으로 검색합니다. 모든 드라이브의 문서를 찾습니다.
+korean.Feature2=>> 100%% 오프라인%n모든 AI 처리가 로컬에서 실행됩니다. 클라우드, 로그인, 데이터 전송 없음.
+korean.Feature3=>> MCP 서버 내장%nClaude, Cursor 등 AI 코딩 에이전트와 연결하여 파일을 검색합니다.
+korean.Feature4=>> 하이브리드 검색%nBM25 키워드 + BGE-M3 시맨틱 검색을 결합하여 최상의 결과를 제공합니다.
 korean.FeatureNote=시스템 요구사항: Windows 10 이상, RAM 4 GB, 디스크 ~200 MB (선택적 AI 모델 580 MB 추가)
 
 ; Tasks
@@ -79,7 +79,7 @@ english.DeleteDataPrompt=Do you also want to delete all LocalSynapse data (searc
 korean.DeleteDataPrompt=LocalSynapse 데이터(검색 인덱스, 설정)도 삭제하시겠습니까?%n%n데이터 폴더: %1
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:TaskDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:TaskDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "startupicon"; Description: "{cm:TaskStartup}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 ; ══════════════════════════════════════
@@ -140,11 +140,12 @@ begin
   Memo.Top := 70;
   Memo.Left := 0;
   Memo.Width := FeaturePage.SurfaceWidth;
-  Memo.Height := 160;
+  Memo.Height := 175;
   Memo.ReadOnly := True;
   Memo.ScrollBars := ssNone;
   Memo.Color := $FAFAFA;
   Memo.Font.Size := 9;
+  Memo.Font.Name := 'Segoe UI';
   Memo.Lines.Add(CustomMessage('Feature1'));
   Memo.Lines.Add('');
   Memo.Lines.Add(CustomMessage('Feature2'));
