@@ -67,7 +67,11 @@ public static class NaturalQueryParser
 
         if (parts.Count == 0) return "";
 
-        var mainExpr = string.Join(" AND ", parts);
+        // Use OR for multi-token queries: documents may mention terms in different chunks.
+        // BM25 ranking naturally prioritizes chunks containing more matching tokens.
+        var mainExpr = parts.Count == 1
+            ? parts[0]
+            : string.Join(" OR ", parts);
 
         // ── Keyword expansions (기존 QueryExpansionMap) ──
         var expansions = Constants.QueryExpansionMap.ExpandKeywordsOnly(query);
