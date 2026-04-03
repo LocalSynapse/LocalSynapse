@@ -37,6 +37,31 @@ src/
   LocalSynapse.UI/         # Avalonia desktop app
 ```
 
+## MCP Configuration
+
+Add LocalSynapse as an MCP server in your Claude Desktop or Claude Code config:
+
+```json
+{
+  "mcpServers": {
+    "localsynapse": {
+      "command": "C:\\Program Files\\LocalSynapse\\LocalSynapse.exe",
+      "args": ["mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `search_files` | Search files by keyword or semantic query |
+| `get_file_content` | Read the content of an indexed file |
+| `list_indexed_files` | List all indexed files with filters |
+| `get_pipeline_status` | Check indexing pipeline status |
+
 ## License
 
 [Apache License 2.0](LICENSE)
