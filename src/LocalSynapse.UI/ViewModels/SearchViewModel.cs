@@ -317,8 +317,10 @@ public partial class SearchViewModel : ObservableObject
     private void CategorizeResults(SearchResponse response, IReadOnlyList<Bm25Hit> quickHits)
     {
         var queryLower = Query.ToLowerInvariant().Trim();
+        // Split query into individual tokens for multi-word matching
+        var queryTokens = queryLower.Split([' ', ',', '.', '-', '_'], StringSplitOptions.RemoveEmptyEntries);
 
-        // === Name matches ===
+        // === Name matches: file/folder name contains ANY query token ===
         var nameFileSet = new Dictionary<string, SearchResultFile>(StringComparer.OrdinalIgnoreCase);
         foreach (var hit in quickHits)
         {
@@ -333,19 +335,19 @@ public partial class SearchViewModel : ObservableObject
         }
         foreach (var hit in response.Items.Where(h =>
             h.MatchSource == MatchSource.FileName ||
-            h.Filename.Contains(queryLower, StringComparison.OrdinalIgnoreCase)))
+            queryTokens.Any(t => h.Filename.Contains(t, StringComparison.OrdinalIgnoreCase))))
         {
             nameFileSet.TryAdd(hit.FileId, HybridToFile(hit));
         }
         _nameFiles = nameFileSet.Values.OrderByDescending(f => f.Score).ToList();
-        _nameFolders = GroupIntoFolders(_nameFiles, queryLower, filterFolderName: true);
+        _nameFolders = GroupIntoFolders(_nameFiles, queryTokens);
 
         // === Content matches ===
         _contentFiles = response.Items
             .Where(h => h.Bm25Score > 0)
             .Select(h => { var f = HybridToFile(h); f.Snippet = h.MatchSnippet ?? ""; return f; })
             .OrderByDescending(f => f.Score).ToList();
-        _contentFolders = GroupIntoFolders(_contentFiles, queryLower, filterFolderName: false);
+        _contentFolders = GroupIntoFolders(_contentFiles);
 
         // === Semantic matches ===
         IsSemanticUnavailable = _hybridSearch.CurrentMode == SearchMode.FtsOnly;
@@ -358,15 +360,16 @@ public partial class SearchViewModel : ObservableObject
                 return f;
             })
             .OrderByDescending(f => f.Score).ToList();
-        _semanticFolders = GroupIntoFolders(_semanticFiles, queryLower, filterFolderName: false);
+        _semanticFolders = GroupIntoFolders(_semanticFiles);
 
         _unfilteredNameCount = _nameFiles.Count + _nameFolders.Count;
         _unfilteredContentCount = _contentFiles.Count;
         _unfilteredSemanticCount = _semanticFiles.Count;
     }
 
+    /// <summary>Group files into folders. Token-based name filtering for Name tab.</summary>
     private static List<SearchResultFolder> GroupIntoFolders(
-        List<SearchResultFile> files, string query, bool filterFolderName)
+        List<SearchResultFile> files, string[] queryTokens)
     {
         var groups = files
             .Where(f => !string.IsNullOrEmpty(f.FolderPath))
@@ -381,17 +384,38 @@ public partial class SearchViewModel : ObservableObject
                     Name = folderName,
                     ParentPath = parentPath,
                     FileCount = g.Count(),
-                    SubText = filterFolderName
-                        ? parentPath
-                        : $"{g.Count()}/{g.Count()} files",
+                    SubText = parentPath,
                     Score = g.Max(f => f.Score),
                 };
-            });
-
-        if (filterFolderName)
-            groups = groups.Where(f => f.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+            })
+            .Where(f => queryTokens.Any(t =>
+                f.Name.Contains(t, StringComparison.OrdinalIgnoreCase)));
 
         return groups.OrderByDescending(f => f.Score).Take(50).ToList();
+    }
+
+    /// <summary>Group files into folders without name filtering (Content/Semantic tabs).</summary>
+    private static List<SearchResultFolder> GroupIntoFolders(
+        List<SearchResultFile> files)
+    {
+        return files
+            .Where(f => !string.IsNullOrEmpty(f.FolderPath))
+            .GroupBy(f => f.FolderPath, StringComparer.OrdinalIgnoreCase)
+            .Select(g =>
+            {
+                var folderName = System.IO.Path.GetFileName(g.Key) ?? g.Key;
+                var parentPath = System.IO.Path.GetDirectoryName(g.Key) ?? "";
+                return new SearchResultFolder
+                {
+                    Path = g.Key,
+                    Name = folderName,
+                    ParentPath = parentPath,
+                    FileCount = g.Count(),
+                    SubText = $"{g.Count()} files",
+                    Score = g.Max(f => f.Score),
+                };
+            })
+            .OrderByDescending(f => f.Score).Take(50).ToList();
     }
 
     private static SearchResultFile HybridToFile(HybridHit hit) => new()

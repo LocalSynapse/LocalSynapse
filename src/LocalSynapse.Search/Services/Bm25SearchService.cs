@@ -45,20 +45,31 @@ public sealed class Bm25SearchService : IBm25Search
         return results;
     }
 
-    /// <summary>LIKE 기반 빠른 파일명 검색.</summary>
+    /// <summary>LIKE 기반 빠른 파일명 검색. Multi-word queries match ANY token.</summary>
     public IReadOnlyList<Bm25Hit> QuickSearch(string query, int limit = 20)
     {
         if (string.IsNullOrWhiteSpace(query)) return [];
 
+        var tokens = query.Split([' ', ',', '.'], StringSplitOptions.RemoveEmptyEntries);
+        if (tokens.Length == 0) return [];
+
         using var conn = _connectionFactory.CreateConnection();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
+
+        // Build OR conditions for each token
+        var conditions = new List<string>();
+        for (int i = 0; i < tokens.Length; i++)
+        {
+            conditions.Add($"(filename LIKE $p{i} COLLATE NOCASE OR path LIKE $p{i} COLLATE NOCASE)");
+            cmd.Parameters.AddWithValue($"$p{i}", $"%{tokens[i]}%");
+        }
+
+        cmd.CommandText = $@"
             SELECT id, filename, path, extension, folder_path, content, modified_at, is_directory
             FROM files
-            WHERE filename LIKE $pattern COLLATE NOCASE OR path LIKE $pattern COLLATE NOCASE
+            WHERE {string.Join(" OR ", conditions)}
             ORDER BY modified_at DESC
             LIMIT $limit";
-        cmd.Parameters.AddWithValue("$pattern", $"%{query}%");
         cmd.Parameters.AddWithValue("$limit", limit);
 
         var hits = new List<Bm25Hit>();
