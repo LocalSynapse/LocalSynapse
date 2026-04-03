@@ -312,11 +312,16 @@ public sealed class FileRepository : IFileRepository
     {
         using var conn = _connectionFactory.CreateConnection();
         using var cmd = conn.CreateCommand();
+        // ContentSearchableFiles excludes SKIPPED files (cloud, intentionally excluded)
+        // so that IndexingPercent reflects actual indexable files only
         cmd.CommandText = $@"
             SELECT
                 SUM(CASE WHEN is_directory = 0 THEN 1 ELSE 0 END),
                 SUM(CASE WHEN is_directory = 1 THEN 1 ELSE 0 END),
-                SUM(CASE WHEN is_directory = 0 AND extension IN ({FileExtensions.ToSqlInClause()}) THEN 1 ELSE 0 END)
+                SUM(CASE WHEN is_directory = 0
+                          AND extension IN ({FileExtensions.ToSqlInClause()})
+                          AND extract_status != 'SKIPPED'
+                     THEN 1 ELSE 0 END)
             FROM files";
         using var r = cmd.ExecuteReader();
         if (r.Read())

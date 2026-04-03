@@ -18,6 +18,7 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     private readonly IPipelineOrchestrator _orchestrator;
     private readonly IPipelineStampRepository _stampRepo;
     private readonly IModelInstaller _modelInstaller;
+    private readonly IFileRepository _fileRepo;
 
     [ObservableProperty] private PipelineStamps _stamps = new();
     [ObservableProperty] private PipelinePhase _currentPhase;
@@ -26,17 +27,20 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _scanStatusText = "";
     [ObservableProperty] private int _scanFilesFound;
     [ObservableProperty] private bool _isCycleRunning;
+    [ObservableProperty] private int _skippedFiles;
 
     private readonly System.Threading.Timer _refreshTimer;
 
     public DataSetupViewModel(
         IPipelineOrchestrator orchestrator,
         IPipelineStampRepository stampRepo,
-        IModelInstaller modelInstaller)
+        IModelInstaller modelInstaller,
+        IFileRepository fileRepo)
     {
         _orchestrator = orchestrator;
         _stampRepo = stampRepo;
         _modelInstaller = modelInstaller;
+        _fileRepo = fileRepo;
 
         // Subscribe to pipeline events (these fire on background threads)
         _orchestrator.ProgressChanged += OnProgressChanged;
@@ -134,6 +138,9 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         IsPipelinePaused = _orchestrator.IsPaused;
         IsCycleRunning = _orchestrator.IsRunning;
         ModelStatus = _modelInstaller.IsModelInstalled("bge-m3") ? "Installed" : "Not installed";
+
+        try { var (cloud, _, _, _) = _fileRepo.CountSkippedByCategory(); SkippedFiles = cloud; }
+        catch { SkippedFiles = 0; }
 
         // Show last progress text if cycle is running
         if (_orchestrator.IsRunning && _orchestrator.LatestProgress.StatusText != null)

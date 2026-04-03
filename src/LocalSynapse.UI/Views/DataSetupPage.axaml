@@ -70,8 +70,8 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- ── 4-Column Stats Grid ── -->
-                    <UniformGrid Columns="4" Rows="1">
+                    <!-- ── 5-Column Stats Grid ── -->
+                    <UniformGrid Columns="5" Rows="1">
                         <!-- Files -->
                         <Border Classes="StatCard" Margin="0,0,5,0">
                             <StackPanel>
@@ -96,6 +96,24 @@
                                            FontSize="{StaticResource FontSizeL}"
                                            FontWeight="Medium"
                                            Foreground="{StaticResource TextPrimaryBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Skipped -->
+                        <Border Classes="StatCard" Margin="5,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="Skipped"
+                                           FontSize="{StaticResource FontSizeXxs}"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,0,0,3" />
+                                <TextBlock Text="{Binding SkippedFiles, StringFormat='{}{0:N0}'}"
+                                           FontSize="{StaticResource FontSizeL}"
+                                           FontWeight="Medium"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           ToolTip.Tip="Cloud-only files excluded from content indexing. Filename search is still available for these files." />
+                                <TextBlock Text="Filename search available"
+                                           FontSize="{StaticResource FontSizeXxs}"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Opacity="0.7" />
                             </StackPanel>
                         </Border>
                         <!-- Indexing % -->

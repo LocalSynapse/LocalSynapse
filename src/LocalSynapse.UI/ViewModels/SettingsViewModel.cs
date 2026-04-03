@@ -12,7 +12,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly ISettingsStore _settings;
 
     [ObservableProperty] private string _language = "en";
-    [ObservableProperty] private string _appVersion = "2.2.2";
+    [ObservableProperty] private string _appVersion = "2.2.3";
     [ObservableProperty] private string _dataFolder = "";
 
     /// <summary>SettingsViewModel 생성자.</summary>
