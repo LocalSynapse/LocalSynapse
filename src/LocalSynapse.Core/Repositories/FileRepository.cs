@@ -177,7 +177,9 @@ public sealed class FileRepository : IFileRepository
     {
         using var conn = _connectionFactory.CreateConnection();
         using var cmd = conn.CreateCommand();
-        var normalized = folderPath.Replace('/', '\\');
+        var normalized = folderPath;
+        if (OperatingSystem.IsWindows())
+            normalized = folderPath.Replace('/', '\\');
         cmd.CommandText = "SELECT path FROM files WHERE path LIKE $pattern";
         cmd.Parameters.AddWithValue("$pattern", normalized + "%");
 

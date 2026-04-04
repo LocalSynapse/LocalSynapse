@@ -69,7 +69,7 @@ public sealed class Bm25SearchService : IBm25Search
         cmd.CommandText = $@"
             SELECT id, filename, path, extension, folder_path, content, modified_at, is_directory
             FROM files
-            WHERE {string.Join(" OR ", conditions)}
+            WHERE is_directory = 0 AND ({string.Join(" OR ", conditions)})
             ORDER BY modified_at DESC
             LIMIT $limit";
         cmd.Parameters.AddWithValue("$limit", limit);
