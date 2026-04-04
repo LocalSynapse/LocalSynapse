@@ -89,15 +89,20 @@ jobs:
           }
           $lines | Out-File publish\installer\SHA256SUMS.txt
           Get-Content publish\installer\SHA256SUMS.txt
+      - name: Flatten Windows artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path publish/artifacts
+          Copy-Item "publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe" "publish/artifacts/" -ErrorAction SilentlyContinue
+          Copy-Item "publish/installer/SHA256SUMS.txt" "publish/artifacts/" -ErrorAction SilentlyContinue
+          Copy-Item "publish/localsynapse-mcp.mcpb" "publish/artifacts/"
+          Copy-Item "publish/server.json" "publish/artifacts/"
+          Get-ChildItem publish/artifacts/
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: |
-            publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe
-            publish/installer/SHA256SUMS.txt
-            publish/localsynapse-mcp.mcpb
-            publish/server.json
+          path: publish/artifacts/
 
   build-macos:
     runs-on: macos-latest
