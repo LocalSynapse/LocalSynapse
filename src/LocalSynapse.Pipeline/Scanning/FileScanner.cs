@@ -120,6 +120,12 @@ public sealed class FileScanner : IFileScanner
                         && existingMtime == file.MtimeMs)
                     {
                         unchangedSkipped++;
+
+                        if (lastProgressReport.ElapsedMilliseconds > 200)
+                        {
+                            ReportProgress(progress, rootPath, totalFiles, totalFolders);
+                            lastProgressReport.Restart();
+                        }
                         continue;
                     }
 

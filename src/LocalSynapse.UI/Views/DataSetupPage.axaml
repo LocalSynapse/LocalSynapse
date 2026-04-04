@@ -154,7 +154,7 @@
                                 <Run Text="{Binding ScanStatusText}" />
                                 <Run Text=" — " />
                                 <Run Text="{Binding ScanFilesFound, StringFormat='{}{0:N0}'}" />
-                                <Run Text=" files" />
+                                <Run Text=" files checked" />
                             </TextBlock>
                         </Grid>
                         <Border Classes="ProgressTrack">

@@ -127,6 +127,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     {
         Debug.WriteLine("[Orch] Auto-run started (10min interval)");
 
+        // Recover pipeline_stamps if previous scan was interrupted
+        RecoverStampsIfNeeded();
+
         // Run first cycle immediately on startup
         try { await RunCycleAsync(ct); }
         catch (Exception ex) { Debug.WriteLine($"[Orch] Initial cycle error: {ex.Message}"); }
@@ -179,6 +182,19 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         Debug.WriteLine("[Orch] Resumed");
     }
 
+    /// <summary>스캔이 완료 전에 앱이 종료되어 stamps가 0인 경우 복구한다.</summary>
+    private void RecoverStampsIfNeeded()
+    {
+        var stamps = _stampRepo.GetCurrent();
+        if (stamps.TotalFiles > 0) return; // stamps 정상
+
+        var (files, folders, contentSearchable) = _fileRepo.CountScanStampTotals();
+        if (files == 0) return; // DB에도 데이터 없음 — 복구 불필요
+
+        _stampRepo.StampScanComplete(files, folders, contentSearchable);
+        Debug.WriteLine($"[Orch] Recovering pipeline_stamps from existing data: {files} files, {folders} folders");
+    }
+
     // ─────────────────────────── Phase 1: Scan ───────────────────────────
 
     private async Task RunScanPhaseAsync(CancellationToken ct)
@@ -189,7 +205,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         var scanProgress = new ActionProgress<ScanProgress>(sp =>
         {
             ReportProgress(PipelinePhase.Scanning, sp.FilesFound,
-                statusText: $"Scanning... {sp.FilesFound:N0} files found");
+                statusText: "Scanning...");
         });
 
         await _fileScanner.ScanAllDrivesAsync(scanProgress, ct);
