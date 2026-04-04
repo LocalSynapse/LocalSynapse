@@ -207,3 +207,14 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+      - name: Upload fixed-name assets (latest download URLs)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd artifacts
+          cp windows/LocalSynapse-v*-Setup.exe LocalSynapse-Setup.exe 2>/dev/null && \
+            gh release upload ${{ github.ref_name }} LocalSynapse-Setup.exe --clobber || true
+          cp macos-arm64/LocalSynapse-v*-macOS-AppleSilicon.dmg LocalSynapse-macOS-AppleSilicon.dmg 2>/dev/null && \
+            gh release upload ${{ github.ref_name }} LocalSynapse-macOS-AppleSilicon.dmg --clobber || true
+          cp macos-x64/LocalSynapse-v*-macOS-Intel.dmg LocalSynapse-macOS-Intel.dmg 2>/dev/null && \
+            gh release upload ${{ github.ref_name }} LocalSynapse-macOS-Intel.dmg --clobber || true
