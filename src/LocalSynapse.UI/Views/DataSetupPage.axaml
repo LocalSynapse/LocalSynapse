@@ -27,7 +27,7 @@
             <Border Classes="Card">
                 <StackPanel Spacing="14">
 
-                    <!-- Header: icon + title + phase badge -->
+                    <!-- ═══ C-4: Header + Status Badge ═══ -->
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <PathIcon Width="18" Height="18"
                                   Foreground="{StaticResource TextPrimaryBrush}"
@@ -36,10 +36,9 @@
                                    FontSize="{StaticResource FontSizeM}"
                                    FontWeight="Medium" />
 
-                        <!-- Phase badge: scanning = blue, idle = green -->
+                        <!-- Running badge -->
                         <Border Background="{StaticResource AccentLightBrush}"
-                                CornerRadius="{StaticResource RadiusSm}"
-                                Padding="10,4"
+                                CornerRadius="10" Padding="10,2"
                                 IsVisible="{Binding IsCycleRunning}">
                             <StackPanel Orientation="Horizontal" Spacing="5">
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource AccentBrush}">
@@ -56,123 +55,210 @@
                                     </Ellipse.Styles>
                                 </Ellipse>
                                 <TextBlock Text="{Binding CurrentPhase}"
-                                           FontSize="{StaticResource FontSizeXs}"
+                                           FontSize="{StaticResource FontSizeS}"
                                            Foreground="{StaticResource AccentBrush}" />
                             </StackPanel>
                         </Border>
 
+                        <!-- Ready badge -->
                         <Border Background="{StaticResource SuccessLightBrush}"
-                                CornerRadius="{StaticResource RadiusSm}"
-                                Padding="10,4"
+                                CornerRadius="10" Padding="10,2"
                                 IsVisible="{Binding !IsCycleRunning}">
-                            <TextBlock Text="Idle"
-                                       FontSize="{StaticResource FontSizeXs}"
-                                       Foreground="{StaticResource SuccessBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource SuccessBrush}" />
+                                <TextBlock Text="Ready"
+                                           FontSize="{StaticResource FontSizeS}"
+                                           Foreground="{StaticResource SuccessBrush}" />
+                            </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- ── 5-Column Stats Grid ── -->
-                    <UniformGrid Columns="5" Rows="1">
-                        <!-- Files -->
-                        <Border Classes="StatCard" Margin="0,0,5,0">
-                            <StackPanel>
-                                <TextBlock Text="Files"
-                                           FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Margin="0,0,0,3" />
-                                <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
-                                           FontSize="{StaticResource FontSizeL}"
-                                           FontWeight="Medium"
-                                           Foreground="{StaticResource TextPrimaryBrush}" />
-                            </StackPanel>
-                        </Border>
-                        <!-- Chunks -->
-                        <Border Classes="StatCard" Margin="5,0,5,0">
-                            <StackPanel>
-                                <TextBlock Text="Chunks"
-                                           FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Margin="0,0,0,3" />
-                                <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
-                                           FontSize="{StaticResource FontSizeL}"
-                                           FontWeight="Medium"
-                                           Foreground="{StaticResource TextPrimaryBrush}" />
-                            </StackPanel>
-                        </Border>
-                        <!-- Skipped -->
-                        <Border Classes="StatCard" Margin="5,0,5,0">
-                            <StackPanel>
-                                <TextBlock Text="Skipped"
-                                           FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Margin="0,0,0,3" />
-                                <TextBlock Text="{Binding SkippedFiles, StringFormat='{}{0:N0}'}"
-                                           FontSize="{StaticResource FontSizeL}"
-                                           FontWeight="Medium"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           ToolTip.Tip="Cloud-only files excluded from content indexing. Filename search is still available for these files." />
-                                <TextBlock Text="Filename search available"
-                                           FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Opacity="0.7" />
-                            </StackPanel>
-                        </Border>
-                        <!-- Indexing % -->
-                        <Border Classes="StatCard" Margin="5,0,5,0">
-                            <StackPanel>
-                                <TextBlock Text="Indexed"
-                                           FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Margin="0,0,0,3" />
-                                <TextBlock Text="{Binding Stamps.IndexingPercent, StringFormat='{}{0:F1}%'}"
-                                           FontSize="{StaticResource FontSizeL}"
-                                           FontWeight="Medium"
-                                           Foreground="{StaticResource WarningBrush}" />
-                            </StackPanel>
-                        </Border>
-                        <!-- Embedding % -->
-                        <Border Classes="StatCard" Margin="5,0,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Embedded"
-                                           FontSize="{StaticResource FontSizeXxs}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Margin="0,0,0,3" />
-                                <TextBlock Text="{Binding Stamps.EmbeddingPercent, StringFormat='{}{0:F1}%'}"
-                                           FontSize="{StaticResource FontSizeL}"
-                                           FontWeight="Medium"
-                                           Foreground="{StaticResource TextMutedBrush}" />
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
+                    <!-- ═══ C-1: 3-Step Stepper ═══ -->
+                    <Grid ColumnDefinitions="*,40,*,40,*" Margin="0,6,0,0">
 
-                    <!-- ── Scan Progress (visible when running) ── -->
-                    <StackPanel Spacing="4" IsVisible="{Binding IsCycleRunning}">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0"
-                                       FontSize="{StaticResource FontSizeXs}"
-                                       Foreground="{StaticResource TextSecondaryBrush}">
-                                <Run Text="{Binding ScanStatusText}" />
-                                <Run Text=" — " />
-                                <Run Text="{Binding ScanFilesFound, StringFormat='{}{0:N0}'}" />
-                                <Run Text=" files checked" />
+                        <!-- Step 1: Scan -->
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="6">
+                            <!-- Complete icon -->
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsScanComplete}">
+                                <PathIcon Width="14" Height="14" Foreground="White"
+                                          Data="M3.5 7.5L5.5 9.5L10.5 4.5" />
+                            </Border>
+                            <!-- In-progress icon (spinner) -->
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsScanning}">
+                                <Border Width="14" Height="14" CornerRadius="7"
+                                        BorderBrush="White" BorderThickness="2"
+                                        Opacity="0.9"
+                                        RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform><RotateTransform /></Border.RenderTransform>
+                                    <Border.Styles>
+                                        <Style Selector="Border">
+                                            <Style.Animations>
+                                                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                                                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0"/></KeyFrame>
+                                                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360"/></KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </Border.Styles>
+                                </Border>
+                            </Border>
+                            <!-- Pending icon -->
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="Transparent" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="2"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsScanPending}">
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
+                            </Border>
+                            <TextBlock Text="Scan" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
+                                       FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
+                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
+                                       Foreground="{StaticResource TextMutedBrush}">
+                                <TextBlock.Styles>
+                                    <Style Selector="TextBlock">
+                                        <Setter Property="Text" Value="files found" />
+                                    </Style>
+                                </TextBlock.Styles>
                             </TextBlock>
-                        </Grid>
-                        <Border Classes="ProgressTrack">
-                            <ProgressBar IsIndeterminate="True"
-                                         Height="4"
-                                         CornerRadius="2"
-                                         Foreground="{StaticResource AccentBrush}"
-                                         Background="Transparent" />
-                        </Border>
-                    </StackPanel>
+                        </StackPanel>
 
-                    <!-- Status text when paused/idle -->
-                    <TextBlock Text="{Binding ScanStatusText}"
-                               IsVisible="{Binding !IsCycleRunning}"
+                        <!-- Connector 1→2 -->
+                        <Border Grid.Column="1" Height="2" VerticalAlignment="Top" Margin="0,14,0,0"
+                                Background="{StaticResource AccentBrush}"
+                                IsVisible="{Binding IsScanComplete}" />
+                        <Border Grid.Column="1" Height="2" VerticalAlignment="Top" Margin="0,14,0,0"
+                                Background="{StaticResource BorderDefaultBrush}"
+                                IsVisible="{Binding !IsScanComplete}" />
+
+                        <!-- Step 2: Extract -->
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="6">
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsExtractComplete}">
+                                <PathIcon Width="14" Height="14" Foreground="White"
+                                          Data="M3.5 7.5L5.5 9.5L10.5 4.5" />
+                            </Border>
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsExtracting}">
+                                <Border Width="14" Height="14" CornerRadius="7"
+                                        BorderBrush="White" BorderThickness="2"
+                                        Opacity="0.9"
+                                        RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform><RotateTransform /></Border.RenderTransform>
+                                    <Border.Styles>
+                                        <Style Selector="Border">
+                                            <Style.Animations>
+                                                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                                                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0"/></KeyFrame>
+                                                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360"/></KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </Border.Styles>
+                                </Border>
+                            </Border>
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="Transparent" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="2"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsExtractPending}">
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
+                            </Border>
+                            <TextBlock Text="Extract" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
+                                       FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
+                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="chunks" FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
+                                       Foreground="{StaticResource TextMutedBrush}" />
+                        </StackPanel>
+
+                        <!-- Connector 2→3 -->
+                        <Border Grid.Column="3" Height="2" VerticalAlignment="Top" Margin="0,14,0,0"
+                                Background="{StaticResource AccentBrush}"
+                                IsVisible="{Binding IsExtractComplete}" />
+                        <Border Grid.Column="3" Height="2" VerticalAlignment="Top" Margin="0,14,0,0"
+                                Background="{StaticResource BorderDefaultBrush}"
+                                IsVisible="{Binding !IsExtractComplete}" />
+
+                        <!-- Step 3: Embed -->
+                        <StackPanel Grid.Column="4" HorizontalAlignment="Center" Spacing="6">
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsEmbedComplete}">
+                                <PathIcon Width="14" Height="14" Foreground="White"
+                                          Data="M3.5 7.5L5.5 9.5L10.5 4.5" />
+                            </Border>
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsEmbedding}">
+                                <Border Width="14" Height="14" CornerRadius="7"
+                                        BorderBrush="White" BorderThickness="2"
+                                        Opacity="0.9"
+                                        RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform><RotateTransform /></Border.RenderTransform>
+                                    <Border.Styles>
+                                        <Style Selector="Border">
+                                            <Style.Animations>
+                                                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                                                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0"/></KeyFrame>
+                                                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360"/></KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </Border.Styles>
+                                </Border>
+                            </Border>
+                            <Border Width="30" Height="30" CornerRadius="15"
+                                    Background="Transparent" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="2"
+                                    HorizontalAlignment="Center"
+                                    IsVisible="{Binding IsEmbedPending}">
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
+                            </Border>
+                            <TextBlock Text="Embed" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="{Binding Stamps.EmbeddingPercent, StringFormat='{}{0:F1}%'}"
+                                       FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
+                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="semantic search" FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
+                                       Foreground="{StaticResource TextMutedBrush}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ═══ C-2: Progress Bar ═══ -->
+                    <!-- Scanning: indeterminate -->
+                    <ProgressBar IsIndeterminate="True" Height="3" CornerRadius="1.5"
+                                 Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderSubtleBrush}"
+                                 IsVisible="{Binding IsScanning}" />
+                    <!-- Extracting: determinate -->
+                    <ProgressBar IsIndeterminate="False" Value="{Binding ExtractProgress}" Maximum="100"
+                                 Height="3" CornerRadius="1.5"
+                                 Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderSubtleBrush}"
+                                 IsVisible="{Binding IsExtracting}" />
+                    <!-- Embedding: determinate -->
+                    <ProgressBar IsIndeterminate="False" Value="{Binding EmbedProgress}" Maximum="100"
+                                 Height="3" CornerRadius="1.5"
+                                 Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderSubtleBrush}"
+                                 IsVisible="{Binding IsEmbedding}" />
+
+                    <!-- ═══ C-3: Status Text ═══ -->
+                    <TextBlock Text="{Binding PipelineStatusText}"
                                FontSize="{StaticResource FontSizeXs}"
-                               Foreground="{StaticResource TextMutedBrush}" />
+                               Foreground="{StaticResource TextSecondaryBrush}" />
 
-                    <!-- ── Action Buttons ── -->
+                    <!-- ═══ Action Buttons ═══ -->
                     <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
                         <Button Classes="BtnSecondary"
                                 Content="Scan now"
@@ -186,6 +272,62 @@
                                 Content="Resume"
                                 Command="{Binding ResumePipelineCommand}"
                                 IsVisible="{Binding IsPipelinePaused}" />
+                    </StackPanel>
+
+                    <!-- ═══ C-5: Skipped Files Info Box ═══ -->
+                    <StackPanel Spacing="10" Margin="0,12,0,0" IsVisible="{Binding HasSkippedFiles}">
+                        <Border Height="1" Background="{StaticResource BorderSubtleBrush}" />
+                        <Border Background="{StaticResource WarningLightBrush}"
+                                CornerRadius="{StaticResource RadiusMd}"
+                                Padding="16,12">
+                            <StackPanel Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Ellipse Width="14" Height="14" Stroke="{StaticResource WarningBrush}"
+                                             StrokeThickness="1.2" Fill="Transparent" VerticalAlignment="Center" />
+                                    <TextBlock FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                               Foreground="{StaticResource WarningBrush}">
+                                        <Run Text="{Binding SkippedFiles, StringFormat='{}{0:N0}'}" />
+                                        <Run Text=" files skipped" />
+                                    </TextBlock>
+                                </StackPanel>
+                                <TextBlock Text="Files are skipped when content extraction is not supported: images (.jpg, .png, .gif), videos, archives (.zip, .rar), executables, and other binary formats. These files are still searchable by filename."
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ═══ C-6: Scan Info Section ═══ -->
+                    <StackPanel Spacing="10" Margin="0,6,0,0">
+                        <!-- Auto-scan -->
+                        <DockPanel>
+                            <Ellipse DockPanel.Dock="Left" Width="14" Height="14"
+                                     Stroke="{StaticResource BorderDefaultBrush}" StrokeThickness="1"
+                                     Fill="Transparent" Margin="0,1,10,0" VerticalAlignment="Top" />
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Auto-scan on launch"
+                                           FontSize="{StaticResource FontSizeS}" FontWeight="Medium"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="App automatically scans for new and modified files each time it starts. Only changed files are re-processed."
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+                        <!-- Manual re-scan -->
+                        <DockPanel>
+                            <Ellipse DockPanel.Dock="Left" Width="14" Height="14"
+                                     Stroke="{StaticResource BorderDefaultBrush}" StrokeThickness="1"
+                                     Fill="Transparent" Margin="0,1,10,0" VerticalAlignment="Top" />
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Manual re-scan"
+                                           FontSize="{StaticResource FontSizeS}" FontWeight="Medium"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="Press &quot;Scan now&quot; to trigger a differential scan immediately. This picks up files added or changed since the last scan."
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
                     </StackPanel>
 
                 </StackPanel>

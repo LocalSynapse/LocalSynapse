@@ -29,6 +29,21 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _isCycleRunning;
     [ObservableProperty] private int _skippedFiles;
 
+    // ── Stepper state (derived from CurrentPhase + Stamps) ──
+    [ObservableProperty] private bool _isScanComplete;
+    [ObservableProperty] private bool _isExtractComplete;
+    [ObservableProperty] private bool _isEmbedComplete;
+    [ObservableProperty] private bool _isScanning;
+    [ObservableProperty] private bool _isExtracting;
+    [ObservableProperty] private bool _isEmbedding;
+    [ObservableProperty] private double _extractProgress;
+    [ObservableProperty] private double _embedProgress;
+    [ObservableProperty] private string _pipelineStatusText = "";
+    [ObservableProperty] private bool _hasSkippedFiles;
+    [ObservableProperty] private bool _isScanPending;
+    [ObservableProperty] private bool _isExtractPending;
+    [ObservableProperty] private bool _isEmbedPending;
+
     private readonly System.Threading.Timer _refreshTimer;
 
     public DataSetupViewModel(
@@ -110,6 +125,8 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
             ScanFilesFound = progress.Current;
             ScanStatusText = progress.StatusText ?? progress.Phase.ToString();
             IsCycleRunning = _orchestrator.IsRunning;
+            Stamps = _stampRepo.GetCurrent();
+            UpdateStepperState();
         });
     }
 
@@ -148,6 +165,59 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
             ScanStatusText = _orchestrator.LatestProgress.StatusText;
             ScanFilesFound = _orchestrator.LatestProgress.Current;
         }
+
+        // ── Update stepper state ──
+        UpdateStepperState();
+    }
+
+    private void UpdateStepperState()
+    {
+        // Step completion
+        IsScanComplete = Stamps.ScanComplete;
+        IsExtractComplete = Stamps.IndexingComplete;
+        IsEmbedComplete = Stamps.EmbeddingComplete;
+
+        // Step in-progress
+        IsScanning = CurrentPhase == PipelinePhase.Scanning;
+        IsExtracting = CurrentPhase == PipelinePhase.Indexing;
+        IsEmbedding = CurrentPhase == PipelinePhase.Embedding;
+
+        // Progress values
+        ExtractProgress = Stamps.IndexingPercent;
+        EmbedProgress = Stamps.EmbeddingPercent;
+
+        // Pending state (not complete AND not in-progress)
+        IsScanPending = !IsScanComplete && !IsScanning;
+        IsExtractPending = !IsExtractComplete && !IsExtracting;
+        IsEmbedPending = !IsEmbedComplete && !IsEmbedding;
+
+        // Skipped
+        HasSkippedFiles = SkippedFiles > 0;
+
+        // Status text
+        if (IsScanning)
+            PipelineStatusText = $"Scanning...  —  {ScanFilesFound:N0} files checked";
+        else if (IsExtracting)
+            PipelineStatusText = $"Extracting...  —  {Stamps.IndexedFiles:N0} / {Stamps.ContentSearchableFiles:N0} files ({Stamps.IndexingPercent:F1}%)";
+        else if (IsEmbedding)
+            PipelineStatusText = $"Embedding...  —  {Stamps.EmbeddingPercent:F1}%";
+        else if (Stamps.TotalFiles > 0)
+        {
+            var lastScan = Stamps.ScanCompletedAt;
+            if (lastScan != null && DateTime.TryParse(lastScan, out var dt))
+            {
+                var ago = DateTime.UtcNow - dt;
+                var agoText = ago.TotalMinutes < 1 ? "just now"
+                    : ago.TotalMinutes < 60 ? $"{(int)ago.TotalMinutes} minutes ago"
+                    : ago.TotalHours < 24 ? $"{(int)ago.TotalHours} hours ago"
+                    : $"{(int)ago.TotalDays} days ago";
+                PipelineStatusText = $"All search modes ready  —  last scan {agoText}";
+            }
+            else
+                PipelineStatusText = "Ready";
+        }
+        else
+            PipelineStatusText = "";
     }
 
     public void Dispose()
