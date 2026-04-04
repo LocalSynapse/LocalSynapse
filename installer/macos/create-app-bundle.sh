@@ -58,6 +58,10 @@ fi
 
 echo "App bundle created: $APP_BUNDLE"
 
+# 5.5. Ad-hoc 코드 서명 (Gatekeeper: "손상됨" → "확인할 수 없는 개발자"로 변경)
+codesign --force --deep -s - "$APP_BUNDLE"
+echo "Ad-hoc signed: $APP_BUNDLE"
+
 # 6. .dmg 생성
 echo "=== Creating DMG: $DMG_NAME ==="
 
