@@ -58,32 +58,74 @@ fi
 
 echo "App bundle created: $APP_BUNDLE"
 
-# 5.5. Ad-hoc 코드 서명 (Gatekeeper: "손상됨" → "확인할 수 없는 개발자"로 변경)
+# 6. Ad-hoc 코드 서명
 codesign --force --deep -s - "$APP_BUNDLE"
 echo "Ad-hoc signed: $APP_BUNDLE"
 
-# 6. .dmg 생성
+# 7. DMG 생성
 echo "=== Creating DMG: $DMG_NAME ==="
-
-DMG_STAGING="$REPO_ROOT/publish/macos/dmg-staging"
-rm -rf "$DMG_STAGING"
-mkdir -p "$DMG_STAGING"
-
-# .app을 스테이징 폴더에 복사
-cp -R "$APP_BUNDLE" "$DMG_STAGING/"
-
-# Applications 심볼릭 링크 추가 (드래그 앤 드롭 설치용)
-ln -s /Applications "$DMG_STAGING/Applications"
-
-# DMG 생성
 rm -f "$DMG_OUTPUT"
-hdiutil create -volname "LocalSynapse" \
-    -srcfolder "$DMG_STAGING" \
-    -ov -format UDZO \
-    "$DMG_OUTPUT"
+mkdir -p "$(dirname "$DMG_OUTPUT")"
+
+DMG_BG="$REPO_ROOT/assets/dmg/dmg-background.png"
+DMG_README="$REPO_ROOT/assets/dmg/README.txt"
+
+# create-dmg가 설치되어 있으면 사용 (배경 + README + 아이콘 배치)
+if command -v create-dmg &>/dev/null; then
+    echo "Using create-dmg..."
+
+    CREATE_DMG_ARGS=(
+        --volname "LocalSynapse"
+        --window-pos 200 120
+        --window-size 600 460
+        --icon-size 72
+        --icon "LocalSynapse.app" 140 145
+        --app-drop-link 460 145
+        --no-internet-enable
+    )
+
+    # 배경 이미지 (있으면 사용)
+    if [ -f "$DMG_BG" ]; then
+        CREATE_DMG_ARGS+=(--background "$DMG_BG")
+    fi
+
+    # README.txt (있으면 추가)
+    if [ -f "$DMG_README" ]; then
+        CREATE_DMG_ARGS+=(--add-file "README.txt" "$DMG_README" 300 420)
+    fi
+
+    # create-dmg는 0이 아닌 exit code를 반환할 수 있음 (경고)
+    create-dmg "${CREATE_DMG_ARGS[@]}" "$DMG_OUTPUT" "$APP_BUNDLE" || true
+
+    if [ ! -f "$DMG_OUTPUT" ]; then
+        echo "create-dmg failed, falling back to hdiutil..."
+    fi
+fi
+
+# create-dmg 실패 시 또는 미설치 시 hdiutil 폴백
+if [ ! -f "$DMG_OUTPUT" ]; then
+    echo "Using hdiutil..."
+    DMG_STAGING="$REPO_ROOT/publish/macos/dmg-staging"
+    rm -rf "$DMG_STAGING"
+    mkdir -p "$DMG_STAGING"
+
+    cp -R "$APP_BUNDLE" "$DMG_STAGING/"
+    ln -s /Applications "$DMG_STAGING/Applications"
+
+    # README.txt 복사
+    if [ -f "$DMG_README" ]; then
+        cp "$DMG_README" "$DMG_STAGING/"
+    fi
+
+    hdiutil create -volname "LocalSynapse" \
+        -srcfolder "$DMG_STAGING" \
+        -ov -format UDZO \
+        "$DMG_OUTPUT"
+
+    rm -rf "$DMG_STAGING"
+fi
 
 # 정리
-rm -rf "$DMG_STAGING"
 rm -rf "$APP_BUNDLE"
 
 DMG_SIZE=$(du -h "$DMG_OUTPUT" | cut -f1)

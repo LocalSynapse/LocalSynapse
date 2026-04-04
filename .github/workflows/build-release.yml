@@ -143,6 +143,8 @@ jobs:
             --self-contained true \
             -p:Version=${{ steps.version.outputs.VERSION }} \
             -o ./publish/${{ matrix.rid }}
+      - name: Install create-dmg
+        run: brew install create-dmg
       - name: Generate macOS icon
         run: |
           chmod +x installer/macos/create-icns.sh
