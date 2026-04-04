@@ -45,7 +45,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPipelineOrchestrator, PipelineOrchestrator>();
 
         // ── Search ──
-        services.AddSingleton<IBm25Search, Bm25SearchService>();
+        services.AddSingleton<IBm25Search>(sp => new Bm25SearchService(
+            sp.GetRequiredService<SqliteConnectionFactory>(),
+            sp.GetRequiredService<SearchClickService>()));
         services.AddSingleton<IEmbeddingBridge>(sp =>
         {
             var embSvc = sp.GetRequiredService<EmbeddingService>();
@@ -85,7 +87,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<ISnippetExtractor>(),
             sp.GetRequiredService<IPipelineStampRepository>(),
             sp.GetRequiredService<IFileRepository>(),
-            sp.GetRequiredService<IChunkRepository>()));
+            sp.GetRequiredService<IChunkRepository>(),
+            sp.GetRequiredService<SearchClickService>()));
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
         services.AddTransient<SettingsViewModel>();

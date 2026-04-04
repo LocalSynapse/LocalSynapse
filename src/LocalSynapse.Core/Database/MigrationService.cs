@@ -37,6 +37,12 @@ public sealed class MigrationService : IMigrationService
         CreatePipelineTables(conn);
         CreateSettingsTable(conn);
 
+        // ── search_clicks v2: position + bounce tracking ──
+        try { ExecuteNonQuery(conn, "ALTER TABLE search_clicks ADD COLUMN position INTEGER DEFAULT 0;"); }
+        catch (SqliteException) { /* column already exists */ }
+        try { ExecuteNonQuery(conn, "ALTER TABLE search_clicks ADD COLUMN is_bounce INTEGER DEFAULT 0;"); }
+        catch (SqliteException) { /* column already exists */ }
+
         // 기존 DB 업그레이드: FTS 토크나이저가 porter 미포함이면 리빌드
         UpgradeFtsTokenizerIfNeeded(conn);
 

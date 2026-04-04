@@ -14,13 +14,15 @@ namespace LocalSynapse.Search.Services;
 public sealed class Bm25SearchService : IBm25Search
 {
     private readonly SqliteConnectionFactory _connectionFactory;
+    private readonly SearchClickService _clickService;
     private readonly ConcurrentDictionary<string, (DateTime ts, IReadOnlyList<Bm25Hit> hits)> _cache = new();
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
 
     /// <summary>Bm25SearchService 생성자.</summary>
-    public Bm25SearchService(SqliteConnectionFactory connectionFactory)
+    public Bm25SearchService(SqliteConnectionFactory connectionFactory, SearchClickService clickService)
     {
         _connectionFactory = connectionFactory;
+        _clickService = clickService;
     }
 
     /// <summary>FTS5 MATCH 기반 BM25 검색을 실행한다.</summary>
@@ -137,7 +139,8 @@ public sealed class Bm25SearchService : IBm25Search
                 meaningfulTokens.Any(t => filename.Contains(t, StringComparison.OrdinalIgnoreCase))
                     ? 5.0 : 1.0;
 
-            var finalScore = bm25Score * recencyBoost * extBoost * filenameBoost;
+            var clickBoost = _clickService.GetBoost(originalQuery, r.GetString(2)); // path
+            var finalScore = bm25Score * recencyBoost * extBoost * filenameBoost * (1.0 + clickBoost);
 
             raw.Add((new Bm25Hit
             {

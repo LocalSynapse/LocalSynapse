@@ -7,6 +7,7 @@ using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Search;
 using LocalSynapse.Search.Interfaces;
+using LocalSynapse.Search.Services;
 using LocalSynapse.UI.Services;
 
 namespace LocalSynapse.UI.ViewModels;
@@ -58,6 +59,7 @@ public partial class SearchViewModel : ObservableObject
     private readonly IPipelineStampRepository _stampRepo;
     private readonly IFileRepository _fileRepo;
     private readonly IChunkRepository _chunkRepo;
+    private readonly SearchClickService _clickService;
 
     // Search-as-you-type debounce
     private System.Threading.Timer? _debounceTimer;
@@ -152,7 +154,8 @@ public partial class SearchViewModel : ObservableObject
         ISnippetExtractor snippetExtractor,
         IPipelineStampRepository stampRepo,
         IFileRepository fileRepo,
-        IChunkRepository chunkRepo)
+        IChunkRepository chunkRepo,
+        SearchClickService clickService)
     {
         _hybridSearch = hybridSearch;
         _bm25Search = bm25Search;
@@ -160,6 +163,7 @@ public partial class SearchViewModel : ObservableObject
         _stampRepo = stampRepo;
         _fileRepo = fileRepo;
         _chunkRepo = chunkRepo;
+        _clickService = clickService;
         Stamps = _stampRepo.GetCurrent();
     }
 
@@ -199,6 +203,9 @@ public partial class SearchViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(Query)) return;
         if (Query.Trim() == _activeSearchQuery && HasSearched) return;
+
+        // 재검색 시 bounce 감지 (직전 클릭 후 10초 이내 재검색 = bounce)
+        _clickService.OnNewSearch(Query.Trim());
 
         IsSearching = true;
         HasSearched = true;
@@ -247,6 +254,12 @@ public partial class SearchViewModel : ObservableObject
     {
         if (SelectedItem is SearchResultFile file && File.Exists(file.Path))
         {
+            // 클릭 위치(결과 목록에서의 인덱스) 계산
+            var position = VisibleFiles.IndexOf(file);
+            if (position >= 0 && !string.IsNullOrWhiteSpace(_activeSearchQuery))
+            {
+                _clickService.RecordClick(_activeSearchQuery, file.Path, position);
+            }
             PlatformHelper.OpenFile(file.Path);
         }
     }
