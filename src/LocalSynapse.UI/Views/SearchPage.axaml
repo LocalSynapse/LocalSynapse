@@ -54,6 +54,7 @@
                                  Watermark="Search files, content, or ask a question..."
                                  FontSize="{StaticResource FontSizeM}"
                                  FontWeight="Medium"
+                                 Foreground="{StaticResource TextPrimaryBrush}"
                                  BorderThickness="0" Background="Transparent"
                                  VerticalAlignment="Center"
                                  Name="SearchBox" />
@@ -61,7 +62,7 @@
                         <Border Grid.Column="2" Classes="KbdBadge"
                                 VerticalAlignment="Center" Margin="0,0,8,0"
                                 IsVisible="{Binding !HasSearched}">
-                            <TextBlock Text="Ctrl+K" Classes="Mono"
+                            <TextBlock Text="{Binding SearchShortcutText}" Classes="Mono"
                                        FontSize="{StaticResource FontSizeXxs}"
                                        Foreground="{StaticResource TextMutedBrush}" />
                         </Border>

@@ -50,10 +50,7 @@ public sealed class FileScanner : IFileScanner
 
         var rootPaths = _scanRoots != null
             ? _scanRoots.ToList()
-            : DriveInfo.GetDrives()
-                .Where(d => d.DriveType == DriveType.Fixed && d.IsReady)
-                .Select(d => d.RootDirectory.FullName)
-                .ToList();
+            : GetDefaultScanRoots();
 
         Debug.WriteLine($"[Scan] Starting scan on roots: {string.Join(", ", rootPaths)}");
 
@@ -190,6 +187,28 @@ public sealed class FileScanner : IFileScanner
             $"{filteredSkipped:N0} filtered");
 
         return result;
+    }
+
+    /// <summary>OS별 기본 스캔 루트를 반환한다.</summary>
+    private static List<string> GetDefaultScanRoots()
+    {
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.OSX))
+        {
+            // macOS: 사용자 홈 디렉토리만 스캔 (시스템 볼륨 제외)
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (!string.IsNullOrEmpty(home) && Directory.Exists(home))
+                return [home];
+
+            // fallback
+            return ["/Users"];
+        }
+
+        // Windows: 기존 로직 — 모든 고정 드라이브
+        return DriveInfo.GetDrives()
+            .Where(d => d.DriveType == DriveType.Fixed && d.IsReady)
+            .Select(d => d.RootDirectory.FullName)
+            .ToList();
     }
 
     private static void ReportProgress(IProgress<ScanProgress>? progress, string drive, int files, int folders)

@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Search;
 using LocalSynapse.Search.Interfaces;
+using LocalSynapse.UI.Services;
 
 namespace LocalSynapse.UI.ViewModels;
 
@@ -95,6 +97,14 @@ public partial class SearchViewModel : ObservableObject
     [ObservableProperty] private EmptyStateType _emptyState = EmptyStateType.Initial;
     [ObservableProperty] private bool _isEmptyNoResults;
     [ObservableProperty] private bool _isEmptyFilteredEmpty;
+
+    /// <summary>플랫폼별 검색 단축키 텍스트.</summary>
+    public string SearchShortcutText => RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "⌘K" : "Ctrl+K";
+
+    /// <summary>플랫폼별 인덱싱 상태 텍스트.</summary>
+    public string IndexedSummaryText => RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+        ? "files indexed"
+        : "files indexed across all drives";
 
     /// <summary>Visible folders for current filter tab.</summary>
     public ObservableCollection<SearchResultFolder> VisibleFolders { get; } = [];
@@ -237,8 +247,7 @@ public partial class SearchViewModel : ObservableObject
     {
         if (SelectedItem is SearchResultFile file && File.Exists(file.Path))
         {
-            try { Process.Start(new ProcessStartInfo(file.Path) { UseShellExecute = true }); }
-            catch (Exception ex) { Debug.WriteLine($"[SearchVM] OpenFile error: {ex.Message}"); }
+            PlatformHelper.OpenFile(file.Path);
         }
     }
 
@@ -254,14 +263,7 @@ public partial class SearchViewModel : ObservableObject
         };
         if (target == null) return;
 
-        try
-        {
-            if (Directory.Exists(target))
-                Process.Start("explorer.exe", $"\"{target}\"");
-            else if (File.Exists(target))
-                Process.Start("explorer.exe", $"/select,\"{target}\"");
-        }
-        catch (Exception ex) { Debug.WriteLine($"[SearchVM] OpenFolder error: {ex.Message}"); }
+        PlatformHelper.RevealInFileManager(target);
     }
 
     /// <summary>Open path in Explorer (called when user clicks the path text).</summary>
@@ -269,15 +271,11 @@ public partial class SearchViewModel : ObservableObject
     private void OpenDetailPath()
     {
         if (string.IsNullOrEmpty(DetailPath)) return;
-        try
-        {
-            var dir = File.Exists(DetailPath)
-                ? System.IO.Path.GetDirectoryName(DetailPath) ?? DetailPath
-                : DetailPath;
-            if (Directory.Exists(dir))
-                Process.Start("explorer.exe", $"\"{dir}\"");
-        }
-        catch (Exception ex) { Debug.WriteLine($"[SearchVM] OpenDetailPath error: {ex.Message}"); }
+        var dir = File.Exists(DetailPath)
+            ? System.IO.Path.GetDirectoryName(DetailPath) ?? DetailPath
+            : DetailPath;
+        if (Directory.Exists(dir))
+            PlatformHelper.OpenFolder(dir);
     }
 
     /// <summary>폴더 접기/펴기 토글.</summary>

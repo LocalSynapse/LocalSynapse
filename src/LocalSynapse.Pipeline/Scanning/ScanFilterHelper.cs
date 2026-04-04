@@ -12,7 +12,12 @@ public static class ScanFilterHelper
         // Windows system
         "Windows", "Program Files", "Program Files (x86)", "ProgramData",
         "$Recycle.Bin", "System Volume Information", "Recovery",
-        // User profile special
+        // macOS system
+        "System", "Library", "Applications", ".Trash", ".Trashes",
+        "Caches", "Containers", "Group Containers",
+        ".Spotlight-V100", ".fseventsd", ".vol",
+        "private", "cores", "Volumes",
+        // Windows user profile special
         "AppData", "WindowsApps", "WpSystem", "MSOCache",
         "Searches", "Links", "3D Objects", "Contacts", "Saved Games",
         "MicrosoftEdgeBackups", "Favorites",
@@ -23,7 +28,7 @@ public static class ScanFilterHelper
         "Intel", "AMD", "NVIDIA",
         // Temp
         "Temp", "tmp",
-        // NOTE: OneDrive/Dropbox/Google Drive are NOT excluded.
+        // NOTE: OneDrive/Dropbox/iCloud/Google Drive are NOT excluded.
         // We scan them but skip individual cloud-only files by FileAttributes.
     };
 
@@ -112,6 +117,19 @@ public static class ScanFilterHelper
         if (IsExcludedFolder(name)) return true;
         if (IsGuidOrHashFolder(name)) return true;
         if (IsHiddenOrSystem(attributes)) return true;
+        if (IsMacOSPackageDirectory(name)) return true;
         return false;
+    }
+
+    /// <summary>Check if directory is a macOS package bundle (.app, .framework, etc.).</summary>
+    public static bool IsMacOSPackageDirectory(string name)
+    {
+        return name.EndsWith(".app", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".framework", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".plugin", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".kext", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".xpc", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".appex", StringComparison.OrdinalIgnoreCase);
     }
 }

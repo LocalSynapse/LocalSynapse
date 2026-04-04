@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
+using LocalSynapse.UI.Services;
 
 namespace LocalSynapse.UI.ViewModels;
 
@@ -29,11 +30,7 @@ public partial class SecurityViewModel : ObservableObject
         var folder = _settings.GetDataFolder();
         if (Directory.Exists(folder))
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = folder,
-                UseShellExecute = true,
-            });
+            PlatformHelper.OpenFolder(folder);
         }
     }
 

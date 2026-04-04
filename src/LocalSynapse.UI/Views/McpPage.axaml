@@ -16,7 +16,8 @@
             <StackPanel Spacing="4">
                 <TextBlock Text="MCP Server"
                            FontSize="{StaticResource FontSizeL}"
-                           FontWeight="SemiBold" />
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
                 <TextBlock Text="Connect LocalSynapse to AI coding agents via Model Context Protocol"
                            FontSize="{StaticResource FontSizeS}"
                            Foreground="{StaticResource TextSecondaryBrush}" />
@@ -63,7 +64,7 @@
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Width="90" />
-                                <TextBlock Text="LocalSynapse.exe mcp"
+                                <TextBlock Text="LocalSynapse mcp"
                                            FontSize="{StaticResource FontSizeXs}"
                                            FontFamily="{StaticResource FontMono}"
                                            Foreground="{StaticResource TextPrimaryBrush}" />

@@ -18,9 +18,7 @@ public sealed class McpConfigService
         "Claude", "claude_desktop_config.json");
 
     /// <summary>현재 실행 중인 EXE의 절대 경로.</summary>
-    public static string ExePath =>
-        Environment.ProcessPath
-        ?? Path.Combine(AppContext.BaseDirectory, "LocalSynapse.exe");
+    public static string ExePath => PlatformHelper.GetExecutableName();
 
     /// <summary>Claude Desktop이 설치되어 있는지 확인.</summary>
     public bool IsClaudeDesktopInstalled()
@@ -118,8 +116,11 @@ public sealed class McpConfigService
     /// <summary>Claude Code CLI 등록 명령어를 생성한다.</summary>
     public string GetClaudeCodeAddCommand()
     {
-        var escaped = ExePath.Replace("\\", "\\\\");
-        return $"claude mcp add {ServerName} -- \"{escaped}\" mcp";
+        var path = ExePath;
+        // Windows: 백슬래시 이스케이프, macOS: 그대로
+        if (PlatformHelper.IsWindows)
+            path = path.Replace("\\", "\\\\");
+        return $"claude mcp add {ServerName} -- \"{path}\" mcp";
     }
 
     /// <summary>Claude Code CLI 제거 명령어를 생성한다.</summary>

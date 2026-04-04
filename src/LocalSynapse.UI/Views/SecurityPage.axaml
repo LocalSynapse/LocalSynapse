@@ -14,7 +14,8 @@
             <StackPanel Spacing="4" Margin="0,0,0,4">
                 <TextBlock Text="Privacy &amp; Security"
                            FontSize="{StaticResource FontSizeL}"
-                           FontWeight="SemiBold" />
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
                 <TextBlock Text="Your data stays on your machine. Always."
                            FontSize="{StaticResource FontSizeS}"
                            Foreground="{StaticResource TextSecondaryBrush}" />

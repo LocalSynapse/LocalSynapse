@@ -10,20 +10,17 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-
       - name: Extract version from tag
         id: version
         shell: pwsh
@@ -34,13 +31,10 @@ jobs:
           echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
           echo "TAG=$tag" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $ver, Tag: $tag"
-
       - name: Restore dependencies
         run: dotnet restore LocalSynapse.v2.sln
-
       - name: Build Release
         run: dotnet build LocalSynapse.v2.sln -c Release --no-restore
-
       - name: Publish win-x64
         run: |
           dotnet publish src/LocalSynapse.UI/LocalSynapse.UI.csproj `
@@ -50,7 +44,6 @@ jobs:
             -p:PublishSingleFile=true `
             -p:Version=${{ steps.version.outputs.VERSION }} `
             -o ./publish/win-x64
-
       - name: Create MCPB artifact
         shell: pwsh
         run: |
@@ -58,7 +51,6 @@ jobs:
           $hash = (Get-FileHash "publish\localsynapse-mcp.mcpb" -Algorithm SHA256).Hash
           echo "MCPB_SHA256=$hash" >> $env:GITHUB_OUTPUT
           Write-Host "MCPB SHA256: $hash"
-          # Generate server.json with actual hash
           $json = @{
             '$schema' = 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json'
             name = 'io.github.localsynapse/localsynapse-mcp'
@@ -77,12 +69,10 @@ jobs:
           $json | Out-File "publish\server.json" -Encoding UTF8
           Write-Host "server.json generated"
         id: mcpb
-
       - name: Build Installer (Inno Setup)
         shell: cmd
         run: |
           "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=${{ steps.version.outputs.VERSION }} installer\LocalSynapse.iss
-
       - name: Generate SHA256 checksums
         shell: pwsh
         run: |
@@ -99,26 +89,114 @@ jobs:
           }
           $lines | Out-File publish\installer\SHA256SUMS.txt
           Get-Content publish\installer\SHA256SUMS.txt
-
-      - name: Upload build artifacts
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: LocalSynapse-${{ steps.version.outputs.TAG }}
+          name: windows-build
           path: |
             publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe
             publish/installer/SHA256SUMS.txt
             publish/localsynapse-mcp.mcpb
             publish/server.json
 
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - rid: osx-arm64
+            arch_label: AppleSilicon
+          - rid: osx-x64
+            arch_label: Intel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          VER="${TAG#v}"
+          if [ -z "$VER" ]; then VER="0.0.0"; fi
+          echo "VERSION=$VER" >> $GITHUB_OUTPUT
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "Version: $VER, Tag: $TAG"
+      - name: Restore dependencies
+        run: dotnet restore LocalSynapse.v2.sln
+      - name: Build Release
+        run: dotnet build LocalSynapse.v2.sln -c Release --no-restore
+      - name: Publish ${{ matrix.rid }}
+        run: |
+          dotnet publish src/LocalSynapse.UI/LocalSynapse.UI.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            -o ./publish/${{ matrix.rid }}
+      - name: Generate macOS icon
+        run: |
+          chmod +x installer/macos/create-icns.sh
+          installer/macos/create-icns.sh
+      - name: Create .app bundle and .dmg
+        run: |
+          chmod +x installer/macos/create-app-bundle.sh
+          installer/macos/create-app-bundle.sh \
+            "${{ steps.version.outputs.VERSION }}" \
+            "${{ matrix.rid }}" \
+            "./publish/${{ matrix.rid }}"
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build-${{ matrix.arch_label }}
+          path: |
+            publish/macos/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-${{ matrix.arch_label }}.dmg
+            publish/macos/SHA256SUMS-macOS.txt
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          VER="${TAG#v}"
+          echo "VERSION=$VER" >> $GITHUB_OUTPUT
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: artifacts/windows
+      - name: Download macOS Apple Silicon artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build-AppleSilicon
+          path: artifacts/macos-arm64
+      - name: Download macOS Intel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build-Intel
+          path: artifacts/macos-x64
+      - name: List all artifacts
+        run: find artifacts -type f | sort
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe
-            publish/installer/SHA256SUMS.txt
-            publish/localsynapse-mcp.mcpb
-            publish/server.json
+            artifacts/windows/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe
+            artifacts/windows/SHA256SUMS.txt
+            artifacts/windows/localsynapse-mcp.mcpb
+            artifacts/windows/server.json
+            artifacts/macos-arm64/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-AppleSilicon.dmg
+            artifacts/macos-arm64/SHA256SUMS-macOS.txt
+            artifacts/macos-x64/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-Intel.dmg
           generate_release_notes: true
           draft: false
           prerelease: false

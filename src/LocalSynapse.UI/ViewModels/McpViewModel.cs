@@ -81,11 +81,7 @@ public partial class McpViewModel : ObservableObject
         var dir = System.IO.Path.GetDirectoryName(ConfigFilePath);
         if (dir != null && System.IO.Directory.Exists(dir))
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = dir,
-                UseShellExecute = true,
-            });
+            PlatformHelper.OpenFolder(dir);
         }
     }
 

@@ -14,7 +14,8 @@
             <StackPanel Spacing="4" Margin="0,0,0,4">
                 <TextBlock Text="Settings"
                            FontSize="{StaticResource FontSizeL}"
-                           FontWeight="SemiBold" />
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
                 <TextBlock Text="Configure LocalSynapse preferences"
                            FontSize="{StaticResource FontSizeS}"
                            Foreground="{StaticResource TextSecondaryBrush}" />

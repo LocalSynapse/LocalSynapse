@@ -94,8 +94,8 @@
     <!-- ══════════════════════════════════════ -->
     <!-- Typography                             -->
     <!-- ══════════════════════════════════════ -->
-    <FontFamily x:Key="FontDefault">Segoe UI Variable, Segoe UI, avares://Avalonia.Fonts.Inter/Assets#Inter, sans-serif</FontFamily>
-    <FontFamily x:Key="FontMono">Cascadia Code, Consolas, monospace</FontFamily>
+    <FontFamily x:Key="FontDefault">avares://Avalonia.Fonts.Inter/Assets#Inter, Segoe UI Variable, Segoe UI, -apple-system, Helvetica Neue, sans-serif</FontFamily>
+    <FontFamily x:Key="FontMono">Cascadia Code, Consolas, Menlo, SF Mono, monospace</FontFamily>
     <x:Double x:Key="FontSizeL">20</x:Double>
     <x:Double x:Key="FontSizeM">14</x:Double>
     <x:Double x:Key="FontSizeBody">13</x:Double>
