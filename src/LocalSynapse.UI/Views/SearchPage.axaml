@@ -236,7 +236,7 @@
                            FontWeight="Medium"
                            Foreground="{StaticResource TextPrimaryBrush}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0} files indexed across all drives'}"
+                <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0} files indexed'}"
                            FontSize="{StaticResource FontSizeS}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            HorizontalAlignment="Center" />
