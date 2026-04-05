@@ -1,158 +1,233 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  width: 600px; height: 460px;
+  width: 1280px;
+  height: 960px;
   background: #1a1a2e;
-  font-family: -apple-system, 'SF Pro', 'Helvetica Neue', sans-serif;
-  color: #fff;
-  overflow: hidden;
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
-
-.container { padding: 0 40px; }
-
-/* Top area — blank space for actual DMG icons */
-.icon-area { height: 200px; }
-
-/* Drag instruction */
+.container {
+  width: 1280px;
+  height: 960px;
+  display: flex;
+  flex-direction: column;
+}
+.icon-area {
+  flex: 0 0 420px;
+}
+.guide-area {
+  flex: 1;
+  padding: 0 80px 48px;
+  display: flex;
+  flex-direction: column;
+}
 .drag-text {
   text-align: center;
-  font-size: 13px;
+  font-size: 26px;
   color: #aaa;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
-
-/* Divider */
 .divider {
-  border: none;
-  border-top: 1px solid #444;
-  margin: 0 0 14px 0;
+  height: 1px;
+  background: #444;
+  margin-bottom: 24px;
 }
-
-/* Gatekeeper section */
-.gate-header {
+.header-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 .warn-icon {
-  width: 18px; height: 18px;
-  border: 1.5px solid #ffbd2e;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; color: #ffbd2e; font-weight: 700;
-  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
 }
-.gate-title { font-size: 15px; font-weight: 500; color: #fff; }
-.gate-desc { font-size: 12px; color: #999; line-height: 1.5; margin-bottom: 10px; }
-
-/* Two cards */
-.cards { display: flex; gap: 10px; }
-
+.header-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+}
+.header-desc {
+  font-size: 22px;
+  color: #bbb;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.cards {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
 .card-a {
   flex: 1;
   background: rgba(255,189,46,0.08);
-  border: 1px solid rgba(255,189,46,0.25);
-  border-radius: 10px;
-  padding: 12px;
+  border: 2px solid rgba(255,189,46,0.3);
+  border-radius: 16px;
+  padding: 24px;
 }
 .card-b {
   flex: 1;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  padding: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 24px;
 }
-
 .card-header {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 .badge {
-  width: 18px; height: 18px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
 }
-.badge-a { background: #ffbd2e; color: #1a1a2e; }
-.badge-b { background: #555; color: #ccc; }
-.card-label-a { font-size: 12px; color: #ffbd2e; font-weight: 500; }
-.card-label-b { font-size: 12px; color: #ccc; font-weight: 500; }
-
+.badge-a {
+  background: rgba(255,189,46,0.2);
+  color: #ffbd2e;
+}
+.badge-b {
+  background: rgba(255,255,255,0.1);
+  color: #aaa;
+}
+.card-title-a {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffbd2e;
+}
+.card-title-b {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ccc;
+}
 .step {
-  display: flex; align-items: flex-start; gap: 6px;
-  margin-bottom: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 .step-num {
-  width: 16px; height: 16px; border-radius: 50%;
-  border: 1px solid #666; color: #888;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 9px; flex-shrink: 0; margin-top: 1px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #ccc;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
-.step-text { font-size: 11px; color: #999; line-height: 1.4; }
-.step-text b { color: #eee; font-weight: 500; }
-
+.step-text {
+  font-size: 21px;
+  color: #ddd;
+  line-height: 1.5;
+}
+.step-text strong {
+  color: #fff;
+  font-weight: 600;
+}
+.card-desc {
+  font-size: 20px;
+  color: #999;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
 .code-block {
-  background: rgba(0,0,0,0.3);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-family: 'SF Mono', Menlo, monospace;
-  font-size: 10.5px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.code-block code {
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 19px;
   color: #e8e8e8;
-  margin: 6px 0 4px 0;
   word-break: break-all;
 }
-.term-desc { font-size: 10px; color: #777; }
-.term-intro { font-size: 10px; color: #999; margin-bottom: 4px; }
-
+.card-hint {
+  font-size: 18px;
+  color: #777;
+}
 .footer {
   text-align: center;
-  font-size: 10px;
-  color: #555;
-  margin-top: 8px;
+  font-size: 19px;
+  color: #666;
+  margin-top: 16px;
 }
 </style>
 </head>
 <body>
 <div class="container">
+
   <div class="icon-area"></div>
-  <div class="drag-text">Drag LocalSynapse to Applications to install</div>
-  <hr class="divider">
 
-  <div class="gate-header">
-    <div class="warn-icon">!</div>
-    <div class="gate-title">First launch on macOS</div>
-  </div>
-  <div class="gate-desc">
-    macOS may block this app because it is not signed with an Apple certificate.<br>
-    This is a security warning, not a problem with the app.
-  </div>
+  <div class="guide-area">
+    <p class="drag-text">Drag LocalSynapse to Applications to install</p>
+    <div class="divider"></div>
 
-  <div class="cards">
-    <div class="card-a">
-      <div class="card-header">
-        <div class="badge badge-a">A</div>
-        <div class="card-label-a">Right-click to open</div>
-      </div>
-      <div class="step"><div class="step-num">1</div><div class="step-text"><b>Control + click</b> LocalSynapse in Applications</div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text">Click <b>"Open"</b> in the menu</div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-text">Click <b>"Open"</b> again to confirm</div></div>
+    <div class="header-row">
+      <svg class="warn-icon" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="13" stroke="#ffbd2e" stroke-width="2.5"/>
+        <path d="M16 9v8" stroke="#ffbd2e" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="16" cy="22.5" r="1.5" fill="#ffbd2e"/>
+      </svg>
+      <span class="header-title">First launch on macOS</span>
     </div>
-    <div class="card-b">
-      <div class="card-header">
-        <div class="badge badge-b">B</div>
-        <div class="card-label-b">Terminal command</div>
+
+    <p class="header-desc">
+      macOS may block this app because it is not signed with an Apple certificate.<br>
+      This is a security warning, not a problem with the app.
+    </p>
+
+    <div class="cards">
+      <div class="card-a">
+        <div class="card-header">
+          <div class="badge badge-a">A</div>
+          <span class="card-title-a">Right-click to open</span>
+        </div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <p class="step-text"><strong>Control + click</strong> LocalSynapse<br>in Applications</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <p class="step-text">Click <strong>"Open"</strong> in the menu</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <p class="step-text">Click <strong>"Open"</strong> again to confirm</p>
+        </div>
       </div>
-      <div class="term-intro">Open Terminal and paste:</div>
-      <div class="code-block">xattr -cr /Applications/LocalSynapse.app</div>
-      <div class="term-desc">Then double-click the app to launch.</div>
+
+      <div class="card-b">
+        <div class="card-header">
+          <div class="badge badge-b">B</div>
+          <span class="card-title-b">Terminal command</span>
+        </div>
+        <p class="card-desc">Open Terminal and paste:</p>
+        <div class="code-block">
+          <code>xattr -cr /Applications/LocalSynapse.app</code>
+        </div>
+        <p class="card-hint">Then double-click the app to launch.</p>
+      </div>
     </div>
+
+    <p class="footer">You only need to do this once. Subsequent launches will work normally.</p>
   </div>
 
-  <div class="footer">You only need to do this once. Subsequent launches will work normally.</div>
 </div>
 </body>
 </html>

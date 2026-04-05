@@ -205,8 +205,25 @@ jobs:
             artifacts/macos-arm64/SHA256SUMS-macOS.txt
             artifacts/macos-x64/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-Intel.dmg
           generate_release_notes: true
+          append_body: true
           draft: false
           prerelease: false
+          body: |
+
+            ---
+
+            ### macOS — First launch
+
+            macOS may show a security warning because this app is not signed with an Apple certificate. To open it:
+
+            **Option A:** Control + click the app → Click "Open" → Click "Open" again
+
+            **Option B:** Open Terminal and run:
+            ```
+            xattr -cr /Applications/LocalSynapse.app
+            ```
+
+            You only need to do this once.
       - name: Upload fixed-name assets (latest download URLs)
         env:
           GH_TOKEN: ${{ github.token }}

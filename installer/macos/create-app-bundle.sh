@@ -70,28 +70,23 @@ mkdir -p "$(dirname "$DMG_OUTPUT")"
 DMG_BG="$REPO_ROOT/assets/dmg/dmg-background.png"
 DMG_README="$REPO_ROOT/assets/dmg/README.txt"
 
-# create-dmg가 설치되어 있으면 사용 (배경 + README + 아이콘 배치)
+# create-dmg가 설치되어 있으면 사용 (배경 + 아이콘 배치)
 if command -v create-dmg &>/dev/null; then
     echo "Using create-dmg..."
 
     CREATE_DMG_ARGS=(
         --volname "LocalSynapse"
         --window-pos 200 120
-        --window-size 600 460
-        --icon-size 72
-        --icon "LocalSynapse.app" 140 145
-        --app-drop-link 460 145
+        --window-size 640 480
+        --icon-size 80
+        --icon "LocalSynapse.app" 180 160
+        --app-drop-link 460 160
         --no-internet-enable
     )
 
-    # 배경 이미지 (있으면 사용)
+    # 배경 이미지 (있으면 사용, 1280x960 Retina 2x)
     if [ -f "$DMG_BG" ]; then
         CREATE_DMG_ARGS+=(--background "$DMG_BG")
-    fi
-
-    # README.txt (있으면 추가)
-    if [ -f "$DMG_README" ]; then
-        CREATE_DMG_ARGS+=(--add-file "README.txt" "$DMG_README" 300 420)
     fi
 
     # create-dmg는 0이 아닌 exit code를 반환할 수 있음 (경고)
@@ -111,11 +106,6 @@ if [ ! -f "$DMG_OUTPUT" ]; then
 
     cp -R "$APP_BUNDLE" "$DMG_STAGING/"
     ln -s /Applications "$DMG_STAGING/Applications"
-
-    # README.txt 복사
-    if [ -f "$DMG_README" ]; then
-        cp "$DMG_README" "$DMG_STAGING/"
-    fi
 
     hdiutil create -volname "LocalSynapse" \
         -srcfolder "$DMG_STAGING" \
