@@ -77,10 +77,10 @@ if command -v create-dmg &>/dev/null; then
     CREATE_DMG_ARGS=(
         --volname "LocalSynapse"
         --window-pos 200 120
-        --window-size 640 480
+        --window-size 640 750
         --icon-size 80
-        --icon "LocalSynapse.app" 180 160
-        --app-drop-link 460 160
+        --icon "LocalSynapse.app" 180 100
+        --app-drop-link 460 100
         --no-internet-enable
     )
 
