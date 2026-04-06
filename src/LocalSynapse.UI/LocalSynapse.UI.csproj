@@ -13,6 +13,9 @@
     <AvaloniaResource Include="..\..\assets\app-icon.ico">
       <Link>Assets/app-icon.ico</Link>
     </AvaloniaResource>
+    <AvaloniaResource Include="..\..\assets\app-icon-256.png">
+      <Link>Assets/app-icon-256.png</Link>
+    </AvaloniaResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LocalSynapse.Core\LocalSynapse.Core.csproj" />
