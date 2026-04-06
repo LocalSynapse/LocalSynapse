@@ -136,7 +136,7 @@ public sealed class Bm25SearchService : IBm25Search
             var extBoost = ExtensionBoost.GetBoost(ext);
             var filename = r.GetString(1);
             var filenameBoost = meaningfulTokens.Length > 0 &&
-                meaningfulTokens.Any(t => filename.Contains(t, StringComparison.OrdinalIgnoreCase))
+                meaningfulTokens.Any(t => IsWordBoundaryMatch(filename, t))
                     ? 5.0 : 1.0;
 
             var clickBoost = _clickService.GetBoost(originalQuery, r.GetString(2)); // path
@@ -173,6 +173,30 @@ public sealed class Bm25SearchService : IBm25Search
         }
 
         return grouped;
+    }
+
+    /// <summary>
+    /// 파일명에서 단어 경계 기준 매칭 여부를 확인한다.
+    /// "plan" → "project-plan.docx" ✅, "explanation.pdf" ✗
+    /// </summary>
+    private static bool IsWordBoundaryMatch(string filename, string token)
+    {
+        var pos = 0;
+        while (pos < filename.Length)
+        {
+            var idx = filename.IndexOf(token, pos, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) return false;
+
+            var before = idx == 0 || !char.IsLetterOrDigit(filename[idx - 1]);
+            var afterIdx = idx + token.Length;
+            var after = afterIdx >= filename.Length || !char.IsLetterOrDigit(filename[afterIdx]);
+
+            if (before && after) return true;
+            if (before && afterIdx < filename.Length && filename[afterIdx] == '.') return true;
+
+            pos = idx + 1;
+        }
+        return false;
     }
 
     private static double ComputeRecencyBoost(string modifiedAt)

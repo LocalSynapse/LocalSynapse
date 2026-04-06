@@ -47,9 +47,9 @@ public sealed class ContentExtractor : IContentExtractor
                 ".html" or ".htm"
                     => await HtmlParser.ParseAsync(filePath, ct),
                 ".rtf"
-                    => await PlainTextParser.ParseAsync(filePath, ct),
+                    => await RtfParser.ParseAsync(filePath, ct),
                 ".odt" or ".ods" or ".odp"
-                    => await PlainTextParser.ParseAsync(filePath, ct),
+                    => await OdtParser.ParseAsync(filePath, ct),
                 ".eml" or ".msg"
                     => ExtractionResult.Fail("UNSUPPORTED_IN_PIPELINE",
                         "Email parsing is handled by the Email agent"),

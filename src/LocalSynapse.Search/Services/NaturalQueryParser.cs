@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Porter2StemmerStandard;
 
 namespace LocalSynapse.Search.Services;
@@ -13,7 +14,7 @@ namespace LocalSynapse.Search.Services;
 /// - Stop words: ToFts5Query()에서 필터링
 /// - 하이픈 확장: "email" ↔ "e-mail" 양방향 매칭
 /// </summary>
-public static class NaturalQueryParser
+public static partial class NaturalQueryParser
 {
     private static readonly EnglishPorter2Stemmer Stemmer = new();
 
@@ -47,8 +48,48 @@ public static class NaturalQueryParser
         "sub", "super", "tri", "under", "inter", "intra", "macro", "micro"
     ];
 
+    // ── 영어 약어/두문자어 화이트리스트 (3자 이하지만 prefix 매치 허용) ──
+    private static readonly HashSet<string> AcronymWhitelist = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "API", "SQL", "CEO", "CTO", "CFO", "COO", "VP", "HR", "IT", "AI", "ML",
+        "UI", "UX", "PR", "QA", "CI", "CD", "DB", "OS", "IP", "ID", "URL",
+        "PDF", "CSV", "XML", "JSON", "HTML", "CSS", "JS", "TS",
+        "AWS", "GCP", "SDK", "CLI", "GUI", "ORM", "MCP", "LLM",
+        "ROI", "KPI", "OKR", "P&L", "PnL", "NDA", "SLA", "MOU",
+        "IOT", "VPN", "DNS", "TCP", "UDP", "SSH", "FTP", "HTTP",
+    };
+
     /// <summary>쿼리를 FTS5 MATCH 표현식으로 변환한다.</summary>
     public static string ToFts5Query(string query)
+    {
+        // ── 따옴표 구문 검색: "exact phrase" → FTS5 phrase match ──
+        var phraseMatch = PhraseRegex().Match(query);
+        if (phraseMatch.Success)
+        {
+            var phrase = phraseMatch.Groups[1].Value.Trim();
+            if (!string.IsNullOrEmpty(phrase))
+            {
+                var escaped = phrase.Replace("\"", "\"\"");
+                var remaining = query[..phraseMatch.Index] + query[(phraseMatch.Index + phraseMatch.Length)..];
+                remaining = remaining.Trim();
+
+                var phraseExpr = $"\"{escaped}\"";
+
+                if (!string.IsNullOrWhiteSpace(remaining))
+                {
+                    var remainingFts = ToFts5QueryInner(remaining);
+                    if (!string.IsNullOrEmpty(remainingFts))
+                        return $"({phraseExpr}) AND ({remainingFts})";
+                }
+                return phraseExpr;
+            }
+        }
+
+        return ToFts5QueryInner(query);
+    }
+
+    /// <summary>내부 FTS5 쿼리 변환 (phrase 처리 후 호출).</summary>
+    private static string ToFts5QueryInner(string query)
     {
         var tokens = Tokenize(query);
         if (tokens.Count == 0) return "";
@@ -59,7 +100,7 @@ public static class NaturalQueryParser
             if (StopWords.Contains(token)) continue;
 
             var escaped = token.Replace("\"", "\"\"");
-            if (IsKorean(token) || token.Length >= 4)
+            if (IsKorean(token) || token.Length >= 4 || AcronymWhitelist.Contains(token))
                 parts.Add($"\"{escaped}\"*");
             else
                 parts.Add($"\"{escaped}\"");
@@ -67,9 +108,16 @@ public static class NaturalQueryParser
 
         if (parts.Count == 0) return "";
 
-        // Use OR for multi-token queries: documents may mention terms in different chunks.
-        // BM25 ranking naturally prioritizes chunks containing more matching tokens.
-        var mainExpr = parts.Count == 1
+        // ── Korean compound decomposition (AND 방식) ──
+        var koreanAndParts = ExpandKoreanCompound(tokens);
+        if (koreanAndParts.Count > 0)
+        {
+            var mainExpr = parts.Count == 1 ? parts[0] : string.Join(" OR ", parts);
+            var andExpr = string.Join(" AND ", koreanAndParts);
+            parts = [$"({mainExpr}) OR ({andExpr})"];
+        }
+
+        var finalExpr = parts.Count == 1
             ? parts[0]
             : string.Join(" OR ", parts);
 
@@ -91,10 +139,10 @@ public static class NaturalQueryParser
                 var esc = e.Replace("\"", "\"\"");
                 return $"\"{esc}\"*";
             });
-            return $"({mainExpr}) OR ({string.Join(" OR ", orParts)})";
+            return $"({finalExpr}) OR ({string.Join(" OR ", orParts)})";
         }
 
-        return mainExpr;
+        return finalExpr;
     }
 
     // 한국어 조사 접미사 — 긴 것부터 매칭
@@ -209,6 +257,44 @@ public static class NaturalQueryParser
 
         return results;
     }
+
+    /// <summary>
+    /// 한국어 복합어를 AND 서브토큰으로 분해한다.
+    /// "변경계약" → ["변경"*, "계약"*]
+    /// 3글자 이상인 한국어 토큰만 분해. 서브토큰은 2글자 이상.
+    /// </summary>
+    private static List<string> ExpandKoreanCompound(List<string> tokens)
+    {
+        var results = new List<string>();
+
+        foreach (var token in tokens)
+        {
+            if (!IsKorean(token)) continue;
+            if (token.Length < 3) continue;
+
+            var subs = new List<string>();
+            for (int i = 0; i <= token.Length - 2; i += 2)
+            {
+                var sub = token.Substring(i, Math.Min(2, token.Length - i));
+                if (sub.Length >= 2)
+                {
+                    var esc = sub.Replace("\"", "\"\"");
+                    subs.Add($"\"{esc}\"*");
+                }
+            }
+
+            if (subs.Count >= 2)
+            {
+                results.AddRange(subs);
+                break;
+            }
+        }
+
+        return results;
+    }
+
+    [GeneratedRegex("\"([^\"]+)\"")]
+    private static partial Regex PhraseRegex();
 
     private static List<string> Tokenize(string query)
     {

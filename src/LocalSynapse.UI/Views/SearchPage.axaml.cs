@@ -15,13 +15,21 @@ public partial class SearchPage : UserControl
         InitializeComponent();
     }
 
-    /// <summary>Enter key triggers search.</summary>
+    /// <summary>Keyboard shortcuts: Enter=search, Escape=clear.</summary>
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Key == Key.Enter && DataContext is SearchViewModel vm)
         {
             vm.SearchCommand.Execute(null);
             e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && DataContext is SearchViewModel vm2)
+        {
+            if (!string.IsNullOrEmpty(vm2.Query))
+            {
+                vm2.Query = "";
+                e.Handled = true;
+            }
         }
         base.OnKeyDown(e);
     }
@@ -82,6 +90,16 @@ public partial class SearchPage : UserControl
         if (DataContext is SearchViewModel vm)
         {
             vm.OpenDetailPathCommand.Execute(null);
+        }
+    }
+
+    /// <summary>Example query click — populate search box and execute.</summary>
+    private void ExampleQuery_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string query && DataContext is SearchViewModel vm)
+        {
+            vm.Query = query;
+            vm.SearchCommand.Execute(null);
         }
     }
 

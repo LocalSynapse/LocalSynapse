@@ -239,7 +239,38 @@
                 <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0} files indexed'}"
                            FontSize="{StaticResource FontSizeS}"
                            Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,16" />
+
+                <!-- Example queries -->
+                <TextBlock Text="Try searching for"
+                           FontSize="{StaticResource FontSizeXs}"
+                           Foreground="{StaticResource TextMutedBrush}"
                            HorizontalAlignment="Center" />
+                <WrapPanel HorizontalAlignment="Center" Margin="0,6,0,0">
+                    <Button Content="budget report" Classes="BtnSecondary"
+                            FontSize="{StaticResource FontSizeXs}"
+                            Padding="10,4" Margin="3"
+                            Click="ExampleQuery_Click" Tag="budget report" />
+                    <Button Content="project timeline" Classes="BtnSecondary"
+                            FontSize="{StaticResource FontSizeXs}"
+                            Padding="10,4" Margin="3"
+                            Click="ExampleQuery_Click" Tag="project timeline" />
+                    <Button Content="meeting notes" Classes="BtnSecondary"
+                            FontSize="{StaticResource FontSizeXs}"
+                            Padding="10,4" Margin="3"
+                            Click="ExampleQuery_Click" Tag="meeting notes" />
+                </WrapPanel>
+                <WrapPanel HorizontalAlignment="Center">
+                    <Button Content="&quot;exact phrase&quot;" Classes="BtnSecondary"
+                            FontSize="{StaticResource FontSizeXs}"
+                            Padding="10,4" Margin="3"
+                            Click="ExampleQuery_Click" Tag="&quot;exact phrase&quot;" />
+                    <Button Content="contract 2025" Classes="BtnSecondary"
+                            FontSize="{StaticResource FontSizeXs}"
+                            Padding="10,4" Margin="3"
+                            Click="ExampleQuery_Click" Tag="contract 2025" />
+                </WrapPanel>
             </StackPanel>
 
             <!-- C. SPLIT PANEL (results) — shares same Grid cell -->
@@ -257,10 +288,17 @@
                                    FontSize="{StaticResource FontSizeM}"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    HorizontalAlignment="Center" />
-                        <TextBlock Text="Try different keywords or check spelling"
-                                   FontSize="{StaticResource FontSizeXs}"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   HorizontalAlignment="Center" />
+                        <StackPanel Spacing="4" HorizontalAlignment="Center">
+                            <TextBlock Text="• Try different keywords or check spelling"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextMutedBrush}" />
+                            <TextBlock Text="• Use quotes for exact phrases: &quot;budget report&quot;"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextMutedBrush}" />
+                            <TextBlock Text="• Check the Content or Semantic tabs for deeper matches"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextMutedBrush}" />
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- Filtered empty -->
@@ -544,6 +582,18 @@
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource TextMutedBrush}"
                                                Margin="0,0,0,8" />
+                                    <!-- File size -->
+                                    <DockPanel Margin="0,0,0,4">
+                                        <TextBlock Text="{Binding DetailSize}"
+                                                   DockPanel.Dock="Right"
+                                                   FontSize="{StaticResource FontSizeS}"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontFamily="{StaticResource FontMono}" />
+                                        <TextBlock Text="Size"
+                                                   FontSize="{StaticResource FontSizeS}"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                    </DockPanel>
+                                    <!-- Modified date -->
                                     <DockPanel>
                                         <TextBlock Text="{Binding DetailModified}"
                                                    DockPanel.Dock="Right"

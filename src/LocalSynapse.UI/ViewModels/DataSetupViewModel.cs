@@ -102,15 +102,40 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task DownloadModelAsync()
     {
-        ModelStatus = "Downloading...";
+        ModelStatus = "Downloading... (0%)  —  ~2.3 GB total";
         try
         {
-            await _modelInstaller.DownloadModelAsync("bge-m3");
+            var progress = new Progress<DownloadProgress>(p =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var pct = p.Percent;
+                    var doneMB = p.BytesDone / (1024.0 * 1024);
+                    var totalMB = p.BytesTotal / (1024.0 * 1024);
+                    ModelStatus = totalMB > 1024
+                        ? $"Downloading... ({pct:F0}%)  —  {doneMB / 1024:F1} / {totalMB / 1024:F1} GB"
+                        : $"Downloading... ({pct:F0}%)  —  {doneMB:F0} / {totalMB:F0} MB";
+                });
+            });
+            await _modelInstaller.DownloadModelAsync("bge-m3", progress);
             ModelStatus = "Installed";
+        }
+        catch (OperationCanceledException)
+        {
+            ModelStatus = "Download cancelled";
+        }
+        catch (HttpRequestException)
+        {
+            ModelStatus = "Download failed — check your internet connection and try again";
+        }
+        catch (IOException)
+        {
+            ModelStatus = "Download failed — not enough disk space (~2.3 GB required)";
         }
         catch (Exception ex)
         {
-            ModelStatus = $"Error: {ex.Message}";
+            Debug.WriteLine($"[DataSetupVM] Model download error: {ex}");
+            ModelStatus = "Download failed — try again later";
         }
     }
 
@@ -136,7 +161,12 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         {
             if (error != null)
             {
-                ScanStatusText = $"Error: {error}";
+                Debug.WriteLine($"[DataSetupVM] Cycle error: {error}");
+                ScanStatusText = error.Contains("UnauthorizedAccess", StringComparison.OrdinalIgnoreCase)
+                    ? "Some files could not be accessed — scan completed with partial results"
+                    : error.Contains("disk", StringComparison.OrdinalIgnoreCase) || error.Contains("space", StringComparison.OrdinalIgnoreCase)
+                    ? "Scan interrupted — not enough disk space for indexing"
+                    : "Scan completed with errors — some files may not be searchable";
             }
             else
             {
