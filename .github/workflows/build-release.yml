@@ -76,7 +76,7 @@ jobs:
       - name: Generate SHA256 checksums
         shell: pwsh
         run: |
-          $setupExe = "publish\installer\LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe"
+          $setupExe = "publish\installer\LocalSynapse-v${{ steps.version.outputs.VERSION }}-Windows-Setup.exe"
           $mcpb = "publish\localsynapse-mcp.mcpb"
           $lines = @()
           if (Test-Path $setupExe) {
@@ -93,7 +93,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path publish/artifacts
-          Copy-Item "publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe" "publish/artifacts/" -ErrorAction SilentlyContinue
+          Copy-Item "publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Windows-Setup.exe" "publish/artifacts/" -ErrorAction SilentlyContinue
           Copy-Item "publish/installer/SHA256SUMS.txt" "publish/artifacts/" -ErrorAction SilentlyContinue
           Copy-Item "publish/localsynapse-mcp.mcpb" "publish/artifacts/"
           Copy-Item "publish/server.json" "publish/artifacts/"
@@ -197,7 +197,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/windows/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Setup.exe
+            artifacts/windows/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Windows-Setup.exe
             artifacts/windows/SHA256SUMS.txt
             artifacts/windows/localsynapse-mcp.mcpb
             artifacts/windows/server.json
@@ -229,8 +229,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd artifacts
-          cp windows/LocalSynapse-v*-Setup.exe LocalSynapse-Setup.exe 2>/dev/null && \
-            gh release upload ${{ github.ref_name }} LocalSynapse-Setup.exe --clobber || true
+          cp windows/LocalSynapse-v*-Windows-Setup.exe LocalSynapse-Windows-Setup.exe 2>/dev/null && \
+            gh release upload ${{ github.ref_name }} LocalSynapse-Windows-Setup.exe --clobber || true
           cp macos-arm64/LocalSynapse-v*-macOS-AppleSilicon.dmg LocalSynapse-macOS-AppleSilicon.dmg 2>/dev/null && \
             gh release upload ${{ github.ref_name }} LocalSynapse-macOS-AppleSilicon.dmg --clobber || true
           cp macos-x64/LocalSynapse-v*-macOS-Intel.dmg LocalSynapse-macOS-Intel.dmg 2>/dev/null && \
