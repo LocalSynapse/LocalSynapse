@@ -339,16 +339,17 @@ public sealed class FileRepository : IFileRepository
     {
         using var conn = _connectionFactory.CreateConnection();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = $@"
+        // Cloud files use extract_status='SKIPPED' (set by FileScanner)
+        cmd.CommandText = @"
             SELECT
-                SUM(CASE WHEN extract_status = 'FAILED_CLOUD_PLACEHOLDER' THEN 1 ELSE 0 END),
+                SUM(CASE WHEN extract_status = 'SKIPPED' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN extract_status = 'FAILED_TOO_LARGE' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN extract_status = 'ENCRYPTED' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN extract_status NOT IN ('SUCCESS','PENDING','SKIPPED',
-                    'FAILED_CLOUD_PLACEHOLDER','FAILED_TOO_LARGE','ENCRYPTED')
+                    'FAILED_TOO_LARGE','ENCRYPTED')
                     AND extract_status IS NOT NULL THEN 1 ELSE 0 END)
             FROM files
-            WHERE is_directory = 0 AND extension IN ({FileExtensions.ToSqlInClause()})";
+            WHERE is_directory = 0";
         using var r = cmd.ExecuteReader();
         if (r.Read())
             return (
