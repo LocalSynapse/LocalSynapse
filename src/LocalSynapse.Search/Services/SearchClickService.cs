@@ -8,7 +8,7 @@ namespace LocalSynapse.Search.Services;
 /// 검색 클릭 기록 및 부스트 점수 계산.
 /// 클릭 위치(position)에 따른 차등 가중치와 재검색 실패(bounce) 감지를 지원한다.
 /// </summary>
-public sealed class SearchClickService
+public class SearchClickService
 {
     private readonly SqliteConnectionFactory _connectionFactory;
 
