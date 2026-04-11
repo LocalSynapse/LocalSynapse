@@ -7,9 +7,6 @@ obj/
 *.user
 *.suo
 
-# Docs (internal, lowercase only — Docs/plans/* is tracked)
-docs/
-
 # OS
 Thumbs.db
 .DS_Store
