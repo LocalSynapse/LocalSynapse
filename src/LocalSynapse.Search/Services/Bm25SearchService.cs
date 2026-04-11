@@ -99,24 +99,56 @@ public sealed class Bm25SearchService : IBm25Search
 
     private IReadOnlyList<Bm25Hit> ExecuteSearch(string ftsQuery, string originalQuery, SearchOptions options)
     {
-        using var conn = _connectionFactory.CreateConnection();
-        using var cmd = conn.CreateCommand();
+        // Phase 1 R5: reader를 먼저 완전 materialize (N+1 제거).
+        // 이전 구현은 reader 루프 내부에서 매 row마다 _clickService.GetBoost()를
+        // 호출했고, GetBoost는 각 호출마다 새 SqliteConnection을 열었다.
+        // LIMIT = TopK * ChunksPerFile * 3 → 최대 ~240개 connection per search.
+        // 새 구현: (1) reader materialize, (2) GetBoostBatch 1회, (3) 점수 계산.
+        var materialized = new List<(
+            string fileId, string filename, string path, string extension,
+            string folderPath, string? content, double bm25Score, string modifiedAt, bool isDirectory
+        )>();
 
-        // bm25 weights: chunk_id(0), file_id(0), text(1.0), filename(5.0), folder_path(0.5)
-        cmd.CommandText = @"
-            SELECT
-                f.id, f.filename, f.path, f.extension, f.folder_path,
-                fc.text, f.modified_at, f.is_directory,
-                bm25(chunks_fts, 0, 0, 1.0, 5.0, 0.5) AS rank
-            FROM chunks_fts
-            JOIN file_chunks fc ON chunks_fts.chunk_id = fc.id
-            JOIN files f ON fc.file_id = f.id
-            WHERE chunks_fts MATCH $fts
-            ORDER BY rank
-            LIMIT $limit";
-        cmd.Parameters.AddWithValue("$fts", ftsQuery);
-        cmd.Parameters.AddWithValue("$limit", options.TopK * options.ChunksPerFile * 3);
+        using (var conn = _connectionFactory.CreateConnection())
+        using (var cmd = conn.CreateCommand())
+        {
+            // bm25 weights: chunk_id(0), file_id(0), text(1.0), filename(5.0), folder_path(0.5)
+            cmd.CommandText = @"
+                SELECT
+                    f.id, f.filename, f.path, f.extension, f.folder_path,
+                    fc.text, f.modified_at, f.is_directory,
+                    bm25(chunks_fts, 0, 0, 1.0, 5.0, 0.5) AS rank
+                FROM chunks_fts
+                JOIN file_chunks fc ON chunks_fts.chunk_id = fc.id
+                JOIN files f ON fc.file_id = f.id
+                WHERE chunks_fts MATCH $fts
+                ORDER BY rank
+                LIMIT $limit";
+            cmd.Parameters.AddWithValue("$fts", ftsQuery);
+            cmd.Parameters.AddWithValue("$limit", options.TopK * options.ChunksPerFile * 3);
 
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                materialized.Add((
+                    r.GetString(0),
+                    r.GetString(1),
+                    r.GetString(2),
+                    r.GetString(3),
+                    r.GetString(4),
+                    r.IsDBNull(5) ? null : r.GetString(5),
+                    Math.Abs(r.GetDouble(8)), // bm25() returns negative
+                    r.GetString(6),
+                    !r.IsDBNull(7) && r.GetInt32(7) == 1
+                ));
+            }
+        } // reader + cmd + connection all disposed here
+
+        // Phase 2: click boost batch lookup (단일 쿼리, N+1 제거의 핵심)
+        var paths = materialized.Select(m => m.path).ToList();
+        var clickBoosts = _clickService.GetBoostBatch(originalQuery, paths);
+
+        // Phase 3: 점수 계산
         // [FIX] stop word를 제거한 토큰으로 filenameBoost 계산
         // 이전: "the budget report" → "the"가 모든 파일명에 매칭 → 항상 5.0x
         // 수정: stop word 제거 후 의미 있는 토큰만 비교
@@ -124,36 +156,29 @@ public sealed class Bm25SearchService : IBm25Search
             .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         var raw = new List<(Bm25Hit hit, double rawScore)>();
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
+        foreach (var m in materialized)
         {
-            var ext = r.GetString(3);
-            var modifiedAt = r.GetString(6);
-            var bm25Score = Math.Abs(r.GetDouble(8)); // bm25() returns negative
-
-            // Apply boosts
-            var recencyBoost = ComputeRecencyBoost(modifiedAt);
-            var extBoost = ExtensionBoost.GetBoost(ext);
-            var filename = r.GetString(1);
+            var recencyBoost = ComputeRecencyBoost(m.modifiedAt);
+            var extBoost = ExtensionBoost.GetBoost(m.extension);
             var filenameBoost = meaningfulTokens.Length > 0 &&
-                meaningfulTokens.Any(t => IsWordBoundaryMatch(filename, t))
+                meaningfulTokens.Any(t => IsWordBoundaryMatch(m.filename, t))
                     ? 5.0 : 1.0;
 
-            var clickBoost = _clickService.GetBoost(originalQuery, r.GetString(2)); // path
-            var finalScore = bm25Score * recencyBoost * extBoost * filenameBoost * (1.0 + clickBoost);
+            var clickBoost = clickBoosts.TryGetValue(m.path, out var cb) ? cb : 0.0;
+            var finalScore = m.bm25Score * recencyBoost * extBoost * filenameBoost * (1.0 + clickBoost);
 
             raw.Add((new Bm25Hit
             {
-                FileId = r.GetString(0),
-                Filename = filename,
-                Path = r.GetString(2),
-                Extension = ext,
-                FolderPath = r.GetString(4),
-                Content = r.IsDBNull(5) ? null : r.GetString(5),
+                FileId = m.fileId,
+                Filename = m.filename,
+                Path = m.path,
+                Extension = m.extension,
+                FolderPath = m.folderPath,
+                Content = m.content,
                 Score = finalScore,
                 MatchedTerms = meaningfulTokens.ToList(),
-                ModifiedAt = modifiedAt,
-                IsDirectory = !r.IsDBNull(7) && r.GetInt32(7) == 1,
+                ModifiedAt = m.modifiedAt,
+                IsDirectory = m.isDirectory,
             }, finalScore));
         }
 

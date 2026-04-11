@@ -1,0 +1,15 @@
+{
+  "report": [
+    "/corpus/annual-report-2023.pdf",
+    "/corpus/budget-2024-report.docx"
+  ],
+  "budget 2024": [
+    "/corpus/budget-2024-report.docx",
+    "/corpus/budget-proposal.xlsx",
+    "/corpus/meeting-notes-jan.txt"
+  ],
+  "plan": [
+    "/corpus/plan-template.docx",
+    "/corpus/project-plan-q1.docx"
+  ]
+}

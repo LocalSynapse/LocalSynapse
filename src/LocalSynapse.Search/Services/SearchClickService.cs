@@ -88,36 +88,68 @@ public class SearchClickService
     }
 
     /// <summary>
-    /// 이전 클릭 기반 부스트 점수를 반환한다 (0.0 ~ 1.0).
-    /// position이 높을수록(=하위 결과) 강한 부스트, bounce 클릭은 부스트 감산.
+    /// 주어진 경로 목록 각각에 대한 click boost 점수를 반환한다 (0.0 ~ 1.0).
+    /// 단일 쿼리로 조회하여 N+1 문제를 회피한다.
+    /// `virtual`로 선언하여 test double이 `override`로 호출 횟수를 감시할 수 있다.
     /// </summary>
-    public double GetBoost(string query, string filePath)
+    /// <returns>
+    /// Dictionary&lt;path, boost&gt;. paths 중 click 기록이 없는 항목은 포함되지 않는다
+    /// (호출자는 TryGetValue 사용).
+    /// </returns>
+    public virtual Dictionary<string, double> GetBoostBatch(string query, IReadOnlyList<string> paths)
     {
+        if (paths.Count == 0) return new Dictionary<string, double>();
+
+        // W2 방어 가드: SQLite SQLITE_MAX_VARIABLE_NUMBER (기본 999). 이 메서드는
+        // paths 각각에 $p{i} 1개 + $query 1개 = paths.Count + 1 변수를 사용하므로
+        // 안전 한계는 paths.Count <= 998. 현재 Bm25SearchService는
+        // LIMIT = TopK * ChunksPerFile * 3 = 최대 ~240 paths만 전달.
+        // 향후 LIMIT 공식이 변경되거나 TopK가 크게 증가하면 이 가드가 명시적 실패로 안내.
+        // 900으로 한 이유: 999에 정확히 맞추면 SQLite 컴파일 옵션 차이에 brittle. 여유 100.
+        const int MaxPathsPerCall = 900;
+        if (paths.Count > MaxPathsPerCall)
+        {
+            throw new ArgumentException(
+                $"GetBoostBatch supports at most {MaxPathsPerCall} paths per call " +
+                $"(SQLite SQLITE_MAX_VARIABLE_NUMBER limit). Got {paths.Count}. " +
+                $"Caller must chunk the input or extend this method to handle chunking internally.",
+                nameof(paths));
+        }
+
+        var result = new Dictionary<string, double>(paths.Count);
+        var normalizedQuery = query.ToLowerInvariant().Trim();
+
         using var conn = _connectionFactory.CreateConnection();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
-            SELECT click_count, position, is_bounce FROM search_clicks
-            WHERE query = $query AND file_path = $path";
-        cmd.Parameters.AddWithValue("$query", query.ToLowerInvariant().Trim());
-        cmd.Parameters.AddWithValue("$path", filePath);
+
+        var placeholders = string.Join(", ", paths.Select((_, i) => $"$p{i}"));
+        cmd.CommandText = $@"
+            SELECT file_path, click_count, position, is_bounce
+            FROM search_clicks
+            WHERE query = $query AND file_path IN ({placeholders})";
+        cmd.Parameters.AddWithValue("$query", normalizedQuery);
+        for (int i = 0; i < paths.Count; i++)
+            cmd.Parameters.AddWithValue($"$p{i}", paths[i]);
 
         using var reader = cmd.ExecuteReader();
-        if (!reader.Read()) return 0.0;
+        while (reader.Read())
+        {
+            var filePath = reader.GetString(0);
+            var clickCount = reader.GetInt32(1);
+            var position = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+            var isBounce = !reader.IsDBNull(3) && reader.GetInt32(3) == 1;
 
-        var clickCount = reader.GetInt32(0);
-        var position = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
-        var isBounce = !reader.IsDBNull(2) && reader.GetInt32(2) == 1;
+            if (isBounce) { result[filePath] = 0.0; continue; }
 
-        if (isBounce) return 0.0; // bounce 클릭은 부스트 없음
+            // position 가중치: 1위 클릭 = 약한 부스트, 8위 클릭 = 강한 부스트
+            // base = count * 0.1 (max 1.0)
+            // weight = log2(position + 2) → pos 0: 1.0, pos 1: 1.58, pos 7: 3.17
+            var baseBoost = Math.Min(1.0, clickCount * 0.1);
+            var positionWeight = Math.Log2(position + 2);
+            var boost = Math.Min(1.0, baseBoost * positionWeight);
+            result[filePath] = boost;
+        }
 
-        // position 가중치: 1위 클릭 = 약한 부스트, 8위 클릭 = 강한 부스트
-        // base = count * 0.1 (max 1.0)
-        // weight = 1.0 / log2(position + 2) → pos 0: 1.0, pos 1: 0.63, pos 7: 0.33
-        // 최종 = base / log2(position + 2) 역수 = base * log2(position + 2)
-        var baseBoost = Math.Min(1.0, clickCount * 0.1);
-        var positionWeight = Math.Log2(position + 2); // pos 0→1.0, pos 1→1.58, pos 7→3.17
-        var boost = Math.Min(1.0, baseBoost * positionWeight);
-
-        return boost;
+        return result;
     }
 }
