@@ -298,7 +298,7 @@
                                              StrokeThickness="1.2" Fill="Transparent" VerticalAlignment="Center" />
                                     <TextBlock FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
                                                Foreground="{StaticResource WarningBrush}">
-                                        <Run Text="{Binding SkippedFiles, StringFormat='{}{0:N0}'}" />
+                                        <Run Text="{Binding SkippedFiles, Mode=OneWay, StringFormat='{}{0:N0}'}" />
                                         <Run Text=" files skipped" />
                                     </TextBlock>
                                 </StackPanel>

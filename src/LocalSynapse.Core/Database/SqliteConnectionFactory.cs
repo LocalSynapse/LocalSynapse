@@ -69,6 +69,8 @@ public sealed class SqliteConnectionFactory : IDisposable
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "PRAGMA busy_timeout=30000;";
         cmd.ExecuteNonQuery();
+        cmd.CommandText = "PRAGMA synchronous=NORMAL;";
+        cmd.ExecuteNonQuery();
         return conn;
     }
 
