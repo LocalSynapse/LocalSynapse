@@ -53,13 +53,48 @@ public sealed class FileRepository : IFileRepository
         return file;
     }
 
-    /// <summary>복수 파일 메타데이터를 일괄 Upsert하고, files_fts도 동기화한다.</summary>
+    // R8 sub-batch size. 기존 단일 tx는 caller가 500개를 전달하면 그 500개 전체를
+    // 한 transaction으로 묶어 lock hold time이 길었다. 75개씩 분할하면 lock hold
+    // time이 ~1/7로 감소하고, 다른 writer (scan, click recording, MCP)의 대기 시간도
+    // 비례 감소한다. 75는 50~100 범위의 중간값으로 spec §6.2에서 확정.
+    private const int UpsertSubBatchSize = 75;
+
+    /// <summary>복수 파일 메타데이터를 일괄 Upsert하고, files_fts도 동기화한다.
+    /// 내부적으로 75개 단위 sub-batch로 분할하여 lock hold time을 줄인다.</summary>
     public int UpsertFiles(IEnumerable<FileMetadata> files)
+    {
+        // 1회 materialize (lazy enumerable 이중 열거 방지)
+        var fileList = files as IReadOnlyList<FileMetadata> ?? files.ToList();
+
+        // W3 회귀 방지: indexedAt을 메서드 진입 시점에 1회 계산.
+        // 원본 코드는 단일 tx 내부에서 한 번 계산하여 모든 파일이 동일한 값을 공유했다.
+        // Sub-batch마다 재계산하면 같은 "batch"로 scan된 파일들이 millisecond 단위로
+        // 다른 timestamp를 갖게 되어 recency ranking 경계 케이스에서 회귀.
+        // T9 regression guard (UpsertFiles_AssignsSameIndexedAtToAllFilesInBatch)가
+        // 이를 검증한다.
+        var indexedAt = DateTime.UtcNow.ToString("o");
+        var totalCount = 0;
+
+        for (int offset = 0; offset < fileList.Count; offset += UpsertSubBatchSize)
+        {
+            var take = Math.Min(UpsertSubBatchSize, fileList.Count - offset);
+            var subBatch = new List<FileMetadata>(take);
+            for (int i = 0; i < take; i++)
+                subBatch.Add(fileList[offset + i]);
+
+            totalCount += UpsertFilesSingleTransaction(subBatch, indexedAt);
+        }
+
+        return totalCount;
+    }
+
+    /// <summary>단일 transaction 내에서 주어진 file 목록을 upsert + files_fts 동기화.
+    /// indexedAt은 outer UpsertFiles에서 1회 계산 후 파라미터로 전달받는다 (W3).</summary>
+    private int UpsertFilesSingleTransaction(IReadOnlyList<FileMetadata> files, string indexedAt)
     {
         using var conn = _connectionFactory.CreateConnection();
         using var tx = conn.BeginTransaction();
 
-        var indexedAt = DateTime.UtcNow.ToString("o");
         var count = 0;
 
         using var cmd = conn.CreateCommand();
