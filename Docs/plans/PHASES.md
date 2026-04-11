@@ -46,7 +46,24 @@
 
 ---
 
-## Phase 1 — SQLite 데이터 액세스 아키텍처 대단위 리팩토링 🔴 [pending]
+## Phase 1 — SQLite 데이터 액세스 Medium 리팩토링 🟡 [done, 2026-04-11]
+
+> **실행된 버전**: Phase 1 **Medium** — recon/spec/diff-plan 3차 리뷰 결과 Full C (SqliteWriteQueue + async 전면화)에서 의도적으로 축소. "필요한 만큼의 규모 안에서 최적의 효과" 원칙 반영.
+>
+> **완료 결과**:
+> - R1 dead code 제거 ✅ (`SqliteConnectionFactory` unseal + `virtual CreateConnection` + WAL)
+> - R3 SettingsStore JSON 전환 ✅ (atomic write + legacy migration + corrupt backup)
+> - R5 N+1 제거 ✅ (**실측 -23.5% avg, -41.1% max**, [1-benchmark.md](1-benchmark.md))
+> - R8 UpsertFiles 75/tx sub-batch 분할 + W3 `indexedAt` 회귀 가드 ✅
+> - 9 tests (T1~T9) + golden master + xunit 2.9.3 test infra
+>
+> **Phase 2 이후 후보로 이월**: R2/R7/R10/R11/R13. 실측 사용자 리포트 발생 시 개별 phase로 처리. SqliteWriteQueue + cross-process broker는 "솔로 개발자 사업 트랙 3~6주 정지" 비용에 비해 현재 실측 문제 없음.
+>
+> **이력 문서**: [1-recon.md](1-recon.md), [1-spec.md](1-spec.md) (v3.5), [1-diff-plan.md](1-diff-plan.md) (v3), [1-benchmark.md](1-benchmark.md)
+
+---
+
+## Phase 1 (원본 Full C 계획, 기록용) 🔴 [superseded by Medium]
 
 > **이 phase는 단일 큰 작업으로 진행한다.** Sub-phase로 쪼개지 않는다.
 > 이유: SettingsStore, write 직렬화, N+1, multi-process race가 모두 같은 아키텍처 결함의 다른 증상이며,
