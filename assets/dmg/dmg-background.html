@@ -196,36 +196,36 @@ body {
       <div class="card-a">
         <div class="card-header">
           <div class="badge badge-a">A</div>
-          <span class="card-title-a">Right-click to open</span>
-        </div>
-        <div class="step">
-          <div class="step-num">1</div>
-          <p class="step-text"><strong>Control + click</strong> LocalSynapse<br>in Applications</p>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <p class="step-text">Click <strong>"Open"</strong> in the menu</p>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <p class="step-text">Click <strong>"Open"</strong> again to confirm</p>
-        </div>
-      </div>
-
-      <div class="card-b">
-        <div class="card-header">
-          <div class="badge badge-b">B</div>
-          <span class="card-title-b">Terminal command</span>
+          <span class="card-title-a">Terminal (recommended)</span>
         </div>
         <p class="card-desc">Open Terminal and paste:</p>
         <div class="code-block">
           <code>xattr -cr /Applications/LocalSynapse.app</code>
         </div>
-        <p class="card-hint">Then double-click the app to launch.</p>
+        <p class="card-hint">Then double-click the app to launch. Works on all macOS versions.</p>
+      </div>
+
+      <div class="card-b">
+        <div class="card-header">
+          <div class="badge badge-b">B</div>
+          <span class="card-title-b">System Settings</span>
+        </div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <p class="step-text">Double-click the app &rarr; click <strong>"Done"</strong> when blocked</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <p class="step-text">Open <strong>System Settings &rarr; Privacy &amp; Security</strong></p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <p class="step-text">Scroll down, click <strong>"Open Anyway"</strong></p>
+        </div>
       </div>
     </div>
 
-    <p class="footer">You only need to do this once. Subsequent launches will work normally.</p>
+    <p class="footer">You only need to do this once. macOS 15 Sequoia removed the older Control+click bypass.</p>
   </div>
 
 </div>
