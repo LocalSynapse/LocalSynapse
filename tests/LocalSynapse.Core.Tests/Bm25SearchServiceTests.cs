@@ -206,23 +206,34 @@ public class Bm25SearchServiceTests
         var bm25 = new Bm25SearchService(temp.Factory, clickSvc);
 
         var sw = new System.Diagnostics.Stopwatch();
-        var durations = new List<long>();
+        var ticks = new List<long>();
 
-        // Warmup
-        bm25.ClearCache();
-        bm25.Search("report", new SearchOptions { TopK = 10, ChunksPerFile = 4 });
+        // Warmup (JIT + connection pool 초기화)
+        for (int i = 0; i < 5; i++)
+        {
+            bm25.ClearCache();
+            bm25.Search("report", new SearchOptions { TopK = 10, ChunksPerFile = 4 });
+        }
 
-        for (int i = 0; i < 10; i++)
+        // 100 runs — 10개 corpus는 ms 단위 0이 나오므로 ticks(100ns 단위)로 측정
+        for (int i = 0; i < 100; i++)
         {
             bm25.ClearCache();
             sw.Restart();
             bm25.Search("report", new SearchOptions { TopK = 10, ChunksPerFile = 4 });
             sw.Stop();
-            durations.Add(sw.ElapsedMilliseconds);
+            ticks.Add(sw.ElapsedTicks);
         }
 
-        var avg = durations.Average();
-        Console.WriteLine($"[Benchmark] Bm25SearchService.Search('report') avg: {avg:F2}ms");
-        Console.WriteLine($"[Benchmark] Individual runs: [{string.Join(", ", durations)}]");
+        var avgTicks = ticks.Average();
+        var avgUs = avgTicks / (System.Diagnostics.Stopwatch.Frequency / 1_000_000.0);
+        var medianTicks = ticks.OrderBy(t => t).ElementAt(50);
+        var medianUs = medianTicks / (System.Diagnostics.Stopwatch.Frequency / 1_000_000.0);
+
+        Console.WriteLine($"[Benchmark] Bm25SearchService.Search('report') over 100 runs:");
+        Console.WriteLine($"[Benchmark]   avg: {avgUs:F1} μs");
+        Console.WriteLine($"[Benchmark]   median: {medianUs:F1} μs");
+        Console.WriteLine($"[Benchmark]   min: {ticks.Min() / (System.Diagnostics.Stopwatch.Frequency / 1_000_000.0):F1} μs");
+        Console.WriteLine($"[Benchmark]   max: {ticks.Max() / (System.Diagnostics.Stopwatch.Frequency / 1_000_000.0):F1} μs");
     }
 }
