@@ -3,6 +3,7 @@ using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Pipeline.Interfaces;
 using LocalSynapse.Pipeline.Orchestration;
+using Xunit;
 
 namespace LocalSynapse.Pipeline.Tests;
 
