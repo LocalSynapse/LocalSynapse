@@ -44,31 +44,6 @@ jobs:
             -p:PublishSingleFile=true `
             -p:Version=${{ steps.version.outputs.VERSION }} `
             -o ./publish/win-x64
-      - name: Create MCPB artifact
-        shell: pwsh
-        run: |
-          Copy-Item "publish\win-x64\LocalSynapse.exe" "publish\localsynapse-mcp.mcpb"
-          $hash = (Get-FileHash "publish\localsynapse-mcp.mcpb" -Algorithm SHA256).Hash
-          echo "MCPB_SHA256=$hash" >> $env:GITHUB_OUTPUT
-          Write-Host "MCPB SHA256: $hash"
-          $json = @{
-            '$schema' = 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json'
-            name = 'io.github.localsynapse/localsynapse-mcp'
-            title = 'LocalSynapse - Local File Search MCP Server'
-            description = 'Offline AI-powered file search MCP server. Searches inside documents (Word, Excel, PDF, PowerPoint) using BM25 + dense vector hybrid search. 100% local, no cloud, no login.'
-            version = '${{ steps.version.outputs.VERSION }}'
-            packages = @(
-              @{
-                registryType = 'mcpb'
-                identifier = "https://github.com/LocalSynapse/LocalSynapse/releases/download/${{ steps.version.outputs.TAG }}/localsynapse-mcp.mcpb"
-                fileSha256 = $hash
-                transport = @{ type = 'stdio' }
-              }
-            )
-          } | ConvertTo-Json -Depth 4
-          $json | Out-File "publish\server.json" -Encoding UTF8
-          Write-Host "server.json generated"
-        id: mcpb
       - name: Build Installer (Inno Setup)
         shell: cmd
         run: |
@@ -77,15 +52,10 @@ jobs:
         shell: pwsh
         run: |
           $setupExe = "publish\installer\LocalSynapse-v${{ steps.version.outputs.VERSION }}-Windows-Setup.exe"
-          $mcpb = "publish\localsynapse-mcp.mcpb"
           $lines = @()
           if (Test-Path $setupExe) {
             $hash = (Get-FileHash $setupExe -Algorithm SHA256).Hash
             $lines += "$hash  $(Split-Path $setupExe -Leaf)"
-          }
-          if (Test-Path $mcpb) {
-            $hash = (Get-FileHash $mcpb -Algorithm SHA256).Hash
-            $lines += "$hash  localsynapse-mcp.mcpb"
           }
           $lines | Out-File publish\installer\SHA256SUMS.txt
           Get-Content publish\installer\SHA256SUMS.txt
@@ -95,8 +65,6 @@ jobs:
           New-Item -ItemType Directory -Force -Path publish/artifacts
           Copy-Item "publish/installer/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Windows-Setup.exe" "publish/artifacts/" -ErrorAction SilentlyContinue
           Copy-Item "publish/installer/SHA256SUMS.txt" "publish/artifacts/" -ErrorAction SilentlyContinue
-          Copy-Item "publish/localsynapse-mcp.mcpb" "publish/artifacts/"
-          Copy-Item "publish/server.json" "publish/artifacts/"
           Get-ChildItem publish/artifacts/
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -199,8 +167,6 @@ jobs:
           files: |
             artifacts/windows/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Windows-Setup.exe
             artifacts/windows/SHA256SUMS.txt
-            artifacts/windows/localsynapse-mcp.mcpb
-            artifacts/windows/server.json
             artifacts/macos-arm64/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-AppleSilicon.dmg
             artifacts/macos-arm64/SHA256SUMS-macOS.txt
             artifacts/macos-x64/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-Intel.dmg
@@ -216,14 +182,18 @@ jobs:
 
             macOS may show a security warning because this app is not signed with an Apple certificate. To open it:
 
-            **Option A:** Control + click the app → Click "Open" → Click "Open" again
-
-            **Option B:** Open Terminal and run:
+            **Option A (recommended):** Open Terminal and run:
             ```
             xattr -cr /Applications/LocalSynapse.app
             ```
+            Then double-click the app to launch. Works on all macOS versions.
 
-            You only need to do this once.
+            **Option B:** Use System Settings
+            1. Double-click the app → click "Done" when blocked
+            2. Open System Settings → Privacy & Security
+            3. Scroll down, click "Open Anyway"
+
+            You only need to do this once. macOS 15 Sequoia removed the older Control+click bypass.
       - name: Upload fixed-name assets (latest download URLs)
         env:
           GH_TOKEN: ${{ github.token }}

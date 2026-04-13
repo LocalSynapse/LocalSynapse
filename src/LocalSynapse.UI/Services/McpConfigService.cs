@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -37,8 +38,9 @@ public sealed class McpConfigService
             var root = JsonNode.Parse(json);
             return root?["mcpServers"]?[ServerName] != null;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[McpConfig] Claude Desktop registration check failed: {ex.Message}");
             return false;
         }
     }

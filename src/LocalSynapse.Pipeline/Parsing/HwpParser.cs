@@ -50,7 +50,7 @@ internal static class HwpParser
             if (data.Length > 0)
                 return Encoding.Unicode.GetString(data).Trim('\0').Trim();
         }
-        catch (CFItemNotFound) { }
+        catch (CFItemNotFound) { Debug.WriteLine("[HwpParser] PrvText stream not found"); }
         return null;
     }
 
@@ -63,8 +63,9 @@ internal static class HwpParser
             var header = cf.RootStorage.GetStream("FileHeader").GetData();
             compressed = header.Length > 36 && (header[36] & 0x01) != 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[HwpParser] FileHeader read failed, assuming compressed: {ex.Message}");
             compressed = true;
         }
 
@@ -98,8 +99,9 @@ internal static class HwpParser
             deflate.CopyTo(output);
             return output.ToArray();
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[HwpParser] Deflate failed, trying zlib offset: {ex.Message}");
             // Fallback: skip 2-byte zlib header
             if (raw.Length <= 2) return null;
             try
@@ -110,9 +112,9 @@ internal static class HwpParser
                 deflate.CopyTo(output);
                 return output.ToArray();
             }
-            catch
+            catch (Exception ex2)
             {
-                Debug.WriteLine("[HwpParser] Decompression failed");
+                Debug.WriteLine($"[HwpParser] Decompression failed: {ex2.Message}");
                 return null;
             }
         }

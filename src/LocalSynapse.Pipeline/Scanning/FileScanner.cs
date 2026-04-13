@@ -270,8 +270,8 @@ public sealed class FileScanner : IFileScanner
                 results.Add(item);
             }
         }
-        catch (UnauthorizedAccessException) { /* skip inaccessible folder */ }
-        catch (IOException) { /* skip locked folder */ }
+        catch (UnauthorizedAccessException) { Debug.WriteLine($"[Scan] EnumerateFiles access denied: {path}"); }
+        catch (IOException ex) { Debug.WriteLine($"[Scan] EnumerateFiles I/O error: {path}, {ex.Message}"); }
         catch (Exception ex)
         {
             Debug.WriteLine($"[Scan] EnumerateFiles failed: {path}, {ex.Message}");
@@ -309,8 +309,8 @@ public sealed class FileScanner : IFileScanner
                 results.Add(item);
             }
         }
-        catch (UnauthorizedAccessException) { /* skip */ }
-        catch (IOException) { /* skip */ }
+        catch (UnauthorizedAccessException) { Debug.WriteLine($"[Scan] EnumerateDirectories access denied: {path}"); }
+        catch (IOException ex) { Debug.WriteLine($"[Scan] EnumerateDirectories I/O error: {path}, {ex.Message}"); }
         catch (Exception ex)
         {
             Debug.WriteLine($"[Scan] EnumerateDirectories failed: {path}, {ex.Message}");

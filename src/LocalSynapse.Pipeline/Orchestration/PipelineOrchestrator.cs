@@ -116,8 +116,18 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         }
         finally
         {
-            if (CurrentPhase != PipelinePhase.Complete)
+            if (CurrentPhase == PipelinePhase.Complete)
+            {
+                // Complete 유지 — 사이클 정상 종료
+            }
+            else if (_isPaused)
+            {
+                CurrentPhase = PipelinePhase.Paused;
+            }
+            else
+            {
                 CurrentPhase = PipelinePhase.Idle;
+            }
             _cycleLock.Release();
         }
     }
@@ -178,6 +188,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     {
         _isPaused = false;
         CurrentPhase = PipelinePhase.Idle;
+        _immediateRunSignal.Set();
         ReportProgress(PipelinePhase.Idle, 0, statusText: "Resumed");
         Debug.WriteLine("[Orch] Resumed");
     }

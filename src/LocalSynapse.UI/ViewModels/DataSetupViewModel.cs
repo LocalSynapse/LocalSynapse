@@ -76,6 +76,9 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     {
         if (_orchestrator.IsRunning) return;
 
+        if (_orchestrator.IsPaused)
+            _orchestrator.Resume();
+
         Debug.WriteLine("[UI] ScanNow clicked — requesting immediate cycle");
         _orchestrator.RequestImmediateCycle();
     }
@@ -187,7 +190,7 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         ModelStatus = _modelInstaller.IsModelInstalled("bge-m3") ? "Installed" : "Not installed";
 
         try { var (cloud, _, _, _) = _fileRepo.CountSkippedByCategory(); SkippedFiles = cloud; }
-        catch { SkippedFiles = 0; }
+        catch (Exception ex) { Debug.WriteLine($"[DataSetupVM] RefreshState skipped count failed: {ex.Message}"); SkippedFiles = 0; }
 
         // Show last progress text if cycle is running
         if (_orchestrator.IsRunning && _orchestrator.LatestProgress.StatusText != null)

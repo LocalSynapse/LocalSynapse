@@ -573,7 +573,7 @@ public partial class SearchViewModel : ObservableObject
                 DetailSize = File.Exists(file.Path)
                     ? FormatFileSize(new FileInfo(file.Path).Length) : "—";
             }
-            catch { DetailSize = "—"; }
+            catch (Exception ex) { Debug.WriteLine($"[SearchVM] Failed to get file size: {ex.Message}"); DetailSize = "—"; }
         }
         else if (item is SearchResultFolder folder)
         {
