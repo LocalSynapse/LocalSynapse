@@ -39,7 +39,7 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
 
 # 2. Info.plist 복사 + 버전 치환
-sed "s/__VERSION__/$VERSION/g" "$SCRIPT_DIR/Info.plist.template" > "$APP_BUNDLE/Contents/Info.plist"
+sed "s|__VERSION__|$VERSION|g" "$SCRIPT_DIR/Info.plist.template" > "$APP_BUNDLE/Contents/Info.plist"
 
 # 3. 퍼블리시 파일 복사
 cp -R "$PUBLISH_DIR"/* "$APP_BUNDLE/Contents/MacOS/"

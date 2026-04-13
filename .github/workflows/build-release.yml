@@ -26,6 +26,11 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
+          $isTag = "${{ github.ref }}".StartsWith("refs/tags/")
+          if ($isTag -and $tag -notmatch '^v\d+\.\d+\.\d+(-[a-z0-9.]+)?$') {
+              Write-Error "Invalid tag format: $tag"
+              exit 1
+          }
           $ver = $tag -replace '^v', ''
           if (-not $ver) { $ver = "0.0.0" }
           echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
@@ -33,6 +38,8 @@ jobs:
           Write-Host "Version: $ver, Tag: $tag"
       - name: Restore dependencies
         run: dotnet restore LocalSynapse.v2.sln
+      - name: Run tests
+        run: dotnet test LocalSynapse.v2.sln -c Release --no-restore
       - name: Build Release
         run: dotnet build LocalSynapse.v2.sln -c Release --no-restore
       - name: Publish win-x64
@@ -94,6 +101,11 @@ jobs:
         id: version
         run: |
           TAG="${{ github.ref_name }}"
+          REF="${{ github.ref }}"
+          if [[ "$REF" == refs/tags/* && ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?$ ]]; then
+              echo "::error::Invalid tag format: $TAG"
+              exit 1
+          fi
           VER="${TAG#v}"
           if [ -z "$VER" ]; then VER="0.0.0"; fi
           echo "VERSION=$VER" >> $GITHUB_OUTPUT

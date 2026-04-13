@@ -7,8 +7,14 @@ obj/
 *.user
 *.suo
 
-# Claude Code (local personal settings)
-.claude/settings.local.json
+# Claude Code (entire directory — slash commands and agents are local-only)
+.claude/
+
+# Build artifacts
+publish/
+artifacts/
+*.pdb
+*.dmg
 
 # Internal planning docs (Phase recon/spec/diff-plan, audits, handoffs)
 # 공개 저장소에 작업 상세를 노출하지 않기 위해 전체 private.
