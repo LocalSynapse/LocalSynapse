@@ -46,39 +46,35 @@ public sealed class EmbeddingService : IEmbeddingService
     }
 
     /// <summary>단일 텍스트의 임베딩을 생성한다.</summary>
-    public Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken ct = default)
+    public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken ct = default)
     {
-        return Task.Run(() =>
+        ct.ThrowIfCancellationRequested();
+
+        if (!IsReady)
+            throw new InvalidOperationException("EmbeddingService is not initialized");
+
+        var (inputIds, attentionMask) = _tokenizer.Encode(text);
+
+        var seqLen = inputIds.Length;
+        var inputIdsTensor = new DenseTensor<long>(inputIds, new[] { 1, seqLen });
+        var maskTensor = new DenseTensor<long>(attentionMask, new[] { 1, seqLen });
+
+        var inputs = new List<NamedOnnxValue>
         {
-            ct.ThrowIfCancellationRequested();
+            NamedOnnxValue.CreateFromTensor("input_ids", inputIdsTensor),
+            NamedOnnxValue.CreateFromTensor("attention_mask", maskTensor),
+        };
 
-            if (!IsReady)
-                throw new InvalidOperationException("EmbeddingService is not initialized");
+        // Add token_type_ids if model expects it (no lock needed — InputMetadata is immutable after load)
+        if (_modelLoader.HasInput("token_type_ids"))
+        {
+            var typeIds = new long[seqLen];
+            var typeIdsTensor = new DenseTensor<long>(typeIds, new[] { 1, seqLen });
+            inputs.Add(NamedOnnxValue.CreateFromTensor("token_type_ids", typeIdsTensor));
+        }
 
-            var session = _modelLoader.GetSession()!;
-            var (inputIds, attentionMask) = _tokenizer.Encode(text);
-
-            var seqLen = inputIds.Length;
-            var inputIdsTensor = new DenseTensor<long>(inputIds, new[] { 1, seqLen });
-            var maskTensor = new DenseTensor<long>(attentionMask, new[] { 1, seqLen });
-
-            var inputs = new List<NamedOnnxValue>
-            {
-                NamedOnnxValue.CreateFromTensor("input_ids", inputIdsTensor),
-                NamedOnnxValue.CreateFromTensor("attention_mask", maskTensor),
-            };
-
-            // Add token_type_ids if model expects it
-            if (session.InputMetadata.ContainsKey("token_type_ids"))
-            {
-                var typeIds = new long[seqLen];
-                var typeIdsTensor = new DenseTensor<long>(typeIds, new[] { 1, seqLen });
-                inputs.Add(NamedOnnxValue.CreateFromTensor("token_type_ids", typeIdsTensor));
-            }
-
-            using var results = session.Run(inputs);
-            return ExtractEmbedding(results, attentionMask);
-        }, ct);
+        using var results = await _modelLoader.RunInferenceAsync(inputs, ct).ConfigureAwait(false);
+        return ExtractEmbedding(results, attentionMask);
     }
 
     /// <summary>배치 텍스트의 임베딩을 생성한다.</summary>

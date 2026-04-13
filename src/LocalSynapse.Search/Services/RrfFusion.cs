@@ -50,7 +50,7 @@ public static class RrfFusion
             if (map.TryGetValue(d.FileId, out var existing))
             {
                 existing.HybridScore += rrfScore;
-                existing.DenseScore = d.Score;
+                existing.DenseScore = Math.Max(existing.DenseScore, d.Score);
             }
             else
             {

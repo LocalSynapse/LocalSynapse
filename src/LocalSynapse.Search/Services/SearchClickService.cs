@@ -12,7 +12,8 @@ public class SearchClickService
 {
     private readonly SqliteConnectionFactory _connectionFactory;
 
-    // 마지막 클릭 정보 (bounce 감지용)
+    // 마지막 클릭 정보 (bounce 감지용) — lock으로 보호
+    private readonly object _clickLock = new();
     private string? _lastClickQuery;
     private string? _lastClickFilePath;
     private DateTime _lastClickTime;
@@ -26,7 +27,8 @@ public class SearchClickService
     /// <summary>검색 클릭을 기록한다. position은 결과 목록에서의 순위 (0-based).</summary>
     public void RecordClick(string query, string filePath, int position)
     {
-        var normalizedQuery = query.ToLowerInvariant().Trim();
+        var normalizedQuery = NaturalQueryParser.RemoveStopwords(query).ToLowerInvariant().Trim();
+        var normalizedPath = NormalizePath(filePath);
         var now = DateTime.UtcNow;
 
         using var conn = _connectionFactory.CreateConnection();
@@ -37,54 +39,68 @@ public class SearchClickService
             ON CONFLICT(query, file_path) DO UPDATE SET
                 click_count = click_count + 1,
                 last_clicked_at = $now,
-                position = $pos";
+                position = MIN(COALESCE(position, $pos), $pos)";
         cmd.Parameters.AddWithValue("$query", normalizedQuery);
-        cmd.Parameters.AddWithValue("$path", filePath);
+        cmd.Parameters.AddWithValue("$path", normalizedPath);
         cmd.Parameters.AddWithValue("$now", now.ToString("o"));
         cmd.Parameters.AddWithValue("$pos", position);
         cmd.ExecuteNonQuery();
 
-        // 마지막 클릭 정보 저장 (bounce 감지용)
-        _lastClickQuery = normalizedQuery;
-        _lastClickFilePath = filePath;
-        _lastClickTime = now;
+        // known race: DB write와 필드 갱신 사이에 OnNewSearch가 끼어들 수 있음 (무시 가능)
+        lock (_clickLock)
+        {
+            _lastClickQuery = normalizedQuery;
+            _lastClickFilePath = normalizedPath;
+            _lastClickTime = now;
+        }
 
-        Debug.WriteLine($"[ClickBoost] Recorded: query=\"{normalizedQuery}\" path=\"{filePath}\" pos={position}");
+        Debug.WriteLine($"[ClickBoost] Recorded: query=\"{normalizedQuery}\" path=\"{normalizedPath}\" pos={position}");
     }
 
     /// <summary>
     /// 새 검색 시작 시 호출. 직전 클릭으로부터 10초 이내 재검색이면 bounce로 기록한다.
+    /// Type-ahead prefix 연속은 bounce로 보지 않는다.
     /// </summary>
     public void OnNewSearch(string newQuery)
     {
-        if (_lastClickQuery == null || _lastClickFilePath == null) return;
+        var normalizedNewQuery = NaturalQueryParser.RemoveStopwords(newQuery).ToLowerInvariant().Trim();
 
-        var elapsed = DateTime.UtcNow - _lastClickTime;
-        if (elapsed.TotalSeconds <= 10)
+        lock (_clickLock)
         {
-            // 10초 이내 재검색 = bounce (클릭한 결과가 원하는 게 아니었음)
-            try
-            {
-                using var conn = _connectionFactory.CreateConnection();
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"
-                    UPDATE search_clicks SET is_bounce = 1
-                    WHERE query = $query AND file_path = $path";
-                cmd.Parameters.AddWithValue("$query", _lastClickQuery);
-                cmd.Parameters.AddWithValue("$path", _lastClickFilePath);
-                cmd.ExecuteNonQuery();
+            if (_lastClickQuery == null || _lastClickFilePath == null) return;
 
-                Debug.WriteLine($"[ClickBoost] Bounce detected: query=\"{_lastClickQuery}\" path=\"{_lastClickFilePath}\" ({elapsed.TotalSeconds:F1}s)");
-            }
-            catch (Exception ex)
+            var elapsed = DateTime.UtcNow - _lastClickTime;
+
+            // A-32: type-ahead prefix continuations are not bounces
+            var isTypeAheadContinuation =
+                !string.IsNullOrEmpty(_lastClickQuery) &&
+                (normalizedNewQuery.StartsWith(_lastClickQuery, StringComparison.Ordinal) ||
+                 _lastClickQuery.StartsWith(normalizedNewQuery, StringComparison.Ordinal));
+
+            if (!isTypeAheadContinuation && elapsed.TotalSeconds <= 10)
             {
-                Debug.WriteLine($"[ClickBoost] Bounce update failed: {ex.Message}");
+                try
+                {
+                    using var conn = _connectionFactory.CreateConnection();
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = @"
+                        UPDATE search_clicks SET is_bounce = 1
+                        WHERE query = $query AND file_path = $path";
+                    cmd.Parameters.AddWithValue("$query", _lastClickQuery);
+                    cmd.Parameters.AddWithValue("$path", _lastClickFilePath);
+                    cmd.ExecuteNonQuery();
+
+                    Debug.WriteLine($"[ClickBoost] Bounce detected: query=\"{_lastClickQuery}\" path=\"{_lastClickFilePath}\" ({elapsed.TotalSeconds:F1}s)");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ClickBoost] Bounce update failed: {ex.Message}");
+                }
             }
+
+            _lastClickQuery = null;
+            _lastClickFilePath = null;
         }
-
-        // 리셋
-        _lastClickQuery = null;
-        _lastClickFilePath = null;
     }
 
     /// <summary>
@@ -92,20 +108,10 @@ public class SearchClickService
     /// 단일 쿼리로 조회하여 N+1 문제를 회피한다.
     /// `virtual`로 선언하여 test double이 `override`로 호출 횟수를 감시할 수 있다.
     /// </summary>
-    /// <returns>
-    /// Dictionary&lt;path, boost&gt;. paths 중 click 기록이 없는 항목은 포함되지 않는다
-    /// (호출자는 TryGetValue 사용).
-    /// </returns>
     public virtual Dictionary<string, double> GetBoostBatch(string query, IReadOnlyList<string> paths)
     {
         if (paths.Count == 0) return new Dictionary<string, double>();
 
-        // W2 방어 가드: SQLite SQLITE_MAX_VARIABLE_NUMBER (기본 999). 이 메서드는
-        // paths 각각에 $p{i} 1개 + $query 1개 = paths.Count + 1 변수를 사용하므로
-        // 안전 한계는 paths.Count <= 998. 현재 Bm25SearchService는
-        // LIMIT = TopK * ChunksPerFile * 3 = 최대 ~240 paths만 전달.
-        // 향후 LIMIT 공식이 변경되거나 TopK가 크게 증가하면 이 가드가 명시적 실패로 안내.
-        // 900으로 한 이유: 999에 정확히 맞추면 SQLite 컴파일 옵션 차이에 brittle. 여유 100.
         const int MaxPathsPerCall = 900;
         if (paths.Count > MaxPathsPerCall)
         {
@@ -117,19 +123,20 @@ public class SearchClickService
         }
 
         var result = new Dictionary<string, double>(paths.Count);
-        var normalizedQuery = query.ToLowerInvariant().Trim();
+        var normalizedQuery = NaturalQueryParser.RemoveStopwords(query).ToLowerInvariant().Trim();
+        var normalizedPaths = paths.Select(NormalizePath).ToList();
 
         using var conn = _connectionFactory.CreateConnection();
         using var cmd = conn.CreateCommand();
 
-        var placeholders = string.Join(", ", paths.Select((_, i) => $"$p{i}"));
+        var placeholders = string.Join(", ", normalizedPaths.Select((_, i) => $"$p{i}"));
         cmd.CommandText = $@"
             SELECT file_path, click_count, position, is_bounce
             FROM search_clicks
             WHERE query = $query AND file_path IN ({placeholders})";
         cmd.Parameters.AddWithValue("$query", normalizedQuery);
-        for (int i = 0; i < paths.Count; i++)
-            cmd.Parameters.AddWithValue($"$p{i}", paths[i]);
+        for (int i = 0; i < normalizedPaths.Count; i++)
+            cmd.Parameters.AddWithValue($"$p{i}", normalizedPaths[i]);
 
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
@@ -139,17 +146,18 @@ public class SearchClickService
             var position = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
             var isBounce = !reader.IsDBNull(3) && reader.GetInt32(3) == 1;
 
-            if (isBounce) { result[filePath] = 0.0; continue; }
+            if (isBounce) { result[NormalizePath(filePath)] = 0.0; continue; }
 
-            // position 가중치: 1위 클릭 = 약한 부스트, 8위 클릭 = 강한 부스트
-            // base = count * 0.1 (max 1.0)
-            // weight = log2(position + 2) → pos 0: 1.0, pos 1: 1.58, pos 7: 3.17
             var baseBoost = Math.Min(1.0, clickCount * 0.1);
             var positionWeight = Math.Log2(position + 2);
             var boost = Math.Min(1.0, baseBoost * positionWeight);
-            result[filePath] = boost;
+            result[NormalizePath(filePath)] = boost;
         }
 
         return result;
     }
+
+    /// <summary>Normalize file path for consistent key matching.</summary>
+    private static string NormalizePath(string path)
+        => path.ToLowerInvariant().TrimEnd('\\', '/');
 }
