@@ -78,7 +78,7 @@ public sealed class BgeM3Installer : IModelInstaller
         var totalBytes = RequiredFiles.Sum(f => f.Size);
         var downloadedBytes = 0L;
 
-        foreach (var (relativePath, _, expectedSize) in RequiredFiles)
+        foreach (var (relativePath, expectedSha256, expectedSize) in RequiredFiles)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -130,6 +130,26 @@ public sealed class BgeM3Installer : IModelInstaller
                 throw new InvalidDataException(
                     $"Downloaded file {relativePath} is smaller than expected minimum size " +
                     $"({actualSize} < {expectedSize} bytes). The download may be truncated. Please retry.");
+            }
+
+            // SHA256 verification (streaming for large files like model.onnx_data 2GB+)
+            if (!string.IsNullOrEmpty(expectedSha256))
+            {
+                using var sha = System.Security.Cryptography.SHA256.Create();
+                using var fs = File.OpenRead(partPath);
+                var hash = await sha.ComputeHashAsync(fs, ct).ConfigureAwait(false);
+                var hex = Convert.ToHexString(hash);
+                if (!hex.Equals(expectedSha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    try { File.Delete(partPath); }
+                    catch (Exception delEx) when (delEx is IOException or UnauthorizedAccessException)
+                    {
+                        Debug.WriteLine($"[BgeM3Installer] Failed to delete hash-mismatch file: {delEx.Message}");
+                    }
+                    throw new InvalidDataException(
+                        $"SHA256 mismatch for {relativePath}: expected {expectedSha256}, got {hex}");
+                }
+                Debug.WriteLine($"[BgeM3Installer] SHA256 verified for {relativePath}");
             }
 
             // Rename .part to final (file handles already released above).

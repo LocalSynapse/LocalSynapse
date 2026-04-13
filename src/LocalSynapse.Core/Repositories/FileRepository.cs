@@ -215,8 +215,8 @@ public sealed class FileRepository : IFileRepository
         var normalized = folderPath;
         if (OperatingSystem.IsWindows())
             normalized = folderPath.Replace('/', '\\');
-        cmd.CommandText = "SELECT path FROM files WHERE path LIKE $pattern";
-        cmd.Parameters.AddWithValue("$pattern", normalized + "%");
+        cmd.CommandText = @"SELECT path FROM files WHERE path LIKE $pattern ESCAPE '\'";
+        cmd.Parameters.AddWithValue("$pattern", EscapeLike(normalized) + "%");
 
         var paths = new List<string>();
         using var r = cmd.ExecuteReader();
@@ -418,10 +418,10 @@ public sealed class FileRepository : IFileRepository
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 SELECT path FROM files
-                WHERE file_ref_number = $frn AND path LIKE $prefix || '%'
+                WHERE file_ref_number = $frn AND path LIKE $prefix || '%' ESCAPE '\'
                 LIMIT 1";
             cmd.Parameters.AddWithValue("$frn", frn);
-            cmd.Parameters.AddWithValue("$prefix", drivePrefix);
+            cmd.Parameters.AddWithValue("$prefix", EscapeLike(drivePrefix));
             return cmd.ExecuteScalar() as string;
         });
     }
@@ -501,6 +501,10 @@ public sealed class FileRepository : IFileRepository
                last_extract_error_code, chunk_count, last_chunked_at, content_hash,
                is_directory, file_ref_number";
 
+    /// <summary>Escape LIKE special characters for SQLite.</summary>
+    private static string EscapeLike(string input)
+        => input.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
+
     private static FileMetadata ReadRow(SqliteDataReader r)
     {
         return new FileMetadata
@@ -555,7 +559,8 @@ public sealed class FileRepository : IFileRepository
         using var conn = _connectionFactory.CreateConnection();
         using var cmd = conn.CreateCommand();
 
-        var escaped = token.Replace("\"", "\"\"");
+        var sanitized = new string(token.Where(c => !char.IsControl(c)).ToArray());
+        var escaped = sanitized.Replace("\"", "\"\"");
         var ftsQuery = $"\"{escaped}\"*";
 
         cmd.CommandText = SelectColumns + @"

@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 using LocalSynapse.Pipeline.Interfaces;
 
@@ -10,6 +12,14 @@ namespace LocalSynapse.Pipeline.Parsing;
 /// </summary>
 internal static class HwpxParser
 {
+    private const long MaxEntrySize = 50_000_000; // 50MB
+    private static readonly XmlReaderSettings SafeXmlSettings = new()
+    {
+        DtdProcessing = DtdProcessing.Prohibit,
+        MaxCharactersInDocument = 100_000_000, // 100M chars — layered defense with byte cap
+        Async = true
+    };
+
     private static readonly XNamespace HpNs = "http://www.hancom.co.kr/hwpml/2011/paragraph";
 
     /// <summary>HWPX 파일에서 텍스트를 추출한다.</summary>
@@ -29,8 +39,15 @@ internal static class HwpxParser
         {
             ct.ThrowIfCancellationRequested();
 
+            if (entry.Length > MaxEntrySize)
+            {
+                Debug.WriteLine($"[HwpxParser] Skipping oversized entry: {entry.FullName} ({entry.Length} bytes)");
+                continue;
+            }
+
             using var stream = entry.Open();
-            var doc = await XDocument.LoadAsync(stream, LoadOptions.None, ct);
+            using var xmlReader = XmlReader.Create(stream, SafeXmlSettings);
+            var doc = await XDocument.LoadAsync(xmlReader, LoadOptions.None, ct);
 
             // 3-tier fallback for text elements
             var texts = doc.Descendants(HpNs + "t").Select(e => e.Value).ToList();

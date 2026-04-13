@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Xml.Linq;
 using LocalSynapse.Pipeline.Interfaces;
 
 namespace LocalSynapse.Pipeline.Parsing;
@@ -12,6 +14,14 @@ namespace LocalSynapse.Pipeline.Parsing;
 /// </summary>
 public static partial class OdtParser
 {
+    private const long MaxEntrySize = 50_000_000; // 50MB
+    private static readonly XmlReaderSettings SafeXmlSettings = new()
+    {
+        DtdProcessing = DtdProcessing.Prohibit,
+        MaxCharactersInDocument = 100_000_000,
+        Async = true
+    };
+
     /// <summary>ODF 파일을 파싱하여 텍스트를 추출한다.</summary>
     public static async Task<ExtractionResult> ParseAsync(string filePath, CancellationToken ct = default)
     {
@@ -22,9 +32,14 @@ public static partial class OdtParser
             if (contentEntry == null)
                 return ExtractionResult.Fail("INVALID_ODF", "No content.xml found in ODF archive");
 
+            if (contentEntry.Length > MaxEntrySize)
+                return ExtractionResult.Fail("ZIP_ENTRY_TOO_LARGE",
+                    $"content.xml exceeds {MaxEntrySize} byte limit ({contentEntry.Length} bytes)");
+
             using var stream = contentEntry.Open();
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-            var xml = await reader.ReadToEndAsync(ct);
+            using var xmlReader = XmlReader.Create(stream, SafeXmlSettings);
+            var doc = await XDocument.LoadAsync(xmlReader, LoadOptions.None, ct);
+            var xml = doc.ToString();
 
             var text = ExtractTextFromXml(xml);
             if (string.IsNullOrWhiteSpace(text))

@@ -64,7 +64,9 @@ public static class ServiceCollectionExtensions
         {
             var router = new McpToolRouter();
             var searchTool = new LocalSynapse.Mcp.Tools.SearchFilesTool(sp.GetRequiredService<IHybridSearch>());
-            var fileTool = new LocalSynapse.Mcp.Tools.GetFileContentTool(sp.GetRequiredService<IFileRepository>());
+            var fileTool = new LocalSynapse.Mcp.Tools.GetFileContentTool(
+                sp.GetRequiredService<IFileRepository>(),
+                sp.GetRequiredService<IChunkRepository>());
             var statusTool = new LocalSynapse.Mcp.Tools.GetPipelineStatusTool(sp.GetRequiredService<IPipelineStampRepository>());
             var listTool = new LocalSynapse.Mcp.Tools.ListIndexedFilesTool(sp.GetRequiredService<IFileRepository>());
             router.Register("search_files", searchTool.ExecuteAsync);

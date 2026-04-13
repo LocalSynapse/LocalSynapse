@@ -35,17 +35,34 @@ public static class PlatformHelper
             if (IsMacOS)
             {
                 if (Directory.Exists(path))
-                    Process.Start("open", $"\"{path}\"");
+                {
+                    var psi = new ProcessStartInfo("open") { UseShellExecute = false };
+                    psi.ArgumentList.Add(path);
+                    Process.Start(psi);
+                }
                 else if (File.Exists(path))
-                    Process.Start("open", $"-R \"{path}\"");
+                {
+                    var psi = new ProcessStartInfo("open") { UseShellExecute = false };
+                    psi.ArgumentList.Add("-R");
+                    psi.ArgumentList.Add(path);
+                    Process.Start(psi);
+                }
             }
             else
             {
-                // Windows
+                // Windows — ArgumentList auto-escapes shell metacharacters
                 if (Directory.Exists(path))
-                    Process.Start("explorer.exe", $"\"{path}\"");
+                {
+                    var psi = new ProcessStartInfo("explorer.exe") { UseShellExecute = false };
+                    psi.ArgumentList.Add(path);
+                    Process.Start(psi);
+                }
                 else if (File.Exists(path))
-                    Process.Start("explorer.exe", $"/select,\"{path}\"");
+                {
+                    var psi = new ProcessStartInfo("explorer.exe") { UseShellExecute = false };
+                    psi.ArgumentList.Add($"/select,{path}");
+                    Process.Start(psi);
+                }
             }
         }
         catch (Exception ex)

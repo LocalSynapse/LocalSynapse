@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LocalSynapse.Mcp.Interfaces;
@@ -15,6 +16,11 @@ public sealed class McpServer : IMcpServer
     private readonly TextReader _input;
     private readonly TextWriter _output;
     private readonly List<ToolDefinition> _toolDefinitions;
+
+    // ReadLineWithLimitAsync state — single reader loop assumed (no concurrent calls)
+    private const int MaxLineLength = 16 * 1024 * 1024; // 16MB
+    private readonly char[] _readBuffer = new char[4096];
+    private string _leftover = "";
 
     private static readonly JsonSerializerOptions s_jsonOptions = new()
     {
@@ -60,7 +66,7 @@ public sealed class McpServer : IMcpServer
             string? line;
             try
             {
-                line = await _input.ReadLineAsync(ct).ConfigureAwait(false);
+                line = await ReadLineWithLimitAsync(ct).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -252,7 +258,8 @@ public sealed class McpServer : IMcpServer
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[McpServer] Error invoking tool '{toolName}': {ex.Message}");
+            var correlationId = Guid.NewGuid().ToString("N")[..12];
+            Debug.WriteLine($"[McpServer] Tool error [{correlationId}] '{toolName}': {ex.Message}");
             var response = new JsonRpcResponse
             {
                 Id = request.Id,
@@ -260,12 +267,49 @@ public sealed class McpServer : IMcpServer
                 {
                     content = new[]
                     {
-                        new { type = "text", text = $"Error: {ex.Message}" }
+                        new { type = "text", text = $"Internal error (ref: {correlationId})" }
                     },
                     isError = true
                 }
             };
             await WriteResponseAsync(response, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Read a line with length limit. Single reader loop assumed (no concurrent calls).</summary>
+    private async Task<string?> ReadLineWithLimitAsync(CancellationToken ct)
+    {
+        var sb = new StringBuilder(_leftover);
+        _leftover = "";
+
+        // Check if leftover already contains a newline
+        // _leftover length bounded by _readBuffer.Length (4KB), so no length check needed here.
+        var current = sb.ToString();
+        var nlIdx = current.IndexOf('\n');
+        if (nlIdx >= 0)
+        {
+            _leftover = current[(nlIdx + 1)..];
+            return current[..nlIdx].TrimEnd('\r');
+        }
+
+        while (true)
+        {
+            var read = await _input.ReadAsync(_readBuffer.AsMemory(), ct).ConfigureAwait(false);
+            if (read == 0)
+                return sb.Length > 0 ? sb.ToString() : null;
+
+            var newlineIdx = Array.IndexOf(_readBuffer, '\n', 0, read);
+
+            if (newlineIdx >= 0)
+            {
+                sb.Append(_readBuffer, 0, newlineIdx);
+                _leftover = new string(_readBuffer, newlineIdx + 1, read - newlineIdx - 1);
+                return sb.ToString().TrimEnd('\r');
+            }
+
+            sb.Append(_readBuffer, 0, read);
+            if (sb.Length > MaxLineLength)
+                throw new InvalidOperationException($"MCP message exceeds maximum line length ({MaxLineLength} bytes)");
         }
     }
 
@@ -299,7 +343,7 @@ public sealed class McpServer : IMcpServer
             new ToolDefinition
             {
                 Name = "get_file_content",
-                Description = "Get the full text content of an indexed file by its ID.",
+                Description = "Returns extracted text content from an indexed file. Content is parsed from the original document format (not raw file bytes). Returns empty if the file has not been processed yet.",
                 InputSchema = new
                 {
                     type = "object",
