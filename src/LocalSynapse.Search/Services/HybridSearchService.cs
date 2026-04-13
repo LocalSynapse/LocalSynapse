@@ -6,7 +6,8 @@ namespace LocalSynapse.Search.Services;
 
 /// <summary>
 /// BM25 + Dense 하이브리드 검색 서비스.
-/// Dense가 사용 가능하면 Hybrid 모드, 아니면 FtsOnly 모드로 동작한다.
+/// Phase 2c 이후 Dense search는 EmptyDenseSearch로 비활성화되어 사실상 FtsOnly 모드로 동작한다.
+/// Phase 3에서 Dense search 재설계 예정. IsAvailable=true인 IDenseSearch 구현이 주입되면 Hybrid 모드 자동 활성화.
 /// </summary>
 public sealed class HybridSearchService : IHybridSearch
 {
