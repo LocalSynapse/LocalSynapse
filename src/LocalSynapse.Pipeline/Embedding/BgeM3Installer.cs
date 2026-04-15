@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Pipeline.Interfaces;
 
@@ -29,12 +30,16 @@ public sealed class BgeM3Installer : IModelInstaller
     // truncated 다운로드(네트워크 중단은 보통 0~80%에서 발생)는 거르면서 false positive를 피한다.
     // HF 원본/표시값으로 되돌리지 말 것. 값 변경 시 HF API로 실제 바이트를 재조회한 후 ~90%로 조정할 것.
     // HF API: https://huggingface.co/api/models/BAAI/bge-m3/tree/main/onnx
+    //
+    // Sha256 values are HuggingFace LFS oids (snapshot as of 2026-04-15, M0-H H5).
+    // HF가 모델 파일을 재빌드하면 oid가 바뀌어 기존 사용자가 재다운로드 실패 → 앱 업데이트 시 hash 재조회 필수.
+    // 재조회: curl -s https://huggingface.co/api/models/BAAI/bge-m3/tree/main/onnx | jq '.[] | {path, oid: .lfs.oid}'
     private static readonly (string RelativePath, string Sha256, long Size)[] RequiredFiles =
     {
-        ("model.onnx",              "",           650_000), // HF actual 724,923
-        ("model.onnx_data",         "", 2_040_000_000),     // HF actual 2,266,820,608
-        ("tokenizer.json",          "",    15_000_000),     // HF actual 17,082,821
-        ("sentencepiece.bpe.model", "",     4_500_000),     // HF actual 5,069,051
+        ("model.onnx",              "f84251230831afb359ab26d9fd37d5936d4d9bb5d1d5410e66442f630f24435b",           650_000), // HF actual 724,923
+        ("model.onnx_data",         "1eebfb28493f67bba03ce0ef64bfdc7fc5a3bd9d7493f818bb1d78cd798416b4", 2_040_000_000),     // HF actual 2,266,820,608
+        ("tokenizer.json",          "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790",    15_000_000),     // HF actual 17,082,821
+        ("sentencepiece.bpe.model", "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",     4_500_000),     // HF actual 5,069,051
     };
 
     /// <summary>BgeM3Installer 생성자.</summary>
@@ -71,6 +76,9 @@ public sealed class BgeM3Installer : IModelInstaller
     public async Task DownloadModelAsync(string modelId, IProgress<DownloadProgress>? progress = null,
         CancellationToken ct = default)
     {
+        var dlSw = Stopwatch.StartNew();
+        SpeedDiagLog.Log("MODEL_DL_START", "model", modelId);
+
         var modelDir = GetModelPath(modelId);
         var onnxDir = Path.Combine(modelDir, "onnx");
         Directory.CreateDirectory(onnxDir);
@@ -87,9 +95,11 @@ public sealed class BgeM3Installer : IModelInstaller
             {
                 downloadedBytes += expectedSize;
                 progress?.Report(new DownloadProgress { BytesDone = downloadedBytes, BytesTotal = totalBytes });
+                SpeedDiagLog.Log("MODEL_DL_FILE", "file", relativePath, "status", "cached");
                 continue;
             }
 
+            var fileSw = Stopwatch.StartNew();
             var url = $"{BaseUrl}/{relativePath}";
             var partPath = targetPath + ".part";
 
@@ -155,9 +165,18 @@ public sealed class BgeM3Installer : IModelInstaller
             // Rename .part to final (file handles already released above).
             File.Move(partPath, targetPath, overwrite: true);
 
+            SpeedDiagLog.Log("MODEL_DL_FILE",
+                "file", relativePath,
+                "bytes", actualSize,
+                "time_ms", fileSw.ElapsedMilliseconds,
+                "mb_per_s", fileSw.ElapsedMilliseconds > 0 ? (actualSize / 1024.0 / 1024.0) * 1000 / fileSw.ElapsedMilliseconds : 0);
             Debug.WriteLine($"[BgeM3Installer] Downloaded: {relativePath} ({actualSize} bytes)");
         }
 
+        SpeedDiagLog.Log("MODEL_DL_COMPLETE",
+            "model", modelId,
+            "total_ms", dlSw.ElapsedMilliseconds,
+            "total_mb", downloadedBytes / 1024.0 / 1024.0);
         Debug.WriteLine($"[BgeM3Installer] Model {modelId} installation complete");
     }
 }

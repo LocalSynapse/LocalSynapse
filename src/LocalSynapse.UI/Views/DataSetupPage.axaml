@@ -182,8 +182,12 @@
                                     IsVisible="{Binding IsExtractPending}">
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
                             </Border>
-                            <TextBlock Text="Extract" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
-                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Extract" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                           HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="text chunking" FontSize="{StaticResource FontSizeXxs}"
+                                           HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" />
+                            </StackPanel>
                             <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
                                        FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
                                        HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
@@ -239,8 +243,12 @@
                                     IsVisible="{Binding IsEmbedPending}">
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
                             </Border>
-                            <TextBlock Text="Embed" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
-                                       HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Embed" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                           HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="semantic vectors" FontSize="{StaticResource FontSizeXxs}"
+                                           HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" />
+                            </StackPanel>
                             <TextBlock Text="{Binding Stamps.EmbeddingPercent, StringFormat='{}{0:F1}%'}"
                                        FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
                                        HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
@@ -388,16 +396,24 @@
                                 <TextBlock Text="BGE-M3 embedding model"
                                            FontSize="{StaticResource FontSizeS}"
                                            FontWeight="Medium" />
-                                <TextBlock Text="~580 MB download · runs 100% locally"
+                                <TextBlock Text="~2.3 GB download · runs 100% locally"
                                            FontSize="{StaticResource FontSizeXxs}"
                                            Foreground="{StaticResource TextMutedBrush}"
                                            Margin="0,2,0,0" />
                             </StackPanel>
                             <!-- Button -->
+                            <!-- H2 (M0-H): Install / ✓Installed 토글. 같은 Grid.Column, IsVisible로 전환. -->
                             <Button Grid.Column="2"
                                     Classes="BtnPrimary"
                                     Content="Install"
                                     Command="{Binding DownloadModelCommand}"
+                                    IsVisible="{Binding !IsModelInstalled}"
+                                    VerticalAlignment="Center" />
+                            <Button Grid.Column="2"
+                                    Classes="BtnPrimary"
+                                    Content="✓ Installed"
+                                    IsEnabled="False"
+                                    IsVisible="{Binding IsModelInstalled}"
                                     VerticalAlignment="Center" />
                         </Grid>
                     </Border>

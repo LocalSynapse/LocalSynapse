@@ -47,6 +47,8 @@ public class SqliteConnectionFactory
         cmd.ExecuteNonQuery();
         cmd.CommandText = "PRAGMA synchronous=NORMAL;";
         cmd.ExecuteNonQuery();
+        cmd.CommandText = "PRAGMA cache_size=-65536;"; // 64MB per-connection page cache (H1, M0-H)
+        cmd.ExecuteNonQuery();
         return conn;
     }
 }

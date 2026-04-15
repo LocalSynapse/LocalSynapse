@@ -13,6 +13,10 @@ namespace LocalSynapse.Search.Services;
 /// </summary>
 public sealed class Bm25SearchService : IBm25Search
 {
+    // H1 (M0-H): materialize 폭주 방지 상한.
+    // 진단 v1.1 기반 — TopK*ChunksPerFile*3와 Math.Min으로 clamp.
+    private const int MaxMaterializeRows = 600;
+
     private readonly SqliteConnectionFactory _connectionFactory;
     private readonly SearchClickService _clickService;
     private readonly ConcurrentDictionary<string, (DateTime ts, IReadOnlyList<Bm25Hit> hits)> _cache = new();
@@ -32,13 +36,20 @@ public sealed class Bm25SearchService : IBm25Search
         if (_cache.TryGetValue(cacheKey, out var cached) && DateTime.UtcNow - cached.ts < CacheTtl)
             return cached.hits;
 
+        var ftsSw = Stopwatch.StartNew();
         var ftsQuery = NaturalQueryParser.ToFts5Query(query);
+        var ftsBuildMs = ftsSw.ElapsedMilliseconds;
         if (string.IsNullOrEmpty(ftsQuery)) return [];
 
         var sw = Stopwatch.StartNew();
         var results = ExecuteSearch(ftsQuery, query, options);
         sw.Stop();
 
+        LocalSynapse.Core.Diagnostics.SpeedDiagLog.Log("BM25_SEARCH",
+            "query", query,
+            "fts_build_ms", ftsBuildMs,
+            "execute_ms", sw.ElapsedMilliseconds,
+            "results", results.Count);
         Debug.WriteLine($"[BM25] query=\"{query}\" fts=\"{ftsQuery}\" results={results.Count} time={sw.ElapsedMilliseconds}ms");
 
         if (_cache.Count > 10) _cache.Clear();
@@ -99,11 +110,7 @@ public sealed class Bm25SearchService : IBm25Search
 
     private IReadOnlyList<Bm25Hit> ExecuteSearch(string ftsQuery, string originalQuery, SearchOptions options)
     {
-        // Phase 1 R5: reader를 먼저 완전 materialize (N+1 제거).
-        // 이전 구현은 reader 루프 내부에서 매 row마다 _clickService.GetBoost()를
-        // 호출했고, GetBoost는 각 호출마다 새 SqliteConnection을 열었다.
-        // LIMIT = TopK * ChunksPerFile * 3 → 최대 ~240개 connection per search.
-        // 새 구현: (1) reader materialize, (2) GetBoostBatch 1회, (3) 점수 계산.
+        var matSw = Stopwatch.StartNew();
         var materialized = new List<(
             string fileId, string filename, string path, string extension,
             string folderPath, string? content, double bm25Score, string modifiedAt, bool isDirectory
@@ -125,7 +132,8 @@ public sealed class Bm25SearchService : IBm25Search
                 ORDER BY rank
                 LIMIT $limit";
             cmd.Parameters.AddWithValue("$fts", ftsQuery);
-            cmd.Parameters.AddWithValue("$limit", options.TopK * options.ChunksPerFile * 3);
+            var limit = Math.Min(options.TopK * options.ChunksPerFile * 3, MaxMaterializeRows);
+            cmd.Parameters.AddWithValue("$limit", limit);
 
             using var r = cmd.ExecuteReader();
             while (r.Read())
@@ -143,10 +151,15 @@ public sealed class Bm25SearchService : IBm25Search
                 ));
             }
         } // reader + cmd + connection all disposed here
+        var matMs = matSw.ElapsedMilliseconds;
 
         // Phase 2: click boost batch lookup (단일 쿼리, N+1 제거의 핵심)
+        var boostSw = Stopwatch.StartNew();
         var paths = materialized.Select(m => m.path).ToList();
         var clickBoosts = _clickService.GetBoostBatch(originalQuery, paths);
+        var boostMs = boostSw.ElapsedMilliseconds;
+
+        var scoreSw = Stopwatch.StartNew();
 
         // Phase 3: 점수 계산
         // [FIX] stop word를 제거한 토큰으로 filenameBoost 계산
@@ -189,6 +202,15 @@ public sealed class Bm25SearchService : IBm25Search
             .OrderByDescending(h => h.Score)
             .Take(options.TopK)
             .ToList();
+
+        var scoreMs = scoreSw.ElapsedMilliseconds;
+
+        LocalSynapse.Core.Diagnostics.SpeedDiagLog.Log("BM25_EXEC",
+            "materialize_ms", matMs,
+            "materialize_rows", materialized.Count,
+            "click_boost_ms", boostMs,
+            "score_ms", scoreMs,
+            "final_count", grouped.Count);
 
         // Apply extension filter
         if (options.ExtensionFilter is { Count: > 0 })
