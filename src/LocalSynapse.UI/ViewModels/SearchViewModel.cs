@@ -207,9 +207,9 @@ public partial class SearchViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(Query)) return;
         var trimmed = Query.Trim();
-        // H3 (M0-H): 한국어 최소 2음절, 영어/기타 최소 1글자. 조용히 skip (UI 변경 없음).
-        var minLength = IsKoreanQuery(trimmed) ? 2 : 1;
-        if (trimmed.Length < minLength) return;
+        // H3 (M0-H, post-exec 조정): minLength 분기 제거. 한글 IME preedit 구조상
+        // 사용자가 "주" 혼자 타이핑하고 멈추면 Text=""라 IsNullOrWhiteSpace 가드에서 skip되고,
+        // "주주" 타이핑 시 Text="주"(1글자)로 자동 검색 발동. Ryan 결정 사항.
         if (trimmed == _activeSearchQuery && HasSearched) return;
 
         // H1 (M0-H): 재진입 방지 — debounce + Enter 동시 진입 시 두 번째 drop.
@@ -628,14 +628,6 @@ public partial class SearchViewModel : ObservableObject
     }
 
     // ─────────────────────────── Helpers ───────────────────────────
-
-    /// <summary>쿼리에 Hangul Syllables 블록(U+AC00-U+D7A3) 문자가 포함되면 한국어로 판정한다. (H3, M0-H)</summary>
-    private static bool IsKoreanQuery(string query)
-    {
-        foreach (var c in query)
-            if (c >= '\uAC00' && c <= '\uD7A3') return true;
-        return false;
-    }
 
     private static string FormatDate(string? isoDate)
     {
