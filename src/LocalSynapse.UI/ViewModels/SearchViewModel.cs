@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
@@ -64,7 +65,10 @@ public partial class SearchViewModel : ObservableObject
     // Search-as-you-type debounce
     private System.Threading.Timer? _debounceTimer;
     private string _activeSearchQuery = "";
-    private const int DebounceMs = 150;
+    private int _searchInFlight; // 0 or 1 (Interlocked). H1 (M0-H): 재진입 방지
+    // H3 (M0-H): 한국어 IME 음절 commit 평균 ~200ms 흡수.
+    // H4 측정 후 영어 체감 저하 시 조정 가능 (spec §7 #6 경로).
+    private const int DebounceMs = 250;
 
     // ── Bindable properties ──
     [ObservableProperty] private string _query = "";
@@ -202,27 +206,50 @@ public partial class SearchViewModel : ObservableObject
     private async Task ExecuteSearchAsync()
     {
         if (string.IsNullOrWhiteSpace(Query)) return;
-        if (Query.Trim() == _activeSearchQuery && HasSearched) return;
+        var trimmed = Query.Trim();
+        // H3 (M0-H): 한국어 최소 2음절, 영어/기타 최소 1글자. 조용히 skip (UI 변경 없음).
+        var minLength = IsKoreanQuery(trimmed) ? 2 : 1;
+        if (trimmed.Length < minLength) return;
+        if (trimmed == _activeSearchQuery && HasSearched) return;
+
+        // H1 (M0-H): 재진입 방지 — debounce + Enter 동시 진입 시 두 번째 drop.
+        if (Interlocked.CompareExchange(ref _searchInFlight, 1, 0) != 0) return;
 
         // 재검색 시 bounce 감지 (직전 클릭 후 10초 이내 재검색 = bounce)
-        _clickService.OnNewSearch(Query.Trim());
+        _clickService.OnNewSearch(trimmed);
 
         IsSearching = true;
         HasSearched = true;
-        _activeSearchQuery = Query.Trim();
+        _activeSearchQuery = trimmed;
 
         try
         {
             var sw = Stopwatch.StartNew();
 
+            var hybridSw = Stopwatch.StartNew();
             var response = await _hybridSearch.SearchAsync(_activeSearchQuery, new SearchOptions { TopK = 200 });
+            var hybridMs = hybridSw.ElapsedMilliseconds;
+
+            var quickSw = Stopwatch.StartNew();
             var quickHits = _bm25Search.QuickSearch(_activeSearchQuery, 200);
+            var quickMs = quickSw.ElapsedMilliseconds;
+
+            var catSw = Stopwatch.StartNew();
+            CategorizeResults(response, quickHits);
+            ApplyFilterAndSort();
+            var catMs = catSw.ElapsedMilliseconds;
 
             sw.Stop();
             SearchTime = $"{sw.Elapsed.TotalSeconds:F1}s";
 
-            CategorizeResults(response, quickHits);
-            ApplyFilterAndSort();
+            LocalSynapse.Core.Diagnostics.SpeedDiagLog.Log("SEARCH_UI",
+                "query", _activeSearchQuery,
+                "hybrid_ms", hybridMs,
+                "quick_ms", quickMs,
+                "categorize_ms", catMs,
+                "total_ms", sw.ElapsedMilliseconds,
+                "hybrid_count", response.Items.Count,
+                "quick_count", quickHits.Count);
 
             Stamps = _stampRepo.GetCurrent();
         }
@@ -233,6 +260,8 @@ public partial class SearchViewModel : ObservableObject
         finally
         {
             IsSearching = false;
+            // 순서 중요: IsSearching false → flag 해제. 역순이면 다음 검색이 먼저 IsSearching=true로 set한 뒤 본 finally가 덮어쓰는 race.
+            Interlocked.Exchange(ref _searchInFlight, 0);
         }
     }
 
@@ -599,6 +628,14 @@ public partial class SearchViewModel : ObservableObject
     }
 
     // ─────────────────────────── Helpers ───────────────────────────
+
+    /// <summary>쿼리에 Hangul Syllables 블록(U+AC00-U+D7A3) 문자가 포함되면 한국어로 판정한다. (H3, M0-H)</summary>
+    private static bool IsKoreanQuery(string query)
+    {
+        foreach (var c in query)
+            if (c >= '\uAC00' && c <= '\uD7A3') return true;
+        return false;
+    }
 
     private static string FormatDate(string? isoDate)
     {
