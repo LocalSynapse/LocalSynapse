@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Pipeline.Interfaces;
 using Microsoft.ML.OnnxRuntime;
@@ -39,9 +40,21 @@ public sealed class EmbeddingService : IEmbeddingService
         if (!Directory.Exists(modelDir))
             throw new DirectoryNotFoundException($"Model directory not found: {modelDir}");
 
+        var sw = Stopwatch.StartNew();
+        var tokSw = Stopwatch.StartNew();
         await _tokenizer.LoadAsync(modelDir, ct);
-        await _modelLoader.LoadAsync(modelId, modelDir, ct);
+        var tokMs = tokSw.ElapsedMilliseconds;
 
+        var modSw = Stopwatch.StartNew();
+        await _modelLoader.LoadAsync(modelId, modelDir, ct);
+        var modMs = modSw.ElapsedMilliseconds;
+
+        SpeedDiagLog.Log("EMB_INIT",
+            "model", modelId,
+            "tokenizer_ms", tokMs,
+            "model_load_ms", modMs,
+            "total_ms", sw.ElapsedMilliseconds,
+            "dim", VectorDimension);
         Debug.WriteLine($"[EmbeddingService] Initialized: {modelId}, dim={VectorDimension}");
     }
 

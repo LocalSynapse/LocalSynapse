@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Pipeline.Interfaces;
@@ -82,19 +83,31 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         {
             LastError = null;
             Debug.WriteLine("[Orch] === Cycle started ===");
+            var cycleSw = Stopwatch.StartNew();
+            SpeedDiagLog.Log("CYCLE_START");
 
             // Phase 1: Scan (fast — just discover files)
+            var scanSw = Stopwatch.StartNew();
             await RunScanPhaseAsync(ct);
+            SpeedDiagLog.Log("PHASE_SCAN", "time_ms", scanSw.ElapsedMilliseconds);
             if (_isPaused || ct.IsCancellationRequested) return;
 
             // Phase 2: Index (slow — parse + chunk, runs in background)
+            var indexSw = Stopwatch.StartNew();
             await RunIndexingPhaseAsync(ct);
+            SpeedDiagLog.Log("PHASE_INDEX", "time_ms", indexSw.ElapsedMilliseconds);
             if (_isPaused || ct.IsCancellationRequested) return;
 
             // Phase 3: Embed (slow — only if model ready)
             if (_embeddingService.IsReady)
             {
+                var embSw = Stopwatch.StartNew();
                 await RunEmbeddingPhaseAsync(ct);
+                SpeedDiagLog.Log("PHASE_EMBED", "time_ms", embSw.ElapsedMilliseconds);
+            }
+            else
+            {
+                SpeedDiagLog.Log("PHASE_EMBED", "skipped", "model_not_ready");
             }
 
             CurrentPhase = PipelinePhase.Complete;
@@ -102,6 +115,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             ReportProgress(PipelinePhase.Complete, 0, statusText: "Cycle complete");
             CycleCompleted?.Invoke(null);
 
+            SpeedDiagLog.Log("CYCLE_COMPLETE", "total_ms", cycleSw.ElapsedMilliseconds);
             Debug.WriteLine("[Orch] === Cycle complete ===");
         }
         catch (OperationCanceledException)
@@ -219,10 +233,13 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                 statusText: "Scanning...");
         });
 
+        var scanCoreSw = Stopwatch.StartNew();
         await _fileScanner.ScanAllDrivesAsync(scanProgress, ct);
+        SpeedDiagLog.Log("SCAN_CORE", "time_ms", scanCoreSw.ElapsedMilliseconds);
 
         // Stamp scan results
         var (files, folders, contentSearchable) = _fileRepo.CountScanStampTotals();
+        SpeedDiagLog.Log("SCAN_RESULT", "files", files, "folders", folders, "content_searchable", contentSearchable);
         _stampRepo.StampScanComplete(files, folders, contentSearchable);
 
         ReportProgress(PipelinePhase.Scanning, files,
@@ -242,6 +259,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         {
             var indexedFiles = 0;
             var totalChunks = 0;
+            var extractTotalMs = 0L;
+            var chunkTotalMs = 0L;
+            var extractCount = 0;
 
             while (true)
             {
@@ -268,7 +288,10 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                             continue;
                         }
 
+                        var exSw = Stopwatch.StartNew();
                         var result = await _contentExtractor.ExtractAsync(file.Path, file.Extension, ct);
+                        extractTotalMs += exSw.ElapsedMilliseconds;
+                        extractCount++;
 
                         if (!result.Success)
                         {
@@ -276,10 +299,12 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                             continue;
                         }
 
+                        var chSw = Stopwatch.StartNew();
                         var chunks = _textChunker.Chunk(
                             result.Text ?? "",
                             result.SourceType,
                             result.OriginMeta);
+                        chunkTotalMs += chSw.ElapsedMilliseconds;
 
                         if (chunks.Count > 0)
                         {
@@ -332,6 +357,12 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             ReportProgress(PipelinePhase.Indexing, indexedFiles,
                 statusText: $"Indexing complete: {indexedFiles:N0} files, {totalChunks:N0} chunks");
 
+            SpeedDiagLog.Log("INDEX_RESULT",
+                "files", indexedFiles,
+                "chunks", totalChunks,
+                "extract_avg_ms", extractCount > 0 ? extractTotalMs / extractCount : 0,
+                "extract_total_ms", extractTotalMs,
+                "chunk_total_ms", chunkTotalMs);
             Debug.WriteLine($"[Orch] Indexing complete: {indexedFiles} files, {totalChunks} chunks");
         }, ct);
     }
