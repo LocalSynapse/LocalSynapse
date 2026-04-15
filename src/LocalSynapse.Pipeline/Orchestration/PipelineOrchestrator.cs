@@ -261,6 +261,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             var totalChunks = 0;
             var extractTotalMs = 0L;
             var chunkTotalMs = 0L;
+            var upsertTotalMs = 0L;
             var extractCount = 0;
 
             while (true)
@@ -278,6 +279,12 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     ct.ThrowIfCancellationRequested();
                     if (_isPaused) return;
 
+                    var fileSw = Stopwatch.StartNew();
+                    long sizeBytes = -1;
+                    try { sizeBytes = new FileInfo(file.Path).Length; }
+                    catch (Exception sizeEx) { Debug.WriteLine($"[Orch] Size probe failed {file.Path}: {sizeEx.Message}"); }
+                    long extractMs = 0, chunkMs = 0, upsertMs = 0;  // W5: catch 블록에서 실측값 보존
+
                     try
                     {
                         // Skip cloud files — they are in DB for filename search only
@@ -285,17 +292,27 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                             || file.LastExtractErrorCode == "CLOUD_FILE")
                         {
                             Debug.WriteLine($"[Pipeline] Skipping cloud file: {file.Path}");
+                            SpeedDiagLog.Log("EXTRACT_FILE",
+                                "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                                "extract_ms", 0, "chunks", 0, "chunk_ms", 0, "upsert_ms", 0,
+                                "total_ms", fileSw.ElapsedMilliseconds, "result", "skip_cloud");
                             continue;
                         }
 
                         var exSw = Stopwatch.StartNew();
                         var result = await _contentExtractor.ExtractAsync(file.Path, file.Extension, ct);
-                        extractTotalMs += exSw.ElapsedMilliseconds;
+                        extractMs = exSw.ElapsedMilliseconds;
+                        extractTotalMs += extractMs;
                         extractCount++;
 
                         if (!result.Success)
                         {
                             _fileRepo.UpdateExtractStatus(file.Id, ExtractStatuses.Error, result.ErrorCode);
+                            SpeedDiagLog.Log("EXTRACT_FILE",
+                                "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                                "extract_ms", extractMs, "chunks", 0, "chunk_ms", 0, "upsert_ms", 0,
+                                "total_ms", fileSw.ElapsedMilliseconds,
+                                "result", $"error_{result.ErrorCode ?? "PARSE_ERROR"}");
                             continue;
                         }
 
@@ -304,7 +321,8 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                             result.Text ?? "",
                             result.SourceType,
                             result.OriginMeta);
-                        chunkTotalMs += chSw.ElapsedMilliseconds;
+                        chunkMs = chSw.ElapsedMilliseconds;
+                        chunkTotalMs += chunkMs;
 
                         if (chunks.Count > 0)
                         {
@@ -323,12 +341,22 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                                 EndOffset = c.EndOffset,
                             });
 
+                            var upSw = Stopwatch.StartNew();
                             _chunkRepo.UpsertChunks(fileChunks);
+                            upsertMs = upSw.ElapsedMilliseconds;
+                            upsertTotalMs += upsertMs;
                             totalChunks += chunks.Count;
                         }
 
                         _fileRepo.UpdateExtractStatus(file.Id, ExtractStatuses.Success);
                         indexedFiles++;
+
+                        SpeedDiagLog.Log("EXTRACT_FILE",
+                            "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                            "extract_ms", extractMs, "chunks", chunks.Count,
+                            "chunk_ms", chunkMs, "upsert_ms", upsertMs,
+                            "total_ms", fileSw.ElapsedMilliseconds,
+                            "result", chunks.Count > 0 ? "success" : "success_empty");
 
                         if (indexedFiles % 50 == 0)
                         {
@@ -342,6 +370,11 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     {
                         Debug.WriteLine($"[Orch] Index error: {file.Path} - {ex.Message}");
                         _fileRepo.UpdateExtractStatus(file.Id, ExtractStatuses.Error, "PARSE_ERROR");
+                        SpeedDiagLog.Log("EXTRACT_FILE",
+                            "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                            "extract_ms", extractMs, "chunks", 0,
+                            "chunk_ms", chunkMs, "upsert_ms", upsertMs,
+                            "total_ms", fileSw.ElapsedMilliseconds, "result", "error_PARSE_ERROR");
                     }
                 }
 
@@ -362,7 +395,8 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                 "chunks", totalChunks,
                 "extract_avg_ms", extractCount > 0 ? extractTotalMs / extractCount : 0,
                 "extract_total_ms", extractTotalMs,
-                "chunk_total_ms", chunkTotalMs);
+                "chunk_total_ms", chunkTotalMs,
+                "upsert_total_ms", upsertTotalMs);
             Debug.WriteLine($"[Orch] Indexing complete: {indexedFiles} files, {totalChunks} chunks");
         }, ct);
     }

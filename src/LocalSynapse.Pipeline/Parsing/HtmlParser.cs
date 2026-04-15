@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Net;
 using System.Text.RegularExpressions;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 
 namespace LocalSynapse.Pipeline.Parsing;
@@ -18,8 +20,14 @@ internal static partial class HtmlParser
         if (fileInfo.Length > MaxSizeBytes)
             return ExtractionResult.Fail("TOO_LARGE", $"File size {fileInfo.Length} exceeds 10MB limit");
 
+        var readSw = Stopwatch.StartNew();
         var html = await File.ReadAllTextAsync(filePath, ct);
+        readSw.Stop();
+        SpeedDiagLog.Log("PARSE_DETAIL",
+            "ext", ".html", "stage", "read",
+            "time_ms", readSw.ElapsedMilliseconds, "size_bytes", fileInfo.Length);
 
+        var parseSw = Stopwatch.StartNew();
         // Remove <script> and <style> blocks
         html = ScriptRegex().Replace(html, " ");
         html = StyleRegex().Replace(html, " ");
@@ -32,6 +40,10 @@ internal static partial class HtmlParser
 
         // Collapse whitespace
         html = WhitespaceRegex().Replace(html, " ").Trim();
+        parseSw.Stop();
+        SpeedDiagLog.Log("PARSE_DETAIL",
+            "ext", ".html", "stage", "parse",
+            "time_ms", parseSw.ElapsedMilliseconds);
 
         return ExtractionResult.Ok(html);
     }

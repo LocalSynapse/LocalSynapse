@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 
 namespace LocalSynapse.Pipeline.Parsing;
@@ -25,6 +26,11 @@ internal static class HwpxParser
     /// <summary>HWPX 파일에서 텍스트를 추출한다.</summary>
     public static async Task<ExtractionResult> ParseAsync(string filePath, CancellationToken ct = default)
     {
+        long sizeBytes = -1;
+        try { sizeBytes = new FileInfo(filePath).Length; }
+        catch (Exception sEx) { Debug.WriteLine($"[HwpxParser] Size probe: {sEx.Message}"); }
+
+        var zipSw = Stopwatch.StartNew();
         using var archive = ZipFile.OpenRead(filePath);
         var sb = new StringBuilder();
 
@@ -34,7 +40,13 @@ internal static class HwpxParser
                      && e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
             .OrderBy(e => e.FullName)
             .ToList();
+        zipSw.Stop();
+        SpeedDiagLog.Log("PARSE_DETAIL",
+            "ext", ".hwpx", "stage", "zip_open",
+            "time_ms", zipSw.ElapsedMilliseconds,
+            "section_count", sectionEntries.Count, "size_bytes", sizeBytes);
 
+        var xmlSw = Stopwatch.StartNew();
         foreach (var entry in sectionEntries)
         {
             ct.ThrowIfCancellationRequested();
@@ -76,6 +88,10 @@ internal static class HwpxParser
                     sb.AppendLine(trimmed);
             }
         }
+        xmlSw.Stop();
+        SpeedDiagLog.Log("PARSE_DETAIL",
+            "ext", ".hwpx", "stage", "xml_parse",
+            "time_ms", xmlSw.ElapsedMilliseconds);
 
         return ExtractionResult.Ok(sb.ToString());
     }

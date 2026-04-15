@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 using UglyToad.PdfPig;
 
@@ -16,11 +17,22 @@ internal static class PdfParser
         return Task.Run(() =>
         {
             ct.ThrowIfCancellationRequested();
+            long sizeBytes = -1;
+            try { sizeBytes = new FileInfo(filePath).Length; }
+            catch (Exception sEx) { Debug.WriteLine($"[PdfParser] Size probe: {sEx.Message}"); }
             try
             {
+                var openSw = Stopwatch.StartNew();
                 using var document = PdfDocument.Open(filePath);
-                var sb = new StringBuilder();
+                openSw.Stop();
+                var pageCount = document.NumberOfPages;
+                SpeedDiagLog.Log("PARSE_DETAIL",
+                    "ext", ".pdf", "stage", "open",
+                    "time_ms", openSw.ElapsedMilliseconds,
+                    "page_count", pageCount, "size_bytes", sizeBytes);
 
+                var pagesSw = Stopwatch.StartNew();
+                var sb = new StringBuilder();
                 foreach (var page in document.GetPages())
                 {
                     ct.ThrowIfCancellationRequested();
@@ -30,6 +42,10 @@ internal static class PdfParser
                         sb.AppendLine(pageText);
                     }
                 }
+                pagesSw.Stop();
+                SpeedDiagLog.Log("PARSE_DETAIL",
+                    "ext", ".pdf", "stage", "pages",
+                    "time_ms", pagesSw.ElapsedMilliseconds);
 
                 return ExtractionResult.Ok(sb.ToString());
             }

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 
 namespace LocalSynapse.Pipeline.Parsing;
@@ -16,7 +18,13 @@ internal static class PlainTextParser
         if (fileInfo.Length > MaxSizeBytes)
             return ExtractionResult.Fail("TOO_LARGE", $"File size {fileInfo.Length} exceeds 10MB limit");
 
+        var readSw = Stopwatch.StartNew();
         var text = await File.ReadAllTextAsync(filePath, ct);
+        readSw.Stop();
+        SpeedDiagLog.Log("PARSE_DETAIL",
+            "ext", Path.GetExtension(filePath).ToLowerInvariant(),
+            "stage", "read",
+            "time_ms", readSw.ElapsedMilliseconds, "size_bytes", fileInfo.Length);
         return ExtractionResult.Ok(text);
     }
 }
