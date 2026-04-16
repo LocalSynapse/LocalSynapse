@@ -363,9 +363,61 @@ Core, UI, Email, Mcp: **변경 없음**.
 
 ---
 
+## Post-Execution Review
+
+> **리뷰어**: diff-reviewer subagent
+> **판정**: **CONDITIONAL PASS** (BLOCK 0, WARNING 5)
+> **커밋**: `9b4f4ed`
+
+### 계획 vs 실제 코드 일치 확인
+
+- ✅ O1: XlsxParser 10MB 상한 — `sizeBytes >= 0 &&` 가드 포함, 계획 일치
+- ✅ O2: filenameBoost `2.5` — SQL column weight `5.0` 유지 확인
+- ✅ O3: IsLikelyGarbled — `char.IsLetter` 비율 < 0.20, 50자 최소
+- ✅ O4a: DocxParser Descendants\<Run\> — Paragraph + TableCell 모두 적용
+- ✅ O4b: HwpParser Replace 체이닝 — 공백 치환
+- ✅ O5: SkipEmbeddingPhase const + 로그 사유 구분
+
+### Post-execution WARNING
+
+| # | 항목 | 심각도 | 대응 |
+|---|------|--------|------|
+| PW1 | O3 GARBLED_TEXT 메시지에서 `pageCount` 사용 — 빈 페이지+garbled 혼합 시 "All N pages" 오보 가능 | 낮음 | 후속: 메시지를 `garbledPages` 기반으로 변경 검토 (M0-U) |
+| PW2 | `CountSkippedByCategory()` SQL이 `FAILED_TOO_LARGE` status를 찾지만 실제 저장은 `ERROR` + errorCode `TOO_LARGE` — 기존 버그, O1에서 전파 | 낮음 | 기존 갭. M0-U에서 status 집계 로직 수정 시 함께 처리 |
+| PW3 | O5 embed skip 시 stamp 미갱신 → M2 부활 시 EnumerateChunksMissing이 delta 처리 가능한지 확인 필요 | 설계 | M2 recon에서 backfill 경로 검증 포함 |
+| PW4 | O4a Descendants\<TableCell\> 중첩 테이블에서 텍스트 중복 가능 — 기존 InnerText도 동일 문제이므로 regression 아님 | 정보 | 기존 갭 |
+| PW5 | Gate 4 (TDD) 미적용 — IsLikelyGarbled, 10MB 상한에 대한 단위 테스트 없음 | 중간 | 후속 Phase에서 Pipeline.Tests에 추가 권장 |
+
+### Gate 실행 결과
+
+```
+Gate 1: Build ✅
+  Core: 0 errors, Pipeline: 0 errors, Search: 0 errors
+  (UI: 프로세스 잠금으로 빌드 불가 — 코드 변경 없음)
+
+Gate 2: Tests ✅
+  Core.Tests: 37 passed, 2 skipped
+  Pipeline.Tests: 35 passed
+  Search.Tests: 기존 컴파일 오류 (pre-existing, O2와 무관 — git stash 검증 완료)
+  Total: 72 passed, 0 failures
+
+Gate 3: Impact Scope ✅
+  변경 파일 6개:
+  - src/LocalSynapse.Pipeline/Parsing/XlsxParser.cs (Pipeline)
+  - src/LocalSynapse.Pipeline/Orchestration/PipelineOrchestrator.cs (Pipeline)
+  - src/LocalSynapse.Pipeline/Parsing/DocxParser.cs (Pipeline)
+  - src/LocalSynapse.Pipeline/Parsing/HwpParser.cs (Pipeline)
+  - src/LocalSynapse.Pipeline/Parsing/PdfParser.cs (Pipeline)
+  - src/LocalSynapse.Search/Services/Bm25SearchService.cs (Search)
+  Cross-Agent 변경 없음.
+```
+
+---
+
 ## 변경 이력
 
 | 날짜 | 변경 |
 |------|------|
 | 2026-04-16 | 초안 작성. Spec v2 기반 6개 파일 diff 상세. |
 | 2026-04-16 | **리뷰 반영**: W1 sizeBytes 가드 추가, S1 O6 재측정 절차 추가. CONDITIONAL PASS → 진행 가능. |
+| 2026-04-16 | **실행 완료** (`9b4f4ed`). Post-execution review CONDITIONAL PASS. PW1~PW5 기록. |
