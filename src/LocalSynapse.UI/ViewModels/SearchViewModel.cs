@@ -66,6 +66,7 @@ public partial class SearchViewModel : ObservableObject
     private System.Threading.Timer? _debounceTimer;
     private string _activeSearchQuery = "";
     private int _searchInFlight; // 0 or 1 (Interlocked). H1 (M0-H): 재진입 방지
+    private int _searchVersion;  // Enter가 debounce 결과를 무효화하는 version counter
     // H3 (M0-H): 한국어 IME 음절 commit 평균 ~200ms 흡수.
     // H4 측정 후 영어 체감 저하 시 조정 가능 (spec §7 #6 경로).
     private const int DebounceMs = 250;
@@ -189,9 +190,14 @@ public partial class SearchViewModel : ObservableObject
             return;
         }
 
+        var version = _searchVersion;
         _debounceTimer = new System.Threading.Timer(_ =>
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = ExecuteSearchAsync());
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (_searchVersion == version)
+                    _ = ExecuteSearchAsync();
+            });
         }, null, DebounceMs, Timeout.Infinite);
     }
 
@@ -200,6 +206,7 @@ public partial class SearchViewModel : ObservableObject
     private async Task SearchAsync()
     {
         _debounceTimer?.Dispose();
+        Interlocked.Increment(ref _searchVersion); // pending debounce 무효화
         await ExecuteSearchAsync();
     }
 
