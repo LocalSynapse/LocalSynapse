@@ -69,7 +69,8 @@ internal static class HwpParser
             var stream = cf.RootStorage.GetStream("PrvText");
             var data = stream.GetData();
             if (data.Length > 0)
-                return Encoding.Unicode.GetString(data).Trim('\0').Trim();
+                return Encoding.Unicode.GetString(data).Trim('\0').Trim()
+                    .Replace("<", " ").Replace(">", " ");
         }
         catch (CFItemNotFound) { Debug.WriteLine("[HwpParser] PrvText stream not found"); }
         return null;

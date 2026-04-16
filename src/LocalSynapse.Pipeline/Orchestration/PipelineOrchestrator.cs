@@ -33,6 +33,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     private const int BatchSize = 500;
     private static readonly TimeSpan AutoRunInterval = TimeSpan.FromMinutes(10);
 
+    /// <summary>Dense search 비활성 기간 동안 embedding 생성을 건너뛴다. M2에서 제거.</summary>
+    private const bool SkipEmbeddingPhase = true;
+
     public PipelinePhase CurrentPhase { get; private set; } = PipelinePhase.Idle;
     public bool IsRunning => CurrentPhase != PipelinePhase.Idle
                           && CurrentPhase != PipelinePhase.Complete
@@ -99,7 +102,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             if (_isPaused || ct.IsCancellationRequested) return;
 
             // Phase 3: Embed (slow — only if model ready)
-            if (_embeddingService.IsReady)
+            if (!SkipEmbeddingPhase && _embeddingService.IsReady)
             {
                 var embSw = Stopwatch.StartNew();
                 await RunEmbeddingPhaseAsync(ct);
@@ -107,7 +110,8 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             }
             else
             {
-                SpeedDiagLog.Log("PHASE_EMBED", "skipped", "model_not_ready");
+                SpeedDiagLog.Log("PHASE_EMBED", "skipped",
+                    SkipEmbeddingPhase ? "dense_disabled" : "model_not_ready");
             }
 
             CurrentPhase = PipelinePhase.Complete;

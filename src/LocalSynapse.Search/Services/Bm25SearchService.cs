@@ -175,7 +175,7 @@ public sealed class Bm25SearchService : IBm25Search
             var extBoost = ExtensionBoost.GetBoost(m.extension);
             var filenameBoost = meaningfulTokens.Length > 0 &&
                 meaningfulTokens.Any(t => IsWordBoundaryMatch(m.filename, t))
-                    ? 5.0 : 1.0;
+                    ? 2.5 : 1.0;
 
             var clickBoost = clickBoosts.TryGetValue(m.path, out var cb) ? cb : 0.0;
             var finalScore = m.bm25Score * recencyBoost * extBoost * filenameBoost * (1.0 + clickBoost);

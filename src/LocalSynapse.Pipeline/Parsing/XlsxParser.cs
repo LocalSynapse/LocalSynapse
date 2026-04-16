@@ -19,6 +19,9 @@ internal static class XlsxParser
         try { sizeBytes = new FileInfo(filePath).Length; }
         catch (Exception sEx) { Debug.WriteLine($"[XlsxParser] Size probe: {sEx.Message}"); }
 
+        if (sizeBytes >= 0 && sizeBytes > 10 * 1024 * 1024)
+            return ExtractionResult.Fail("TOO_LARGE", $"xlsx {sizeBytes} bytes exceeds 10MB limit");
+
         var openSw = Stopwatch.StartNew();
         using var doc = SpreadsheetDocument.Open(filePath, false);
         var workbookPart = doc.WorkbookPart;

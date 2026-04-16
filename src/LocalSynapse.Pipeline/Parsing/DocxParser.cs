@@ -38,7 +38,7 @@ internal static class DocxParser
             {
                 if (element is Paragraph para)
                 {
-                    var text = para.InnerText;
+                    var text = string.Concat(para.Descendants<Run>().Select(r => r.InnerText));
                     if (!string.IsNullOrWhiteSpace(text))
                         sb.AppendLine(text);
                 }
@@ -47,7 +47,7 @@ internal static class DocxParser
                     foreach (var row in table.Descendants<TableRow>())
                     {
                         var cells = row.Descendants<TableCell>()
-                            .Select(c => c.InnerText.Trim());
+                            .Select(c => string.Concat(c.Descendants<Run>().Select(r => r.InnerText)).Trim());
                         sb.AppendLine(string.Join("\t", cells));
                     }
                 }
