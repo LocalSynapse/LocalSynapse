@@ -17,8 +17,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{BECCC255
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalSynapse.Core.Tests", "tests\LocalSynapse.Core.Tests\LocalSynapse.Core.Tests.csproj", "{E8B6C35B-BEF3-4DBF-BE2D-18202A240B13}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalSynapse.Pipeline.Tests", "tests\LocalSynapse.Pipeline.Tests\LocalSynapse.Pipeline.Tests.csproj", "{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,24 +99,11 @@ Global
 		{E8B6C35B-BEF3-4DBF-BE2D-18202A240B13}.Release|x64.Build.0 = Release|Any CPU
 		{E8B6C35B-BEF3-4DBF-BE2D-18202A240B13}.Release|x86.ActiveCfg = Release|Any CPU
 		{E8B6C35B-BEF3-4DBF-BE2D-18202A240B13}.Release|x86.Build.0 = Release|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Debug|x64.Build.0 = Debug|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Debug|x86.Build.0 = Debug|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Release|x64.ActiveCfg = Release|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Release|x64.Build.0 = Release|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Release|x86.ActiveCfg = Release|Any CPU
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E8B6C35B-BEF3-4DBF-BE2D-18202A240B13} = {BECCC255-D695-4770-9B01-AC9E0FC24F8B}
-		{E91EE9C2-F377-4C61-B09C-9C24F5FE14DA} = {BECCC255-D695-4770-9B01-AC9E0FC24F8B}
 	EndGlobalSection
 EndGlobal
