@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 
 namespace LocalSynapse.Pipeline.Parsing;
@@ -14,13 +15,26 @@ public static partial class RtfParser
     /// <summary>RTF 파일을 파싱하여 텍스트를 추출한다.</summary>
     public static async Task<ExtractionResult> ParseAsync(string filePath, CancellationToken ct = default)
     {
+        long sizeBytes = -1;
+        try { sizeBytes = new FileInfo(filePath).Length; }
+        catch (Exception sEx) { Debug.WriteLine($"[RtfParser] Size probe: {sEx.Message}"); }
         try
         {
+            var readSw = Stopwatch.StartNew();
             var raw = await File.ReadAllTextAsync(filePath, Encoding.Default, ct);
+            readSw.Stop();
+            SpeedDiagLog.Log("PARSE_DETAIL",
+                "ext", ".rtf", "stage", "read",
+                "time_ms", readSw.ElapsedMilliseconds, "size_bytes", sizeBytes);
             if (string.IsNullOrWhiteSpace(raw))
                 return ExtractionResult.Fail("EMPTY", "RTF file is empty");
 
+            var parseSw = Stopwatch.StartNew();
             var text = StripRtf(raw);
+            parseSw.Stop();
+            SpeedDiagLog.Log("PARSE_DETAIL",
+                "ext", ".rtf", "stage", "parse",
+                "time_ms", parseSw.ElapsedMilliseconds);
             if (string.IsNullOrWhiteSpace(text))
                 return ExtractionResult.Fail("EMPTY", "No text extracted from RTF");
 

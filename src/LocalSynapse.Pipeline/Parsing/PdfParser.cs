@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 using UglyToad.PdfPig;
 
@@ -16,20 +17,46 @@ internal static class PdfParser
         return Task.Run(() =>
         {
             ct.ThrowIfCancellationRequested();
+            long sizeBytes = -1;
+            try { sizeBytes = new FileInfo(filePath).Length; }
+            catch (Exception sEx) { Debug.WriteLine($"[PdfParser] Size probe: {sEx.Message}"); }
             try
             {
+                var openSw = Stopwatch.StartNew();
                 using var document = PdfDocument.Open(filePath);
-                var sb = new StringBuilder();
+                openSw.Stop();
+                var pageCount = document.NumberOfPages;
+                SpeedDiagLog.Log("PARSE_DETAIL",
+                    "ext", ".pdf", "stage", "open",
+                    "time_ms", openSw.ElapsedMilliseconds,
+                    "page_count", pageCount, "size_bytes", sizeBytes);
 
+                var pagesSw = Stopwatch.StartNew();
+                var sb = new StringBuilder();
+                var garbledPages = 0;
                 foreach (var page in document.GetPages())
                 {
                     ct.ThrowIfCancellationRequested();
                     var pageText = page.Text;
-                    if (!string.IsNullOrWhiteSpace(pageText))
+                    if (string.IsNullOrWhiteSpace(pageText)) continue;
+                    if (IsLikelyGarbled(pageText))
                     {
-                        sb.AppendLine(pageText);
+                        garbledPages++;
+                        continue;
                     }
+                    sb.AppendLine(pageText);
                 }
+                pagesSw.Stop();
+                if (garbledPages > 0)
+                    Debug.WriteLine($"[PdfParser] {garbledPages}/{pageCount} pages garbled: {filePath}");
+                SpeedDiagLog.Log("PARSE_DETAIL",
+                    "ext", ".pdf", "stage", "pages",
+                    "time_ms", pagesSw.ElapsedMilliseconds,
+                    "garbled_pages", garbledPages);
+
+                if (garbledPages > 0 && sb.Length == 0)
+                    return ExtractionResult.Fail("GARBLED_TEXT",
+                        $"All {pageCount} pages appear garbled (possible CMap encoding issue)");
 
                 return ExtractionResult.Ok(sb.ToString());
             }
@@ -40,5 +67,17 @@ internal static class PdfParser
                 return ExtractionResult.Fail("ENCRYPTED", ex.Message);
             }
         }, ct);
+    }
+
+    /// <summary>CMap 디코딩 실패로 인한 garbled 텍스트를 감지한다.</summary>
+    private static bool IsLikelyGarbled(string text)
+    {
+        if (text.Length < 50) return false;
+        var letterCount = 0;
+        foreach (var c in text)
+        {
+            if (char.IsLetter(c)) letterCount++;
+        }
+        return (double)letterCount / text.Length < 0.20;
     }
 }

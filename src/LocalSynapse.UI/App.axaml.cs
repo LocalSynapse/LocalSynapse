@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Pipeline.Interfaces;
 using LocalSynapse.UI.Services.DI;
@@ -28,15 +29,21 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            SpeedDiagLog.AppStart(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown");
+
             // 1. Build DI container
+            var swDi = Stopwatch.StartNew();
             var services = new ServiceCollection();
             services.AddLocalSynapseServices();
             _serviceProvider = services.BuildServiceProvider();
             Services = _serviceProvider;
+            SpeedDiagLog.Log("DI_BUILD", "time_ms", swDi.ElapsedMilliseconds);
 
             // 2. Run DB migrations
+            var swMig = Stopwatch.StartNew();
             var migration = _serviceProvider.GetRequiredService<IMigrationService>();
             migration.RunMigrations();
+            SpeedDiagLog.Log("MIGRATIONS", "time_ms", swMig.ElapsedMilliseconds);
             Debug.WriteLine("[App] Migrations complete");
 
             // 3. Create main window with DI

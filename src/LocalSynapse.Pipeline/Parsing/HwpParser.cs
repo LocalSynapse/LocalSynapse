@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 using OpenMcdf;
 
@@ -16,17 +17,37 @@ internal static class HwpParser
     /// <summary>HWP 파일에서 텍스트를 추출한다.</summary>
     public static ExtractionResult Parse(string filePath)
     {
+        long sizeBytes = -1;
+        try { sizeBytes = new FileInfo(filePath).Length; }
+        catch (Exception sEx) { Debug.WriteLine($"[HwpParser] Size probe: {sEx.Message}"); }
         try
         {
+            var openSw = Stopwatch.StartNew();
             using var cf = new CompoundFile(filePath);
+            openSw.Stop();
+            SpeedDiagLog.Log("PARSE_DETAIL",
+                "ext", ".hwp", "stage", "open",
+                "time_ms", openSw.ElapsedMilliseconds, "size_bytes", sizeBytes);
 
             // PrvText 스트림 시도 (미리보기 텍스트)
+            var prvSw = Stopwatch.StartNew();
             var prvText = TryReadPrvText(cf);
+            prvSw.Stop();
             if (!string.IsNullOrWhiteSpace(prvText))
+            {
+                SpeedDiagLog.Log("PARSE_DETAIL",
+                    "ext", ".hwp", "stage", "prvtext",
+                    "time_ms", prvSw.ElapsedMilliseconds);
                 return ExtractionResult.Ok(prvText);
+            }
 
             // BodyText 스토리지에서 추출
+            var sectionsSw = Stopwatch.StartNew();
             var bodyText = ExtractFromBodyText(cf);
+            sectionsSw.Stop();
+            SpeedDiagLog.Log("PARSE_DETAIL",
+                "ext", ".hwp", "stage", "sections",
+                "time_ms", sectionsSw.ElapsedMilliseconds);
             return ExtractionResult.Ok(bodyText);
         }
         catch (CFItemNotFound)
@@ -48,7 +69,8 @@ internal static class HwpParser
             var stream = cf.RootStorage.GetStream("PrvText");
             var data = stream.GetData();
             if (data.Length > 0)
-                return Encoding.Unicode.GetString(data).Trim('\0').Trim();
+                return Encoding.Unicode.GetString(data).Trim('\0').Trim()
+                    .Replace("<", " ").Replace(">", " ");
         }
         catch (CFItemNotFound) { Debug.WriteLine("[HwpParser] PrvText stream not found"); }
         return null;

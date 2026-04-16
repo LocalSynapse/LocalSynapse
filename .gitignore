@@ -29,3 +29,8 @@ Thumbs.db
 # Temp
 *.tmp
 *.bak
+
+# M0-B parser quality verification (local-only personal documents)
+sample-docs/
+parser-dump/
+Docs/diagnostics/M0-B-samples/

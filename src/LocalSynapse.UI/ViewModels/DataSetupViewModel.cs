@@ -24,6 +24,7 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [ObservableProperty] private PipelinePhase _currentPhase;
     [ObservableProperty] private bool _isPipelinePaused;
     [ObservableProperty] private string _modelStatus = "";
+    [ObservableProperty] private bool _isModelInstalled; // H2 (M0-H): Install 버튼 / ✓Installed 동기화
     [ObservableProperty] private string _scanStatusText = "";
     [ObservableProperty] private int _scanFilesFound;
     [ObservableProperty] private bool _isCycleRunning;
@@ -121,6 +122,8 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
                 });
             });
             await _modelInstaller.DownloadModelAsync("bge-m3", progress);
+            // H2 (M0-H): try 블록 성공 경로에만 설정. catch 블록들에는 추가하지 않음.
+            IsModelInstalled = true;
             ModelStatus = "Installed";
         }
         catch (OperationCanceledException)
@@ -187,7 +190,8 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         CurrentPhase = _orchestrator.CurrentPhase;
         IsPipelinePaused = _orchestrator.IsPaused;
         IsCycleRunning = _orchestrator.IsRunning;
-        ModelStatus = _modelInstaller.IsModelInstalled("bge-m3") ? "Installed" : "Not installed";
+        IsModelInstalled = _modelInstaller.IsModelInstalled("bge-m3");
+        ModelStatus = IsModelInstalled ? "Installed" : "Not installed";
 
         try { var (cloud, _, _, _) = _fileRepo.CountSkippedByCategory(); SkippedFiles = cloud; }
         catch (Exception ex) { Debug.WriteLine($"[DataSetupVM] RefreshState skipped count failed: {ex.Message}"); SkippedFiles = 0; }

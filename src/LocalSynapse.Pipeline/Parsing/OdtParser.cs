@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Pipeline.Interfaces;
 
 namespace LocalSynapse.Pipeline.Parsing;
@@ -25,10 +26,18 @@ public static partial class OdtParser
     /// <summary>ODF 파일을 파싱하여 텍스트를 추출한다.</summary>
     public static async Task<ExtractionResult> ParseAsync(string filePath, CancellationToken ct = default)
     {
+        long sizeBytes = -1;
+        try { sizeBytes = new FileInfo(filePath).Length; }
+        catch (Exception sEx) { Debug.WriteLine($"[OdtParser] Size probe: {sEx.Message}"); }
         try
         {
+            var zipSw = Stopwatch.StartNew();
             using var zip = ZipFile.OpenRead(filePath);
             var contentEntry = zip.GetEntry("content.xml");
+            zipSw.Stop();
+            SpeedDiagLog.Log("PARSE_DETAIL",
+                "ext", ".odt", "stage", "zip_open",
+                "time_ms", zipSw.ElapsedMilliseconds, "size_bytes", sizeBytes);
             if (contentEntry == null)
                 return ExtractionResult.Fail("INVALID_ODF", "No content.xml found in ODF archive");
 
@@ -36,12 +45,17 @@ public static partial class OdtParser
                 return ExtractionResult.Fail("ZIP_ENTRY_TOO_LARGE",
                     $"content.xml exceeds {MaxEntrySize} byte limit ({contentEntry.Length} bytes)");
 
+            var xmlSw = Stopwatch.StartNew();
             using var stream = contentEntry.Open();
             using var xmlReader = XmlReader.Create(stream, SafeXmlSettings);
             var doc = await XDocument.LoadAsync(xmlReader, LoadOptions.None, ct);
             var xml = doc.ToString();
 
             var text = ExtractTextFromXml(xml);
+            xmlSw.Stop();
+            SpeedDiagLog.Log("PARSE_DETAIL",
+                "ext", ".odt", "stage", "xml_parse",
+                "time_ms", xmlSw.ElapsedMilliseconds);
             if (string.IsNullOrWhiteSpace(text))
                 return ExtractionResult.Fail("EMPTY", "No text extracted from ODF");
 

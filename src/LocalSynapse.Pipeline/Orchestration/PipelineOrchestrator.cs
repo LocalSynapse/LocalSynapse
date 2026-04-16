@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Pipeline.Interfaces;
@@ -31,6 +32,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
 
     private const int BatchSize = 500;
     private static readonly TimeSpan AutoRunInterval = TimeSpan.FromMinutes(10);
+
+    /// <summary>Dense search 비활성 기간 동안 embedding 생성을 건너뛴다. M2에서 제거.</summary>
+    private const bool SkipEmbeddingPhase = true;
 
     public PipelinePhase CurrentPhase { get; private set; } = PipelinePhase.Idle;
     public bool IsRunning => CurrentPhase != PipelinePhase.Idle
@@ -82,19 +86,32 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         {
             LastError = null;
             Debug.WriteLine("[Orch] === Cycle started ===");
+            var cycleSw = Stopwatch.StartNew();
+            SpeedDiagLog.Log("CYCLE_START");
 
             // Phase 1: Scan (fast — just discover files)
+            var scanSw = Stopwatch.StartNew();
             await RunScanPhaseAsync(ct);
+            SpeedDiagLog.Log("PHASE_SCAN", "time_ms", scanSw.ElapsedMilliseconds);
             if (_isPaused || ct.IsCancellationRequested) return;
 
             // Phase 2: Index (slow — parse + chunk, runs in background)
+            var indexSw = Stopwatch.StartNew();
             await RunIndexingPhaseAsync(ct);
+            SpeedDiagLog.Log("PHASE_INDEX", "time_ms", indexSw.ElapsedMilliseconds);
             if (_isPaused || ct.IsCancellationRequested) return;
 
             // Phase 3: Embed (slow — only if model ready)
-            if (_embeddingService.IsReady)
+            if (!SkipEmbeddingPhase && _embeddingService.IsReady)
             {
+                var embSw = Stopwatch.StartNew();
                 await RunEmbeddingPhaseAsync(ct);
+                SpeedDiagLog.Log("PHASE_EMBED", "time_ms", embSw.ElapsedMilliseconds);
+            }
+            else
+            {
+                SpeedDiagLog.Log("PHASE_EMBED", "skipped",
+                    SkipEmbeddingPhase ? "dense_disabled" : "model_not_ready");
             }
 
             CurrentPhase = PipelinePhase.Complete;
@@ -102,6 +119,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             ReportProgress(PipelinePhase.Complete, 0, statusText: "Cycle complete");
             CycleCompleted?.Invoke(null);
 
+            SpeedDiagLog.Log("CYCLE_COMPLETE", "total_ms", cycleSw.ElapsedMilliseconds);
             Debug.WriteLine("[Orch] === Cycle complete ===");
         }
         catch (OperationCanceledException)
@@ -219,10 +237,13 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                 statusText: "Scanning...");
         });
 
+        var scanCoreSw = Stopwatch.StartNew();
         await _fileScanner.ScanAllDrivesAsync(scanProgress, ct);
+        SpeedDiagLog.Log("SCAN_CORE", "time_ms", scanCoreSw.ElapsedMilliseconds);
 
         // Stamp scan results
         var (files, folders, contentSearchable) = _fileRepo.CountScanStampTotals();
+        SpeedDiagLog.Log("SCAN_RESULT", "files", files, "folders", folders, "content_searchable", contentSearchable);
         _stampRepo.StampScanComplete(files, folders, contentSearchable);
 
         ReportProgress(PipelinePhase.Scanning, files,
@@ -242,6 +263,10 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         {
             var indexedFiles = 0;
             var totalChunks = 0;
+            var extractTotalMs = 0L;
+            var chunkTotalMs = 0L;
+            var upsertTotalMs = 0L;
+            var extractCount = 0;
 
             while (true)
             {
@@ -258,6 +283,12 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     ct.ThrowIfCancellationRequested();
                     if (_isPaused) return;
 
+                    var fileSw = Stopwatch.StartNew();
+                    long sizeBytes = -1;
+                    try { sizeBytes = new FileInfo(file.Path).Length; }
+                    catch (Exception sizeEx) { Debug.WriteLine($"[Orch] Size probe failed {file.Path}: {sizeEx.Message}"); }
+                    long extractMs = 0, chunkMs = 0, upsertMs = 0;  // W5: catch 블록에서 실측값 보존
+
                     try
                     {
                         // Skip cloud files — they are in DB for filename search only
@@ -265,21 +296,37 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                             || file.LastExtractErrorCode == "CLOUD_FILE")
                         {
                             Debug.WriteLine($"[Pipeline] Skipping cloud file: {file.Path}");
+                            SpeedDiagLog.Log("EXTRACT_FILE",
+                                "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                                "extract_ms", 0, "chunks", 0, "chunk_ms", 0, "upsert_ms", 0,
+                                "total_ms", fileSw.ElapsedMilliseconds, "result", "skip_cloud");
                             continue;
                         }
 
+                        var exSw = Stopwatch.StartNew();
                         var result = await _contentExtractor.ExtractAsync(file.Path, file.Extension, ct);
+                        extractMs = exSw.ElapsedMilliseconds;
+                        extractTotalMs += extractMs;
+                        extractCount++;
 
                         if (!result.Success)
                         {
                             _fileRepo.UpdateExtractStatus(file.Id, ExtractStatuses.Error, result.ErrorCode);
+                            SpeedDiagLog.Log("EXTRACT_FILE",
+                                "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                                "extract_ms", extractMs, "chunks", 0, "chunk_ms", 0, "upsert_ms", 0,
+                                "total_ms", fileSw.ElapsedMilliseconds,
+                                "result", $"error_{result.ErrorCode ?? "PARSE_ERROR"}");
                             continue;
                         }
 
+                        var chSw = Stopwatch.StartNew();
                         var chunks = _textChunker.Chunk(
                             result.Text ?? "",
                             result.SourceType,
                             result.OriginMeta);
+                        chunkMs = chSw.ElapsedMilliseconds;
+                        chunkTotalMs += chunkMs;
 
                         if (chunks.Count > 0)
                         {
@@ -298,12 +345,22 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                                 EndOffset = c.EndOffset,
                             });
 
+                            var upSw = Stopwatch.StartNew();
                             _chunkRepo.UpsertChunks(fileChunks);
+                            upsertMs = upSw.ElapsedMilliseconds;
+                            upsertTotalMs += upsertMs;
                             totalChunks += chunks.Count;
                         }
 
                         _fileRepo.UpdateExtractStatus(file.Id, ExtractStatuses.Success);
                         indexedFiles++;
+
+                        SpeedDiagLog.Log("EXTRACT_FILE",
+                            "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                            "extract_ms", extractMs, "chunks", chunks.Count,
+                            "chunk_ms", chunkMs, "upsert_ms", upsertMs,
+                            "total_ms", fileSw.ElapsedMilliseconds,
+                            "result", chunks.Count > 0 ? "success" : "success_empty");
 
                         if (indexedFiles % 50 == 0)
                         {
@@ -317,6 +374,11 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     {
                         Debug.WriteLine($"[Orch] Index error: {file.Path} - {ex.Message}");
                         _fileRepo.UpdateExtractStatus(file.Id, ExtractStatuses.Error, "PARSE_ERROR");
+                        SpeedDiagLog.Log("EXTRACT_FILE",
+                            "path", file.Path, "ext", file.Extension, "size_bytes", sizeBytes,
+                            "extract_ms", extractMs, "chunks", 0,
+                            "chunk_ms", chunkMs, "upsert_ms", upsertMs,
+                            "total_ms", fileSw.ElapsedMilliseconds, "result", "error_PARSE_ERROR");
                     }
                 }
 
@@ -332,6 +394,13 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             ReportProgress(PipelinePhase.Indexing, indexedFiles,
                 statusText: $"Indexing complete: {indexedFiles:N0} files, {totalChunks:N0} chunks");
 
+            SpeedDiagLog.Log("INDEX_RESULT",
+                "files", indexedFiles,
+                "chunks", totalChunks,
+                "extract_avg_ms", extractCount > 0 ? extractTotalMs / extractCount : 0,
+                "extract_total_ms", extractTotalMs,
+                "chunk_total_ms", chunkTotalMs,
+                "upsert_total_ms", upsertTotalMs);
             Debug.WriteLine($"[Orch] Indexing complete: {indexedFiles} files, {totalChunks} chunks");
         }, ct);
     }
