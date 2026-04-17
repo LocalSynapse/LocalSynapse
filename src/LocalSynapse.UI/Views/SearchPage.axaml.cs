@@ -6,7 +6,7 @@ using LocalSynapse.UI.ViewModels;
 namespace LocalSynapse.UI.Views;
 
 /// <summary>
-/// Search page code-behind. Handles keyboard, selection, sort, and clipboard.
+/// Search page code-behind. Handles keyboard, selection, and clipboard.
 /// </summary>
 public partial class SearchPage : UserControl
 {
@@ -32,27 +32,6 @@ public partial class SearchPage : UserControl
             }
         }
         base.OnKeyDown(e);
-    }
-
-    /// <summary>Filter tab click handler.</summary>
-    private void FilterTab_Click(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.Tag is string tag && DataContext is SearchViewModel vm)
-        {
-            if (Enum.TryParse<SearchFilter>(tag, out var filter))
-                vm.ActiveFilter = filter;
-        }
-    }
-
-    /// <summary>Sort selection changed.</summary>
-    private void Sort_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (sender is ComboBox cb && cb.SelectedItem is ComboBoxItem item
-            && item.Tag is string tag && DataContext is SearchViewModel vm)
-        {
-            if (Enum.TryParse<SortOption>(tag, out var sort))
-                vm.ActiveSort = sort;
-        }
     }
 
     /// <summary>Folder row click — select folder.</summary>

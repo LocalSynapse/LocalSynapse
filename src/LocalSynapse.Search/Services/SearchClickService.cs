@@ -157,6 +157,49 @@ public class SearchClickService
         return result;
     }
 
+    /// <summary>검색 결과 중 이전에 클릭한 파일 경로와 마지막 열람일+총 클릭 수를 반환한다.</summary>
+    public Dictionary<string, (DateTime lastOpened, int totalClicks)> GetRecentlyOpenedPaths(
+        IReadOnlyList<string> candidatePaths, int limit = 5)
+    {
+        if (candidatePaths.Count == 0) return new();
+
+        // SQLite 변수 상한 방어 — 900개씩 청크 처리
+        const int chunkSize = 900;
+        var result = new Dictionary<string, (DateTime, int)>(StringComparer.OrdinalIgnoreCase);
+
+        for (int offset = 0; offset < candidatePaths.Count; offset += chunkSize)
+        {
+            var chunk = candidatePaths.Skip(offset).Take(chunkSize).ToList();
+            using var conn = _connectionFactory.CreateConnection();
+            using var cmd = conn.CreateCommand();
+
+            var placeholders = new List<string>();
+            for (int i = 0; i < chunk.Count; i++)
+            {
+                placeholders.Add($"$p{i}");
+                cmd.Parameters.AddWithValue($"$p{i}", NormalizePath(chunk[i]));
+            }
+
+            cmd.CommandText = $@"
+                SELECT file_path, MAX(last_clicked_at) as last_opened, SUM(click_count) as total_clicks
+                FROM search_clicks
+                WHERE is_bounce = 0 AND file_path IN ({string.Join(",", placeholders)})
+                GROUP BY file_path
+                ORDER BY last_opened DESC
+                LIMIT $limit";
+            cmd.Parameters.AddWithValue("$limit", limit);
+
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                if (DateTime.TryParse(r.GetString(1), out var dt))
+                    result[r.GetString(0)] = (dt, r.GetInt32(2));
+            }
+        }
+
+        return result;
+    }
+
     /// <summary>Normalize file path for consistent key matching.</summary>
     private static string NormalizePath(string path)
         => path.ToLowerInvariant().TrimEnd('\\', '/');

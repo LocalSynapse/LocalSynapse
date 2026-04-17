@@ -106,6 +106,38 @@ public sealed class Bm25SearchService : IBm25Search
         return hits;
     }
 
+    /// <summary>FTS5 쿼리에 매치되는 chunk 수를 파일별로 반환한다.</summary>
+    public Dictionary<string, (int matchCount, bool titleMatch)> GetMatchChunkCounts(
+        string ftsQuery, IReadOnlyList<string> fileIds)
+    {
+        if (string.IsNullOrWhiteSpace(ftsQuery) || fileIds.Count == 0) return new();
+        using var conn = _connectionFactory.CreateConnection();
+        using var cmd = conn.CreateCommand();
+
+        var placeholders = new List<string>();
+        for (int i = 0; i < fileIds.Count; i++)
+        {
+            placeholders.Add($"$f{i}");
+            cmd.Parameters.AddWithValue($"$f{i}", fileIds[i]);
+        }
+
+        cmd.CommandText = $@"
+            SELECT fc.file_id, COUNT(*) as match_count,
+                   MIN(fc.chunk_index) as min_chunk_index
+            FROM chunks_fts
+            JOIN file_chunks fc ON chunks_fts.chunk_id = fc.id
+            WHERE chunks_fts MATCH $fts
+              AND fc.file_id IN ({string.Join(",", placeholders)})
+            GROUP BY fc.file_id";
+        cmd.Parameters.AddWithValue("$fts", ftsQuery);
+
+        var result = new Dictionary<string, (int, bool)>();
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+            result[r.GetString(0)] = (r.GetInt32(1), r.GetInt32(2) == 0);
+        return result;
+    }
+
     /// <summary>캐시를 초기화한다.</summary>
     public void ClearCache() => _cache.Clear();
 
