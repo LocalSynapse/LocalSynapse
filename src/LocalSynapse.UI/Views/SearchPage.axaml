@@ -261,79 +261,77 @@
                     <!-- ══════════════════════════════════════ -->
                     <StackPanel IsVisible="{Binding ShowFilenameMatch}">
                         <Button Command="{Binding ToggleFilenameCommand}" Classes="SectionHeader">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="&#x1F3AF;" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center" />
-                                <TextBlock Text="Filename Match"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Width="22" Height="22" CornerRadius="5" Background="#DBEAFE">
+                                    <TextBlock Text="Aa" FontSize="11" FontWeight="SemiBold" Foreground="#1D4ED8"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="{Binding SectionLabelFilename}"
+                                           FontSize="{StaticResource FontSizeXs}" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding FilenameMatchCount, StringFormat='({0})'}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontFamily="{StaticResource FontMono}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                                           FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                         <ItemsControl IsVisible="{Binding IsFilenameExpanded}"
                                       ItemsSource="{Binding FilenameMatchFiles}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SearchResultFile">
-                                    <Border Padding="10,10" Cursor="Hand"
+                                    <Border Padding="10,7,10,7" Cursor="Hand"
                                             PointerPressed="FileRow_PointerPressed"
                                             DoubleTapped="FileRow_DoubleTapped"
-                                            Background="Transparent"
-                                            Margin="10,0"
-                                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                                            BorderThickness="0,0,0,1">
+                                            Background="Transparent" Margin="10,0"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
                                         <Border.Styles>
                                             <Style Selector="Border:pointerover">
                                                 <Setter Property="Background" Value="{StaticResource BgHoverBrush}" />
                                             </Style>
                                         </Border.Styles>
                                         <DockPanel>
-                                            <StackPanel DockPanel.Dock="Right" Spacing="4"
-                                                        VerticalAlignment="Top" Margin="12,2,0,0">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <Border Classes="ExtBadge">
-                                                        <TextBlock Text="{Binding Extension}" />
-                                                    </Border>
-                                                    <TextBlock Text="{Binding ModifiedAt}"
-                                                               Foreground="{StaticResource TextMutedBrush}"
-                                                               FontSize="{StaticResource FontSizeXs}"
-                                                               FontFamily="{StaticResource FontMono}" />
-                                                </StackPanel>
-                                                <TextBlock Text="{Binding Note}"
-                                                           IsVisible="{Binding Note.Length}"
-                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                           FontSize="{StaticResource FontSizeXxs}"
-                                                           HorizontalAlignment="Right" />
-                                            </StackPanel>
-                                            <Border Width="34" Height="34"
-                                                    CornerRadius="{StaticResource RadiusSm}"
+                                            <Border Width="18" Height="22" CornerRadius="2"
                                                     Background="{StaticResource BgBadgeBrush}"
-                                                    Margin="0,0,12,0" VerticalAlignment="Top">
-                                                <PathIcon Width="16" Height="16"
+                                                    Margin="0,0,8,0" VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding ExtensionAbbrev}" FontSize="6" FontWeight="SemiBold"
                                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                                           Data="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </Border>
                                             <StackPanel Spacing="2" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Filename}"
-                                                           FontSize="{StaticResource FontSizeBody}"
-                                                           FontWeight="Medium"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                <TextBlock Text="{Binding Filename}" FontSize="{StaticResource FontSizeBody}"
+                                                           FontWeight="Medium" Foreground="{StaticResource TextPrimaryBrush}"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding FolderPath}"
-                                                           FontSize="{StaticResource FontSizeXs}"
-                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                           MaxLines="1"
-                                                           TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{Binding FolderPath}" FontSize="{StaticResource FontSizeXs}"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                                                    <ItemsControl ItemsSource="{Binding SmartNotes}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:SmartNote">
+                                                                <Border Background="{Binding BackgroundBrush}" CornerRadius="4" Padding="8,2">
+                                                                    <TextBlock Text="{Binding Text}" Foreground="{Binding ForegroundBrush}"
+                                                                               FontSize="10.5" FontWeight="SemiBold" />
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
                                             </StackPanel>
                                         </DockPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <Button IsVisible="{Binding ShowMoreFilename}"
+                                Command="{Binding ToggleMoreFilenameCommand}"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{StaticResource TextSecondaryBrush}"
+                                FontSize="{StaticResource FontSizeXs}"
+                                Padding="36,5,0,5" Cursor="Hand">
+                            <TextBlock Text="{Binding MoreFilenameText}" />
+                        </Button>
                     </StackPanel>
 
                     <!-- ══════════════════════════════════════ -->
@@ -341,73 +339,63 @@
                     <!-- ══════════════════════════════════════ -->
                     <StackPanel IsVisible="{Binding ShowPreviouslyOpened}">
                         <Button Command="{Binding TogglePreviouslyOpenedCommand}" Classes="SectionHeader">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="&#x1F552;" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center" />
-                                <TextBlock Text="Previously Opened"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Width="22" Height="22" CornerRadius="5" Background="#FEF3C7">
+                                    <TextBlock Text="&#x27F2;" FontSize="13" FontWeight="SemiBold" Foreground="#92400E"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="{Binding SectionLabelOpened}"
+                                           FontSize="{StaticResource FontSizeXs}" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding PreviouslyOpenedCount, StringFormat='({0})'}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontFamily="{StaticResource FontMono}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                                           FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                         <ItemsControl IsVisible="{Binding IsPreviouslyOpenedExpanded}"
                                       ItemsSource="{Binding PreviouslyOpenedFiles}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SearchResultFile">
-                                    <Border Padding="10,10" Cursor="Hand"
+                                    <Border Padding="10,7,10,7" Cursor="Hand"
                                             PointerPressed="FileRow_PointerPressed"
                                             DoubleTapped="FileRow_DoubleTapped"
-                                            Background="Transparent"
-                                            Margin="10,0"
-                                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                                            BorderThickness="0,0,0,1">
+                                            Background="Transparent" Margin="10,0"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
                                         <Border.Styles>
                                             <Style Selector="Border:pointerover">
                                                 <Setter Property="Background" Value="{StaticResource BgHoverBrush}" />
                                             </Style>
                                         </Border.Styles>
                                         <DockPanel>
-                                            <StackPanel DockPanel.Dock="Right" Spacing="4"
-                                                        VerticalAlignment="Top" Margin="12,2,0,0">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <Border Classes="ExtBadge">
-                                                        <TextBlock Text="{Binding Extension}" />
-                                                    </Border>
-                                                    <TextBlock Text="{Binding ModifiedAt}"
-                                                               Foreground="{StaticResource TextMutedBrush}"
-                                                               FontSize="{StaticResource FontSizeXs}"
-                                                               FontFamily="{StaticResource FontMono}" />
-                                                </StackPanel>
-                                                <TextBlock Text="{Binding Note}"
-                                                           IsVisible="{Binding Note.Length}"
-                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                           FontSize="{StaticResource FontSizeXxs}"
-                                                           HorizontalAlignment="Right" />
-                                            </StackPanel>
-                                            <Border Width="34" Height="34"
-                                                    CornerRadius="{StaticResource RadiusSm}"
+                                            <Border Width="18" Height="22" CornerRadius="2"
                                                     Background="{StaticResource BgBadgeBrush}"
-                                                    Margin="0,0,12,0" VerticalAlignment="Top">
-                                                <PathIcon Width="16" Height="16"
+                                                    Margin="0,0,8,0" VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding ExtensionAbbrev}" FontSize="6" FontWeight="SemiBold"
                                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                                           Data="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </Border>
                                             <StackPanel Spacing="2" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Filename}"
-                                                           FontSize="{StaticResource FontSizeBody}"
-                                                           FontWeight="Medium"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                <TextBlock Text="{Binding Filename}" FontSize="{StaticResource FontSizeBody}"
+                                                           FontWeight="Medium" Foreground="{StaticResource TextPrimaryBrush}"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding FolderPath}"
-                                                           FontSize="{StaticResource FontSizeXs}"
-                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                           MaxLines="1"
-                                                           TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{Binding FolderPath}" FontSize="{StaticResource FontSizeXs}"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                                                    <ItemsControl ItemsSource="{Binding SmartNotes}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:SmartNote">
+                                                                <Border Background="{Binding BackgroundBrush}" CornerRadius="4" Padding="8,2">
+                                                                    <TextBlock Text="{Binding Text}" Foreground="{Binding ForegroundBrush}"
+                                                                               FontSize="10.5" FontWeight="SemiBold" />
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
                                             </StackPanel>
                                         </DockPanel>
                                     </Border>
@@ -421,99 +409,80 @@
                     <!-- ══════════════════════════════════════ -->
                     <StackPanel IsVisible="{Binding ShowContentMatch}">
                         <Button Command="{Binding ToggleContentCommand}" Classes="SectionHeader">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="&#x1F4C4;" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center" />
-                                <TextBlock Text="Found in Content"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Width="22" Height="22" CornerRadius="5" Background="#E0E7FF">
+                                    <TextBlock Text="&#x2261;" FontSize="14" FontWeight="SemiBold" Foreground="#4338CA"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="{Binding SectionLabelContent}"
+                                           FontSize="{StaticResource FontSizeXs}" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding ContentMatchCount, StringFormat='({0})'}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontFamily="{StaticResource FontMono}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                                           FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                         <ItemsControl IsVisible="{Binding IsContentExpanded}"
                                       ItemsSource="{Binding ContentMatchFiles}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SearchResultFile">
-                                    <Border Padding="10,10" Cursor="Hand"
+                                    <Border Padding="10,7,10,7" Cursor="Hand"
                                             PointerPressed="FileRow_PointerPressed"
                                             DoubleTapped="FileRow_DoubleTapped"
-                                            Background="Transparent"
-                                            Margin="10,0"
-                                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                                            BorderThickness="0,0,0,1">
+                                            Background="Transparent" Margin="10,0"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
                                         <Border.Styles>
                                             <Style Selector="Border:pointerover">
                                                 <Setter Property="Background" Value="{StaticResource BgHoverBrush}" />
                                             </Style>
                                         </Border.Styles>
                                         <DockPanel>
-                                            <StackPanel DockPanel.Dock="Right" Spacing="4"
-                                                        VerticalAlignment="Top" Margin="12,2,0,0">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <Border Classes="ExtBadge">
-                                                        <TextBlock Text="{Binding Extension}" />
-                                                    </Border>
-                                                    <TextBlock Text="{Binding ModifiedAt}"
-                                                               Foreground="{StaticResource TextMutedBrush}"
-                                                               FontSize="{StaticResource FontSizeXs}"
-                                                               FontFamily="{StaticResource FontMono}" />
-                                                </StackPanel>
-                                                <TextBlock Text="{Binding Note}"
-                                                           IsVisible="{Binding Note.Length}"
-                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                           FontSize="{StaticResource FontSizeXxs}"
-                                                           HorizontalAlignment="Right" />
-                                            </StackPanel>
-                                            <Border Width="34" Height="34"
-                                                    CornerRadius="{StaticResource RadiusSm}"
+                                            <Border Width="18" Height="22" CornerRadius="2"
                                                     Background="{StaticResource BgBadgeBrush}"
-                                                    Margin="0,0,12,0" VerticalAlignment="Top">
-                                                <PathIcon Width="16" Height="16"
+                                                    Margin="0,0,8,0" VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding ExtensionAbbrev}" FontSize="6" FontWeight="SemiBold"
                                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                                           Data="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </Border>
                                             <StackPanel Spacing="2" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Filename}"
-                                                           FontSize="{StaticResource FontSizeBody}"
-                                                           FontWeight="Medium"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                <TextBlock Text="{Binding Filename}" FontSize="{StaticResource FontSizeBody}"
+                                                           FontWeight="Medium" Foreground="{StaticResource TextPrimaryBrush}"
                                                            TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding FolderPath}"
-                                                           FontSize="{StaticResource FontSizeXs}"
-                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                           MaxLines="1"
-                                                           TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding Snippet}"
-                                                           IsVisible="{Binding Snippet.Length}"
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{Binding FolderPath}" FontSize="{StaticResource FontSizeXs}"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                                                    <ItemsControl ItemsSource="{Binding SmartNotes}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:SmartNote">
+                                                                <Border Background="{Binding BackgroundBrush}" CornerRadius="4" Padding="8,2">
+                                                                    <TextBlock Text="{Binding Text}" Foreground="{Binding ForegroundBrush}"
+                                                                               FontSize="10.5" FontWeight="SemiBold" />
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Snippet}" IsVisible="{Binding Snippet.Length}"
                                                            Foreground="{StaticResource SuccessBrush}"
                                                            FontSize="{StaticResource FontSizeXxs}"
-                                                           MaxLines="1"
-                                                           TextTrimming="CharacterEllipsis" />
+                                                           MaxLines="1" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                         </DockPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <!-- Hidden content count -->
-                        <Button IsVisible="{Binding ShowMoreContent}"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Foreground="{StaticResource AccentBrush}"
-                                FontSize="{StaticResource FontSizeS}"
-                                FontWeight="Medium"
-                                Padding="20,6"
-                                Margin="0,2,0,4"
-                                Cursor="Hand"
-                                IsEnabled="False">
-                            <TextBlock Text="{Binding HiddenContentCount, StringFormat='{}{0} more results below threshold'}"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       FontSize="{StaticResource FontSizeXs}" />
+                        <Button IsVisible="{Binding ShowMoreContentVisible}"
+                                Command="{Binding ToggleMoreContentCommand}"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{StaticResource TextSecondaryBrush}"
+                                FontSize="{StaticResource FontSizeXs}"
+                                Padding="36,5,0,5" Cursor="Hand">
+                            <TextBlock Text="{Binding MoreContentText}" />
                         </Button>
                     </StackPanel>
 
@@ -522,18 +491,17 @@
                     <!-- ══════════════════════════════════════ -->
                     <StackPanel IsVisible="{Binding ShowRelatedFolders}">
                         <Button Command="{Binding ToggleRelatedFoldersCommand}" Classes="SectionHeader">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="&#x1F4C1;" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center" />
-                                <TextBlock Text="Related Folders"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Width="22" Height="22" CornerRadius="5" Background="#D1FAE5">
+                                    <TextBlock Text="&#x229E;" FontSize="13" FontWeight="SemiBold" Foreground="#065F46"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="{Binding SectionLabelFolders}"
+                                           FontSize="{StaticResource FontSizeXs}" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding RelatedFolderCount, StringFormat='({0})'}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontFamily="{StaticResource FontMono}"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
+                                           FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource FontMono}"
+                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                         <ItemsControl IsVisible="{Binding IsRelatedFoldersExpanded}"
@@ -542,10 +510,8 @@
                                 <DataTemplate x:DataType="vm:SearchResultFolder">
                                     <Border Padding="10,10,10,10" Cursor="Hand"
                                             PointerPressed="FolderRow_PointerPressed"
-                                            Background="Transparent"
-                                            Margin="10,0"
-                                            BorderBrush="{StaticResource BorderSubtleBrush}"
-                                            BorderThickness="0,0,0,1">
+                                            Background="Transparent" Margin="10,0"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1">
                                         <Border.Styles>
                                             <Style Selector="Border:pointerover">
                                                 <Setter Property="Background" Value="{StaticResource BgHoverBrush}" />
@@ -553,7 +519,7 @@
                                         </Border.Styles>
                                         <DockPanel>
                                             <TextBlock DockPanel.Dock="Right"
-                                                       Text="{Binding FileCount, StringFormat='{}{0} files'}"
+                                                       Text="{Binding MetaText}"
                                                        Foreground="{StaticResource TextMutedBrush}"
                                                        FontSize="{StaticResource FontSizeXs}"
                                                        FontFamily="{StaticResource FontMono}"
@@ -568,8 +534,7 @@
                                             </Border>
                                             <StackPanel Spacing="2">
                                                 <TextBlock Text="{Binding Name}"
-                                                           FontSize="{StaticResource FontSizeBody}"
-                                                           FontWeight="Medium"
+                                                           FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
                                                            Foreground="{StaticResource TextPrimaryBrush}"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding ParentPath}"
@@ -582,6 +547,14 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <Button IsVisible="{Binding ShowMoreFolders}"
+                                Command="{Binding ToggleMoreFoldersCommand}"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{StaticResource TextSecondaryBrush}"
+                                FontSize="{StaticResource FontSizeXs}"
+                                Padding="36,5,0,5" Cursor="Hand">
+                            <TextBlock Text="{Binding MoreFoldersText}" />
+                        </Button>
                     </StackPanel>
 
                 </StackPanel>

@@ -107,7 +107,7 @@ public sealed class Bm25SearchService : IBm25Search
     }
 
     /// <summary>FTS5 쿼리에 매치되는 chunk 수를 파일별로 반환한다.</summary>
-    public Dictionary<string, (int matchCount, bool titleMatch)> GetMatchChunkCounts(
+    public Dictionary<string, (int matchCount, int firstMatchIndex)> GetMatchChunkCounts(
         string ftsQuery, IReadOnlyList<string> fileIds)
     {
         if (string.IsNullOrWhiteSpace(ftsQuery) || fileIds.Count == 0) return new();
@@ -131,10 +131,10 @@ public sealed class Bm25SearchService : IBm25Search
             GROUP BY fc.file_id";
         cmd.Parameters.AddWithValue("$fts", ftsQuery);
 
-        var result = new Dictionary<string, (int, bool)>();
+        var result = new Dictionary<string, (int, int)>();
         using var r = cmd.ExecuteReader();
         while (r.Read())
-            result[r.GetString(0)] = (r.GetInt32(1), r.GetInt32(2) == 0);
+            result[r.GetString(0)] = (r.GetInt32(1), r.GetInt32(2));
         return result;
     }
 
