@@ -12,6 +12,10 @@ public sealed class Bm25Hit
     public List<string> MatchedTerms { get; set; } = [];
     public string? ModifiedAt { get; set; }
     public bool IsDirectory { get; set; }
+    public MatchSource MatchSource { get; set; }
+    public double FilenameRank { get; set; }
+    public double ContentRank { get; set; }
+    public double FolderRank { get; set; }
 }
 
 public sealed class DenseHit
@@ -45,7 +49,14 @@ public sealed class HybridHit
     public string? FamilyHeader { get; set; }
 }
 
-public enum MatchSource { FileName, Content }
+[Flags]
+public enum MatchSource
+{
+    None = 0,
+    FileName = 1,
+    Content = 2,
+    Folder = 4
+}
 
 public sealed class SearchResponse
 {

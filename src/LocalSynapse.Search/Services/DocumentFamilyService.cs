@@ -97,7 +97,7 @@ public sealed partial class DocumentFamilyService : IDocumentFamilyService
     [GeneratedRegex(@"(?<!\d)[012]\d(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?!\d)")]
     private static partial Regex Date6Regex();
 
-    [GeneratedRegex(@"(?:^|(?<=[\s_\-]))(?:v\d+|vDraft|final|approved|signed|executed|rev\d+|ver\d+)(?=[\s_\-.]|$)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:^|(?<=[\s_\-]))(?:v\d+|vDraft|final|approved|signed|executed|rev\d+|ver\d+|최종|수정본|수정|완료|개정)(?=[\s_\-.]|$)", RegexOptions.IgnoreCase)]
     private static partial Regex VersionRegex();
 
     [GeneratedRegex(@"[\(\[\{]\s*\d+\s*[\)\]\}]|#\d+|_\d{1,2}(?=[_\s.]|$)|\d{1,2}차")]

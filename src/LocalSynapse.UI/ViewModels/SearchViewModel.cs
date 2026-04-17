@@ -381,7 +381,7 @@ public partial class SearchViewModel : ObservableObject
             });
         }
         foreach (var hit in response.Items.Where(h =>
-            h.MatchSource == MatchSource.FileName ||
+            h.MatchSource.HasFlag(MatchSource.FileName) ||
             queryTokens.Any(t => h.Filename.Contains(t, StringComparison.OrdinalIgnoreCase))))
         {
             nameFileSet.TryAdd(hit.FileId, HybridToFile(hit));

@@ -116,7 +116,7 @@ public sealed class HybridSearchService : IHybridSearch
             MatchedTerms = b.MatchedTerms,
             ModifiedAt = b.ModifiedAt,
             IsDirectory = b.IsDirectory,
-            MatchSource = MatchSource.Content,
+            MatchSource = b.MatchSource,
         }).ToList();
     }
 }

@@ -113,18 +113,22 @@ public sealed class Bm25SearchService : IBm25Search
         var matSw = Stopwatch.StartNew();
         var materialized = new List<(
             string fileId, string filename, string path, string extension,
-            string folderPath, string? content, double bm25Score, string modifiedAt, bool isDirectory
+            string folderPath, string? content, double bm25Score, string modifiedAt, bool isDirectory,
+            double filenameRank, double contentRank, double folderRank
         )>();
 
         using (var conn = _connectionFactory.CreateConnection())
         using (var cmd = conn.CreateCommand())
         {
-            // bm25 weights: chunk_id(0), file_id(0), text(1.0), filename(5.0), folder_path(0.5)
+            // bm25 weights: chunk_id(0), file_id(0), text(1.0), filename(3.0), folder_path(1.0)
             cmd.CommandText = @"
                 SELECT
                     f.id, f.filename, f.path, f.extension, f.folder_path,
                     fc.text, f.modified_at, f.is_directory,
-                    bm25(chunks_fts, 0, 0, 1.0, 5.0, 0.5) AS rank
+                    bm25(chunks_fts, 0, 0, 1.0, 3.0, 1.0) AS rank,
+                    bm25(chunks_fts, 0, 0, 0, 1.0, 0) AS filename_rank,
+                    bm25(chunks_fts, 0, 0, 1.0, 0, 0) AS content_rank,
+                    bm25(chunks_fts, 0, 0, 0, 0, 1.0) AS folder_rank
                 FROM chunks_fts
                 JOIN file_chunks fc ON chunks_fts.chunk_id = fc.id
                 JOIN files f ON fc.file_id = f.id
@@ -145,9 +149,12 @@ public sealed class Bm25SearchService : IBm25Search
                     r.GetString(3),
                     r.GetString(4),
                     r.IsDBNull(5) ? null : r.GetString(5),
-                    Math.Abs(r.GetDouble(8)), // bm25() returns negative
+                    Math.Abs(r.GetDouble(8)), // bm25() returns negative — Score용 양수
                     r.GetString(6),
-                    !r.IsDBNull(7) && r.GetInt32(7) == 1
+                    !r.IsDBNull(7) && r.GetInt32(7) == 1,
+                    r.GetDouble(9),   // filename_rank (음수 원본 — MatchSource 판별용)
+                    r.GetDouble(10),  // content_rank
+                    r.GetDouble(11)   // folder_rank
                 ));
             }
         } // reader + cmd + connection all disposed here
@@ -173,12 +180,20 @@ public sealed class Bm25SearchService : IBm25Search
         {
             var recencyBoost = ComputeRecencyBoost(m.modifiedAt);
             var extBoost = ExtensionBoost.GetBoost(m.extension);
-            var filenameBoost = meaningfulTokens.Length > 0 &&
-                meaningfulTokens.Any(t => IsWordBoundaryMatch(m.filename, t))
-                    ? 2.5 : 1.0;
+            // R3: MatchSource 판별 (컬럼별 BM25 음수 점수 기반)
+            var source = MatchSource.None;
+            if (m.filenameRank < 0) source |= MatchSource.FileName;
+            if (m.contentRank < 0)  source |= MatchSource.Content;
+            if (m.folderRank < 0)   source |= MatchSource.Folder;
+            if (source == MatchSource.None) source = MatchSource.Content; // fallback
 
+            // R4: filenameBoost 가산 방식 (곱셈 제거)
+            var hasFilenameMatch = meaningfulTokens.Length > 0 &&
+                meaningfulTokens.Any(t => IsWordBoundaryMatch(m.filename, t));
             var clickBoost = clickBoosts.TryGetValue(m.path, out var cb) ? cb : 0.0;
-            var finalScore = m.bm25Score * recencyBoost * extBoost * filenameBoost * (1.0 + clickBoost);
+            var baseScore = m.bm25Score * recencyBoost * extBoost * (1.0 + clickBoost);
+            var filenameBonus = hasFilenameMatch ? baseScore * 0.5 : 0;
+            var finalScore = baseScore + filenameBonus;
 
             raw.Add((new Bm25Hit
             {
@@ -192,6 +207,10 @@ public sealed class Bm25SearchService : IBm25Search
                 MatchedTerms = meaningfulTokens.ToList(),
                 ModifiedAt = m.modifiedAt,
                 IsDirectory = m.isDirectory,
+                MatchSource = source,
+                FilenameRank = m.filenameRank,
+                ContentRank = m.contentRank,
+                FolderRank = m.folderRank,
             }, finalScore));
         }
 
@@ -250,6 +269,7 @@ public sealed class Bm25SearchService : IBm25Search
     {
         if (!DateTime.TryParse(modifiedAt, out var date)) return 1.0;
         var days = (DateTime.UtcNow - date).TotalDays;
-        return 1.0 / (1.0 + days / 730.0);
+        var boost = 1.0 / (1.0 + days / 365.0);
+        return Math.Max(0.3, boost);
     }
 }
