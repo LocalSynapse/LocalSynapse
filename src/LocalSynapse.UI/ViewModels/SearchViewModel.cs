@@ -25,12 +25,23 @@ public enum NoteColor
     TimeRecent, TimeOld, Opened, Frequent, Location
 }
 
+/// <summary>App-level locale helper. Uses ISettingsStore.GetLanguage() instead of OS culture.</summary>
+public static class SmartNoteLocale
+{
+    private static string _language = "en";
+
+    /// <summary>Initialize from ISettingsStore at app startup.</summary>
+    public static void Initialize(string language) => _language = language ?? "en";
+
+    /// <summary>True if app language is Korean.</summary>
+    public static bool IsKorean => _language.StartsWith("ko", StringComparison.OrdinalIgnoreCase);
+}
+
 /// <summary>Smart Notes badge with ko/en bilingual text and color-coded brush.</summary>
 public record SmartNote(string TextKo, string TextEn, NoteColor Color)
 {
-    /// <summary>Current locale text.</summary>
-    public string Text => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ko"
-        ? TextKo : TextEn;
+    /// <summary>Current locale text. Uses SmartNoteLocale.IsKorean for app-level setting.</summary>
+    public string Text => SmartNoteLocale.IsKorean ? TextKo : TextEn;
 
     /// <summary>Badge background brush.</summary>
     public Avalonia.Media.SolidColorBrush BackgroundBrush => Color switch
@@ -74,7 +85,7 @@ public sealed class SearchResultFolder
     public double Score { get; set; }
     public string LastModified { get; set; } = "";
 
-    private static bool IsKo => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ko";
+    private static bool IsKo => SmartNoteLocale.IsKorean;
 
     /// <summary>Localized meta text for folder row.</summary>
     public string MetaText => IsKo
@@ -139,7 +150,7 @@ public partial class SearchViewModel : ObservableObject
     private const int DebounceMs = 250;
 
     // ── i18n ──
-    private static bool IsKorean => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ko";
+    private static bool IsKorean => SmartNoteLocale.IsKorean;
 
     /// <summary>Section 1 label.</summary>
     public string SectionLabelFilename => IsKorean ? "파일명 일치" : "Filename match";

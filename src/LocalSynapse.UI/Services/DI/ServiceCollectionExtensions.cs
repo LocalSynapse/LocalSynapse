@@ -84,7 +84,10 @@ public static class ServiceCollectionExtensions
         // DataSetupViewModel: Singleton (observes pipeline, must survive tab switches)
         services.AddSingleton<DataSetupViewModel>();
         // Search: Singleton (survives tab switches, preserves search state)
-        services.AddSingleton<SearchViewModel>(sp => new SearchViewModel(
+        services.AddSingleton<SearchViewModel>(sp =>
+        {
+            ViewModels.SmartNoteLocale.Initialize(sp.GetRequiredService<ISettingsStore>().GetLanguage());
+            return new SearchViewModel(
             sp.GetRequiredService<IHybridSearch>(),
             sp.GetRequiredService<IBm25Search>(),
             sp.GetRequiredService<Bm25SearchService>(),
@@ -93,7 +96,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IFileRepository>(),
             sp.GetRequiredService<IChunkRepository>(),
             sp.GetRequiredService<SearchClickService>(),
-            sp.GetRequiredService<IDocumentFamilyService>()));
+            sp.GetRequiredService<IDocumentFamilyService>());
+        });
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
         services.AddTransient<SettingsViewModel>();
