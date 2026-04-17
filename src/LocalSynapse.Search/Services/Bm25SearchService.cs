@@ -100,6 +100,7 @@ public sealed class Bm25SearchService : IBm25Search
                 Score = 1.0,
                 ModifiedAt = r.GetString(6),
                 IsDirectory = !r.IsDBNull(7) && r.GetInt32(7) == 1,
+                MatchSource = MatchSource.FileName, // QuickSearch = LIKE 기반 파일명 매치
             });
         }
         return hits;

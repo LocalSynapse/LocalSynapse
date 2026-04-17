@@ -37,7 +37,7 @@ public static class RrfFusion
                 MatchedTerms = b.MatchedTerms,
                 ModifiedAt = b.ModifiedAt,
                 IsDirectory = b.IsDirectory,
-                MatchSource = MatchSource.Content,
+                MatchSource = b.MatchSource,
             };
         }
 
@@ -65,7 +65,7 @@ public static class RrfFusion
                     Bm25Score = 0,
                     DenseScore = d.Score,
                     ModifiedAt = d.ModifiedAt ?? "",
-                    MatchSource = MatchSource.Content,
+                    MatchSource = MatchSource.Content, // Dense-only: BM25 미매치, semantic content 기반
                 };
             }
         }
