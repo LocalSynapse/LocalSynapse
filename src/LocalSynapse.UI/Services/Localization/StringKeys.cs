@@ -81,6 +81,8 @@ public static class StringKeys
             public const string Type = "Search.Detail.Type";
             public const string Score = "Search.Detail.Score";
             public const string Files = "Search.Detail.Files";
+            public const string NotIndexed = "Search.Detail.NotIndexed";
+            public const string PreviewError = "Search.Detail.PreviewError";
         }
     }
 

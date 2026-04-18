@@ -924,7 +924,7 @@ public partial class SearchViewModel : ObservableObject
                             allText, Query.Split(' ', StringSplitOptions.RemoveEmptyEntries));
                     }
                     else if (chunks.Count == 0)
-                        DetailSnippet = "File not yet indexed";
+                        DetailSnippet = _loc[StringKeys.Search.Detail.NotIndexed];
                     else
                         DetailSnippet = chunks[0].Text.Length > 500
                             ? chunks[0].Text[..500] + "..." : chunks[0].Text;
@@ -932,7 +932,7 @@ public partial class SearchViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[SearchVM] Snippet error: {ex.Message}");
-                    DetailSnippet = "Unable to load preview";
+                    DetailSnippet = _loc[StringKeys.Search.Detail.PreviewError];
                 }
             }
 
