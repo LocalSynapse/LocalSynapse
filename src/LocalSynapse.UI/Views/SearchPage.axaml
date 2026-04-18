@@ -144,24 +144,32 @@
                 <!-- Right: date filter -->
                 <ComboBox DockPanel.Dock="Right"
                           ItemsSource="{Binding DateFilterOptions}"
-                          SelectedValue="{Binding ActiveDateFilter}"
-                          SelectedValueBinding="{Binding Token}"
-                          DisplayMemberBinding="{Binding DisplayText}"
+                          SelectedItem="{Binding ActiveDateFilterOption}"
                           FontSize="11" Padding="4,3"
                           CornerRadius="5" MinWidth="70"
                           HorizontalContentAlignment="Center"
-                          VerticalAlignment="Center" Margin="0,0,6,0" />
+                          VerticalAlignment="Center" Margin="0,0,6,0">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FilterOption">
+                            <TextBlock Text="{Binding DisplayText}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
 
                 <!-- Right: type filter -->
                 <ComboBox DockPanel.Dock="Right"
                           ItemsSource="{Binding TypeFilterOptions}"
-                          SelectedValue="{Binding ActiveTypeFilter}"
-                          SelectedValueBinding="{Binding Token}"
-                          DisplayMemberBinding="{Binding DisplayText}"
+                          SelectedItem="{Binding ActiveTypeFilterOption}"
                           FontSize="11" Padding="4,3"
                           CornerRadius="5" MinWidth="60"
                           HorizontalContentAlignment="Center"
-                          VerticalAlignment="Center" Margin="0,0,4,0" />
+                          VerticalAlignment="Center" Margin="0,0,4,0">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FilterOption">
+                            <TextBlock Text="{Binding DisplayText}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
 
                 <!-- Left: total result count -->
                 <StackPanel Orientation="Horizontal" Spacing="4"

@@ -151,9 +151,31 @@ public partial class SearchViewModel : ObservableObject
     [ObservableProperty] private string _searchTime = "";
     [ObservableProperty] private PipelineStamps _stamps = new();
 
-    // Filter
+    // Filter — string tokens are the source of truth; *Option properties wrap for ComboBox SelectedItem binding
     [ObservableProperty] private string _activeTypeFilter = "All";
     [ObservableProperty] private string _activeDateFilter = "All";
+
+    /// <summary>ComboBox-bindable FilterOption for type filter. Language-aware DisplayText.</summary>
+    public FilterOption ActiveTypeFilterOption
+    {
+        get => TypeFilterOptions.FirstOrDefault(o => o.Token == ActiveTypeFilter) ?? TypeFilterOptions[0];
+        set
+        {
+            if (value != null && value.Token != ActiveTypeFilter)
+                ActiveTypeFilter = value.Token;
+        }
+    }
+
+    /// <summary>ComboBox-bindable FilterOption for date filter.</summary>
+    public FilterOption ActiveDateFilterOption
+    {
+        get => DateFilterOptions.FirstOrDefault(o => o.Token == ActiveDateFilter) ?? DateFilterOptions[0];
+        set
+        {
+            if (value != null && value.Token != ActiveDateFilter)
+                ActiveDateFilter = value.Token;
+        }
+    }
 
     // ── Selected item + detail panel ──
     [ObservableProperty] private object? _selectedItem;
@@ -294,6 +316,8 @@ public partial class SearchViewModel : ObservableObject
         OnPropertyChanged(nameof(IndexedSummaryText));
         OnPropertyChanged(nameof(TypeFilterOptions));
         OnPropertyChanged(nameof(DateFilterOptions));
+        OnPropertyChanged(nameof(ActiveTypeFilterOption));
+        OnPropertyChanged(nameof(ActiveDateFilterOption));
 
         // Rebuild SmartNote + MetaText from cached response (collection regeneration strategy).
         // SmartNote and MetaText are pre-localized at creation — reconstruct with current _loc.
@@ -416,8 +440,18 @@ public partial class SearchViewModel : ObservableObject
         IsEmptyFilteredEmpty = value == EmptyStateType.FilteredEmpty;
     }
 
-    partial void OnActiveTypeFilterChanged(string value) => ApplyTypeAndDateFilter();
-    partial void OnActiveDateFilterChanged(string value) => ApplyTypeAndDateFilter();
+    partial void OnActiveTypeFilterChanged(string value)
+    {
+        if (value == null) { ActiveTypeFilter = "All"; return; }
+        OnPropertyChanged(nameof(ActiveTypeFilterOption));
+        ApplyTypeAndDateFilter();
+    }
+    partial void OnActiveDateFilterChanged(string value)
+    {
+        if (value == null) { ActiveDateFilter = "All"; return; }
+        OnPropertyChanged(nameof(ActiveDateFilterOption));
+        ApplyTypeAndDateFilter();
+    }
     partial void OnSelectedItemChanged(object? value) => UpdateDetailPanel(value);
 
     /// <summary>Open file with default program.</summary>
@@ -839,10 +873,12 @@ public partial class SearchViewModel : ObservableObject
     private List<SearchResultFile> FilterFiles(List<SearchResultFile> files)
     {
         var result = files.AsEnumerable();
+        var typeFilter = ActiveTypeFilter ?? "All";
+        var dateFilter = ActiveDateFilter ?? "All";
 
-        if (ActiveTypeFilter != "All")
+        if (typeFilter != "All")
         {
-            var extFilter = ActiveTypeFilter.ToLowerInvariant() switch
+            var extFilter = typeFilter.ToLowerInvariant() switch
             {
                 "docx" => new[] { ".docx", ".doc" },
                 "xlsx" => new[] { ".xlsx", ".xls", ".csv" },
@@ -856,9 +892,9 @@ public partial class SearchViewModel : ObservableObject
                 result = result.Where(f => extFilter.Contains(f.Extension.ToLowerInvariant()));
         }
 
-        if (ActiveDateFilter != "All")
+        if (dateFilter != "All")
         {
-            var cutoff = ActiveDateFilter switch
+            var cutoff = dateFilter switch
             {
                 "30 days" => DateTime.UtcNow.AddDays(-30),
                 "90 days" => DateTime.UtcNow.AddDays(-90),
