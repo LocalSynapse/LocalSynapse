@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LocalSynapse.UI.ViewModels"
              xmlns:conv="using:LocalSynapse.UI.Converters"
+             xmlns:i18n="using:LocalSynapse.UI.Markup"
              x:Class="LocalSynapse.UI.Views.SearchPage"
              x:DataType="vm:SearchViewModel"
              FontFamily="{StaticResource FontDefault}">
@@ -30,12 +31,15 @@
         </Style>
         <!-- Section header button style -->
         <Style Selector="Button.SectionHeader">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="20,8,20,6" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.SectionHeader /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BgMutedBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
         </Style>
         <Style Selector="Button.SectionHeader:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{StaticResource BgHoverBrush}" />
@@ -63,7 +67,7 @@
                         <!-- Input -->
                         <TextBox Grid.Column="1"
                                  Text="{Binding Query, Mode=TwoWay}"
-                                 Watermark="Search files, content, or ask a question..."
+                                 Watermark="{i18n:Tr Key=Search.Placeholder}"
                                  FontSize="{StaticResource FontSizeM}"
                                  FontWeight="Medium"
                                  Foreground="{StaticResource TextPrimaryBrush}"
@@ -80,7 +84,7 @@
                         </Border>
                         <!-- Search button -->
                         <Button Grid.Column="3" Classes="BtnPrimary"
-                                Content="Search"
+                                Content="{i18n:Tr Key=Search.Button}"
                                 Command="{Binding SearchCommand}"
                                 VerticalAlignment="Stretch"
                                 Padding="20,0" />
@@ -96,7 +100,10 @@
                                  Height="{StaticResource StatusDotSize}"
                                  Fill="{StaticResource SuccessBrush}"
                                  VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0} files indexed'}"
+                        <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
+                                   FontSize="{StaticResource FontSizeS}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{i18n:Tr Key=Search.FilesIndexed}"
                                    FontSize="{StaticResource FontSizeS}"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
                     </StackPanel>
@@ -105,7 +112,10 @@
                                  Height="{StaticResource StatusDotSize}"
                                  Fill="{StaticResource SuccessBrush}"
                                  VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0} chunks'}"
+                        <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
+                                   FontSize="{StaticResource FontSizeS}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{i18n:Tr Key=Search.Chunks}"
                                    FontSize="{StaticResource FontSizeS}"
                                    Foreground="{StaticResource TextSecondaryBrush}" />
                     </StackPanel>
@@ -134,7 +144,9 @@
                 <!-- Right: date filter -->
                 <ComboBox DockPanel.Dock="Right"
                           ItemsSource="{Binding DateFilterOptions}"
-                          SelectedItem="{Binding ActiveDateFilter}"
+                          SelectedValue="{Binding ActiveDateFilter}"
+                          SelectedValueBinding="{Binding Token}"
+                          DisplayMemberBinding="{Binding DisplayText}"
                           FontSize="11" Padding="4,3"
                           CornerRadius="5" MinWidth="70"
                           HorizontalContentAlignment="Center"
@@ -143,16 +155,22 @@
                 <!-- Right: type filter -->
                 <ComboBox DockPanel.Dock="Right"
                           ItemsSource="{Binding TypeFilterOptions}"
-                          SelectedItem="{Binding ActiveTypeFilter}"
+                          SelectedValue="{Binding ActiveTypeFilter}"
+                          SelectedValueBinding="{Binding Token}"
+                          DisplayMemberBinding="{Binding DisplayText}"
                           FontSize="11" Padding="4,3"
                           CornerRadius="5" MinWidth="60"
                           HorizontalContentAlignment="Center"
                           VerticalAlignment="Center" Margin="0,0,4,0" />
 
                 <!-- Left: total result count -->
-                <StackPanel Orientation="Horizontal" Spacing="8"
+                <StackPanel Orientation="Horizontal" Spacing="4"
                             VerticalAlignment="Center" Margin="20,0,0,0">
-                    <TextBlock Text="{Binding TotalResultCount, StringFormat='{}{0} results'}"
+                    <TextBlock Text="{Binding TotalResultCount}"
+                               FontSize="{StaticResource FontSizeBody}"
+                               FontWeight="Medium"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{i18n:Tr Key=Search.Results}"
                                FontSize="{StaticResource FontSizeBody}"
                                FontWeight="Medium"
                                Foreground="{StaticResource TextSecondaryBrush}" />
@@ -177,19 +195,22 @@
                               Foreground="{StaticResource AccentBrush}"
                               Data="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 9h-2v2H9v-2H7v-2h2V7h2v2h2v2z" />
                 </Border>
-                <TextBlock Text="Search across all your files"
+                <TextBlock Text="{i18n:Tr Key=Search.Initial}"
                            FontSize="{StaticResource FontSizeM}"
                            FontWeight="Medium"
                            Foreground="{StaticResource TextPrimaryBrush}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0} files indexed'}"
-                           FontSize="{StaticResource FontSizeS}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,16" />
+                <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" Margin="0,0,0,16">
+                    <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
+                               FontSize="{StaticResource FontSizeS}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding IndexedSummaryText}"
+                               FontSize="{StaticResource FontSizeS}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                </StackPanel>
 
                 <!-- Example queries -->
-                <TextBlock Text="Try searching for"
+                <TextBlock Text="{i18n:Tr Key=Search.TryHint}"
                            FontSize="{StaticResource FontSizeXs}"
                            Foreground="{StaticResource TextMutedBrush}"
                            HorizontalAlignment="Center" />
@@ -230,15 +251,15 @@
                     <!-- No results -->
                     <StackPanel IsVisible="{Binding IsEmptyNoResults}" Spacing="8"
                                 HorizontalAlignment="Center" Margin="0,40,0,20">
-                        <TextBlock Text="No results found"
+                        <TextBlock Text="{i18n:Tr Key=Search.NoResults}"
                                    FontSize="{StaticResource FontSizeM}"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    HorizontalAlignment="Center" />
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <TextBlock Text="&#x2022; Try different keywords or check spelling"
+                            <TextBlock Text="{i18n:Tr Key=Search.NoResultsHint}"
                                        FontSize="{StaticResource FontSizeXs}"
                                        Foreground="{StaticResource TextMutedBrush}" />
-                            <TextBlock Text="&#x2022; Use quotes for exact phrases: &quot;budget report&quot;"
+                            <TextBlock Text="{i18n:Tr Key=Search.QuotesHint}"
                                        FontSize="{StaticResource FontSizeXs}"
                                        Foreground="{StaticResource TextMutedBrush}" />
                         </StackPanel>
@@ -247,11 +268,11 @@
                     <!-- Filtered empty -->
                     <StackPanel IsVisible="{Binding IsEmptyFilteredEmpty}" Spacing="8"
                                 HorizontalAlignment="Center" Margin="0,40,0,20">
-                        <TextBlock Text="No results with current filters"
+                        <TextBlock Text="{i18n:Tr Key=Search.FilteredEmpty}"
                                    FontSize="{StaticResource FontSizeM}"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    HorizontalAlignment="Center" />
-                        <Button Content="Clear filters" Command="{Binding ClearFiltersCommand}"
+                        <Button Content="{i18n:Tr Key=Search.FilteredEmptyHint}" Command="{Binding ClearFiltersCommand}"
                                 Classes="BtnSecondary" HorizontalAlignment="Center"
                                 Foreground="{StaticResource AccentBrush}" />
                     </StackPanel>
@@ -606,7 +627,7 @@
                                     <Binding Path="!IsFolderSelected" />
                                 </MultiBinding>
                             </StackPanel.IsVisible>
-                            <TextBlock Text="Select an item to preview"
+                            <TextBlock Text="{i18n:Tr Key=Search.SelectToPreview}"
                                        Foreground="{StaticResource TextMutedBrush}"
                                        FontSize="{StaticResource FontSizeM}"
                                        HorizontalAlignment="Center" />
@@ -653,7 +674,7 @@
                                     BorderThickness="0,1,0,1"
                                     Margin="0,16,0,0">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="INFO"
+                                    <TextBlock Text="{i18n:Tr Key=Search.Detail.Info}"
                                                FontSize="{StaticResource FontSizeXs}"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource TextMutedBrush}"
@@ -665,7 +686,7 @@
                                                    FontSize="{StaticResource FontSizeS}"
                                                    Foreground="{StaticResource TextPrimaryBrush}"
                                                    FontFamily="{StaticResource FontMono}" />
-                                        <TextBlock Text="Size"
+                                        <TextBlock Text="{i18n:Tr Key=Search.Detail.Size}"
                                                    FontSize="{StaticResource FontSizeS}"
                                                    Foreground="{StaticResource TextSecondaryBrush}" />
                                     </DockPanel>
@@ -677,7 +698,7 @@
                                                    FontWeight="SemiBold"
                                                    FontFamily="{StaticResource FontMono}"
                                                    Foreground="{StaticResource TextPrimaryBrush}" />
-                                        <TextBlock Text="Modified"
+                                        <TextBlock Text="{i18n:Tr Key=Search.Detail.Modified}"
                                                    FontSize="{StaticResource FontSizeS}"
                                                    Foreground="{StaticResource TextSecondaryBrush}" />
                                     </DockPanel>
@@ -688,7 +709,7 @@
                                                    FontWeight="SemiBold"
                                                    FontFamily="{StaticResource FontMono}"
                                                    Foreground="{StaticResource AccentBrush}" />
-                                        <TextBlock Text="Score"
+                                        <TextBlock Text="{i18n:Tr Key=Search.Detail.Score}"
                                                    FontSize="{StaticResource FontSizeS}"
                                                    Foreground="{StaticResource TextSecondaryBrush}" />
                                     </DockPanel>
@@ -697,7 +718,7 @@
 
                             <!-- Snippet section -->
                             <StackPanel Spacing="8" Margin="20,16,20,0">
-                                <TextBlock Text="CONTENT PREVIEW"
+                                <TextBlock Text="{i18n:Tr Key=Search.Detail.ContentPreview}"
                                            FontSize="{StaticResource FontSizeXs}"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource TextMutedBrush}" />
@@ -717,11 +738,11 @@
                             <!-- Actions -->
                             <StackPanel Orientation="Horizontal" Spacing="8"
                                         Margin="20,16,20,20">
-                                <Button Classes="BtnPrimary" Content="Open file"
+                                <Button Classes="BtnPrimary" Content="{i18n:Tr Key=Search.Detail.OpenFile}"
                                         Command="{Binding OpenFileCommand}" />
-                                <Button Classes="BtnSecondary" Content="Open folder"
+                                <Button Classes="BtnSecondary" Content="{i18n:Tr Key=Search.Detail.OpenFolder}"
                                         Command="{Binding OpenFolderCommand}" />
-                                <Button Classes="BtnSecondary" Content="Copy path"
+                                <Button Classes="BtnSecondary" Content="{i18n:Tr Key=Search.Detail.CopyPath}"
                                         Name="CopyPathButton"
                                         Click="CopyPath_Click" />
                             </StackPanel>
@@ -766,7 +787,7 @@
                                     BorderThickness="0,1,0,1"
                                     Margin="0,16,0,0">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="INFO"
+                                    <TextBlock Text="{i18n:Tr Key=Search.Detail.Info}"
                                                FontSize="{StaticResource FontSizeXs}"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource TextMutedBrush}"
@@ -778,7 +799,7 @@
                                                    FontWeight="SemiBold"
                                                    FontFamily="{StaticResource FontMono}"
                                                    Foreground="{StaticResource TextPrimaryBrush}" />
-                                        <TextBlock Text="Matching files"
+                                        <TextBlock Text="{i18n:Tr Key=Search.Detail.Files}"
                                                    FontSize="{StaticResource FontSizeS}"
                                                    Foreground="{StaticResource TextSecondaryBrush}" />
                                     </DockPanel>
@@ -787,7 +808,7 @@
 
                             <!-- Files in folder -->
                             <StackPanel Margin="20,16,20,0" Spacing="8">
-                                <TextBlock Text="FILES IN THIS FOLDER"
+                                <TextBlock Text="{i18n:Tr Key=Search.Detail.Files}"
                                            FontSize="{StaticResource FontSizeXs}"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource TextMutedBrush}" />
@@ -831,9 +852,9 @@
                             <!-- Actions -->
                             <StackPanel Orientation="Horizontal" Spacing="8"
                                         Margin="20,16,20,20">
-                                <Button Classes="BtnPrimary" Content="Open folder"
+                                <Button Classes="BtnPrimary" Content="{i18n:Tr Key=Search.Detail.OpenFolder}"
                                         Command="{Binding OpenFolderCommand}" />
-                                <Button Classes="BtnSecondary" Content="Copy path"
+                                <Button Classes="BtnSecondary" Content="{i18n:Tr Key=Search.Detail.CopyPath}"
                                         Name="CopyPathButtonFolder"
                                         Click="CopyPath_Click" />
                             </StackPanel>

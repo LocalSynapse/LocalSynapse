@@ -14,6 +14,7 @@ using LocalSynapse.Mcp.Interfaces;
 using LocalSynapse.Mcp.Server;
 using LocalSynapse.UI.ViewModels;
 using LocalSynapse.UI.Services;
+using LocalSynapse.UI.Services.Localization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LocalSynapse.UI.Services.DI;
@@ -78,16 +79,16 @@ public static class ServiceCollectionExtensions
         });
         services.AddSingleton<IMcpServer, McpServer>();
 
+        // ── Localization ──
+        services.AddSingleton<ILocalizationService, LocalizationService>();
+
         // ── ViewModels ──
         // MainViewModel: Singleton (one navigation state for app lifetime)
         services.AddSingleton<MainViewModel>();
         // DataSetupViewModel: Singleton (observes pipeline, must survive tab switches)
         services.AddSingleton<DataSetupViewModel>();
         // Search: Singleton (survives tab switches, preserves search state)
-        services.AddSingleton<SearchViewModel>(sp =>
-        {
-            ViewModels.SmartNoteLocale.Initialize(sp.GetRequiredService<ISettingsStore>().GetLanguage());
-            return new SearchViewModel(
+        services.AddSingleton<SearchViewModel>(sp => new SearchViewModel(
             sp.GetRequiredService<IHybridSearch>(),
             sp.GetRequiredService<IBm25Search>(),
             sp.GetRequiredService<Bm25SearchService>(),
@@ -96,8 +97,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IFileRepository>(),
             sp.GetRequiredService<IChunkRepository>(),
             sp.GetRequiredService<SearchClickService>(),
-            sp.GetRequiredService<IDocumentFamilyService>());
-        });
+            sp.GetRequiredService<IDocumentFamilyService>(),
+            sp.GetRequiredService<ILocalizationService>()));
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
         services.AddTransient<SettingsViewModel>();

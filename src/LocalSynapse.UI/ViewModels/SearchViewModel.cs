@@ -1,4 +1,6 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -12,6 +14,7 @@ using LocalSynapse.Search;
 using LocalSynapse.Search.Interfaces;
 using LocalSynapse.Search.Services;
 using LocalSynapse.UI.Services;
+using LocalSynapse.UI.Services.Localization;
 
 namespace LocalSynapse.UI.ViewModels;
 
@@ -25,24 +28,9 @@ public enum NoteColor
     TimeRecent, TimeOld, Opened, Frequent, Location
 }
 
-/// <summary>App-level locale helper. Uses ISettingsStore.GetLanguage() instead of OS culture.</summary>
-public static class SmartNoteLocale
+/// <summary>Smart Notes badge with pre-localized text and color-coded brush.</summary>
+public record SmartNote(string Text, NoteColor Color)
 {
-    private static string _language = "en";
-
-    /// <summary>Initialize from ISettingsStore at app startup.</summary>
-    public static void Initialize(string language) => _language = language ?? "en";
-
-    /// <summary>True if app language is Korean.</summary>
-    public static bool IsKorean => _language.StartsWith("ko", StringComparison.OrdinalIgnoreCase);
-}
-
-/// <summary>Smart Notes badge with ko/en bilingual text and color-coded brush.</summary>
-public record SmartNote(string TextKo, string TextEn, NoteColor Color)
-{
-    /// <summary>Current locale text. Uses SmartNoteLocale.IsKorean for app-level setting.</summary>
-    public string Text => SmartNoteLocale.IsKorean ? TextKo : TextEn;
-
     /// <summary>Badge background brush.</summary>
     public Avalonia.Media.SolidColorBrush BackgroundBrush => Color switch
     {
@@ -74,7 +62,7 @@ public record SmartNote(string TextKo, string TextEn, NoteColor Color)
     };
 }
 
-/// <summary>Folder item in search results.</summary>
+/// <summary>Folder item in search results. MetaText is pre-localized at creation time.</summary>
 public sealed class SearchResultFolder
 {
     public required string Path { get; set; }
@@ -85,17 +73,12 @@ public sealed class SearchResultFolder
     public double Score { get; set; }
     public string LastModified { get; set; } = "";
 
-    private static bool IsKo => SmartNoteLocale.IsKorean;
-
-    /// <summary>Localized meta text for folder row.</summary>
-    public string MetaText => IsKo
-        ? (string.IsNullOrEmpty(LastModified)
-            ? $"{FileCount}개 파일"
-            : $"{FileCount}개 파일 · 최근 {LastModified}")
-        : (string.IsNullOrEmpty(LastModified)
-            ? $"{FileCount} files"
-            : $"{FileCount} files · last {LastModified}");
+    /// <summary>Pre-localized meta text — set at creation time by SearchViewModel using ILocalizationService.</summary>
+    public string MetaText { get; set; } = "";
 }
+
+/// <summary>Filter option token-display pair. Token is language-invariant for SelectedValue binding.</summary>
+public sealed record FilterOption(string Token, string DisplayText);
 
 /// <summary>File item in search results.</summary>
 public sealed class SearchResultFile
@@ -141,6 +124,7 @@ public partial class SearchViewModel : ObservableObject
     private readonly IChunkRepository _chunkRepo;
     private readonly SearchClickService _clickService;
     private readonly IDocumentFamilyService _familyService;
+    private readonly ILocalizationService _loc;
 
     // Search-as-you-type debounce
     private System.Threading.Timer? _debounceTimer;
@@ -150,16 +134,16 @@ public partial class SearchViewModel : ObservableObject
     private const int DebounceMs = 250;
 
     // ── i18n ──
-    private static bool IsKorean => SmartNoteLocale.IsKorean;
+    private bool IsKorean => _loc.Current == "ko";
 
     /// <summary>Section 1 label.</summary>
-    public string SectionLabelFilename => IsKorean ? "파일명 일치" : "Filename match";
+    public string SectionLabelFilename => _loc[StringKeys.Search.Section.Filename];
     /// <summary>Section 2 label.</summary>
-    public string SectionLabelOpened => IsKorean ? "이전에 열어봄" : "Previously opened";
+    public string SectionLabelOpened => _loc[StringKeys.Search.Section.Opened];
     /// <summary>Section 3 label.</summary>
-    public string SectionLabelContent => IsKorean ? "내용에서 발견" : "Found in content";
+    public string SectionLabelContent => _loc[StringKeys.Search.Section.Content];
     /// <summary>Section 4 label.</summary>
-    public string SectionLabelFolders => IsKorean ? "관련 폴더" : "Related folders";
+    public string SectionLabelFolders => _loc[StringKeys.Search.Section.Folders];
 
     // ── Bindable properties ──
     [ObservableProperty] private string _query = "";
@@ -233,25 +217,45 @@ public partial class SearchViewModel : ObservableObject
     /// <summary>Platform search shortcut text.</summary>
     public string SearchShortcutText => RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "⌘K" : "Ctrl+K";
 
-    /// <summary>Platform indexed summary text.</summary>
+    /// <summary>Platform indexed summary text (localized).</summary>
     public string IndexedSummaryText => RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-        ? "files indexed"
-        : "files indexed across all drives";
+        ? _loc[StringKeys.Search.IndexedSummary.Mac]
+        : _loc[StringKeys.Search.IndexedSummary.Desktop];
 
     /// <summary>Files in selected folder (detail panel).</summary>
     public ObservableCollection<SearchResultFile> DetailFolderFiles { get; } = [];
 
-    /// <summary>Available type filter options.</summary>
-    public string[] TypeFilterOptions { get; } = ["All", "DOCX", "XLSX", "PDF", "PPTX", "HWP", "TXT"];
+    /// <summary>Available type filter options. Token is language-invariant; DisplayText is localized.</summary>
+    public FilterOption[] TypeFilterOptions => new[]
+    {
+        new FilterOption("All", _loc[StringKeys.Common.All]),
+        new FilterOption("DOCX", "DOCX"),
+        new FilterOption("XLSX", "XLSX"),
+        new FilterOption("PDF", "PDF"),
+        new FilterOption("PPTX", "PPTX"),
+        new FilterOption("HWP", "HWP"),
+        new FilterOption("TXT", "TXT"),
+    };
 
-    /// <summary>Available date filter options.</summary>
-    public string[] DateFilterOptions { get; } = ["All", "30 days", "90 days", "This year"];
+    /// <summary>Available date filter options. Token is language-invariant; DisplayText is localized.</summary>
+    public FilterOption[] DateFilterOptions => new[]
+    {
+        new FilterOption("All", _loc[StringKeys.Common.All]),
+        new FilterOption("30 days", _loc[StringKeys.Filter.Date30Days]),
+        new FilterOption("90 days", _loc[StringKeys.Filter.Date90Days]),
+        new FilterOption("This year", _loc[StringKeys.Filter.DateThisYear]),
+    };
 
     // ── Internal result storage (pre-filter) ──
     private List<SearchResultFile> _allFilenameFiles = [];
     private List<SearchResultFile> _allPreviouslyOpenedFiles = [];
     private List<SearchResultFile> _allContentFiles = [];
     private List<SearchResultFolder> _allRelatedFolders = [];
+
+    // ── Cache for language-change rebuild ──
+    private SearchResponse? _lastResponse;
+    private IReadOnlyList<Bm25Hit>? _lastQuickHits;
+    private string _lastQuery = "";
 
     /// <summary>SearchViewModel constructor.</summary>
     public SearchViewModel(
@@ -263,7 +267,8 @@ public partial class SearchViewModel : ObservableObject
         IFileRepository fileRepo,
         IChunkRepository chunkRepo,
         SearchClickService clickService,
-        IDocumentFamilyService familyService)
+        IDocumentFamilyService familyService,
+        ILocalizationService loc)
     {
         _hybridSearch = hybridSearch;
         _bm25Search = bm25Search;
@@ -274,7 +279,37 @@ public partial class SearchViewModel : ObservableObject
         _chunkRepo = chunkRepo;
         _clickService = clickService;
         _familyService = familyService;
+        _loc = loc;
         Stamps = _stampRepo.GetCurrent();
+        _loc.LanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        // Fire PropertyChanged for all localized computed properties
+        OnPropertyChanged(nameof(SectionLabelFilename));
+        OnPropertyChanged(nameof(SectionLabelOpened));
+        OnPropertyChanged(nameof(SectionLabelContent));
+        OnPropertyChanged(nameof(SectionLabelFolders));
+        OnPropertyChanged(nameof(IndexedSummaryText));
+        OnPropertyChanged(nameof(TypeFilterOptions));
+        OnPropertyChanged(nameof(DateFilterOptions));
+
+        // Rebuild SmartNote + MetaText from cached response (collection regeneration strategy).
+        // SmartNote and MetaText are pre-localized at creation — reconstruct with current _loc.
+        if (_lastResponse != null && _lastQuickHits != null)
+        {
+            try
+            {
+                CategorizeIntoSections(_lastResponse, _lastQuickHits);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SearchVM] Rebuild on language change failed: {ex.Message}");
+            }
+        }
+        // Always re-apply filter to refresh "더 보기/Show less" text
+        ApplyTypeAndDateFilter();
     }
 
     // ── Search-as-you-type ──
@@ -344,6 +379,11 @@ public partial class SearchViewModel : ObservableObject
             CategorizeIntoSections(response, quickHits);
             ApplyTypeAndDateFilter();
             var catMs = catSw.ElapsedMilliseconds;
+
+            // Cache for language-change rebuild
+            _lastResponse = response;
+            _lastQuickHits = quickHits;
+            _lastQuery = _activeSearchQuery;
 
             sw.Stop();
             SearchTime = $"{sw.Elapsed.TotalSeconds:F1}s";
@@ -557,7 +597,7 @@ public partial class SearchViewModel : ObservableObject
         _allRelatedFolders = relatedFolders;
     }
 
-    private static List<SearchResultFolder> GroupIntoFolders(List<SearchResultFile> files)
+    private List<SearchResultFolder> GroupIntoFolders(List<SearchResultFile> files)
     {
         return files
             .Where(f => !string.IsNullOrEmpty(f.FolderPath))
@@ -566,15 +606,21 @@ public partial class SearchViewModel : ObservableObject
             {
                 var folderName = System.IO.Path.GetFileName(g.Key) ?? g.Key;
                 var parentPath = System.IO.Path.GetDirectoryName(g.Key) ?? "";
+                var fileCount = g.Count();
+                var lastMod = g.Max(f => f.ModifiedAt) ?? "";
+                var metaText = string.IsNullOrEmpty(lastMod)
+                    ? _loc.Format(StringKeys.Folder.FileCount, fileCount)
+                    : _loc.Format(StringKeys.Folder.FileCountWithDate, fileCount, lastMod);
                 return new SearchResultFolder
                 {
                     Path = g.Key,
                     Name = folderName,
                     ParentPath = parentPath,
-                    FileCount = g.Count(),
-                    SubText = $"{g.Count()} files",
+                    FileCount = fileCount,
+                    SubText = _loc.Format(StringKeys.Folder.FileCount, fileCount),
                     Score = g.Max(f => f.Score),
-                    LastModified = g.Max(f => f.ModifiedAt) ?? "",
+                    LastModified = lastMod,
+                    MetaText = metaText,
                 };
             })
             .OrderByDescending(f => f.Score).Take(50).ToList();
@@ -616,53 +662,49 @@ public partial class SearchViewModel : ObservableObject
             {
                 if (family.isLatest)
                     candidates.Add((2, new SmartNote(
-                        $"{family.versionCount}개 버전 중 최신",
-                        $"Latest of {family.versionCount} versions",
+                        _loc.Format(StringKeys.SmartNote.LatestOfVersions, family.versionCount),
                         NoteColor.Version)));
                 else
                 {
-                    candidates.Add((2, new SmartNote("최신 버전 아님", "Not latest version", NoteColor.Version)));
+                    candidates.Add((2, new SmartNote(_loc[StringKeys.SmartNote.NotLatest], NoteColor.Version)));
                     candidates.Add((11, new SmartNote(
-                        $"{family.versionCount}개 버전 중 {family.position}번째",
-                        $"#{family.position} of {family.versionCount} versions",
+                        _loc.Format(StringKeys.SmartNote.NthOfVersions, family.position, family.versionCount),
                         NoteColor.Version)));
                 }
             }
             if (IsCopyPattern(file.Filename))
-                candidates.Add((10, new SmartNote("복사본", "Copy", NoteColor.Version)));
+                candidates.Add((10, new SmartNote(_loc[StringKeys.SmartNote.Copy], NoteColor.Version)));
 
             // Category E: History (P3, P4)
             if (recentlyOpened.TryGetValue(NormalizePath(file.Path), out var opened))
             {
                 if (opened.totalClicks >= 5)
                     candidates.Add((3, new SmartNote(
-                        $"자주 열어봄 ({opened.totalClicks}회)",
-                        $"Frequently opened ({opened.totalClicks}×)",
+                        _loc.Format(StringKeys.SmartNote.FrequentOpened, opened.totalClicks),
                         NoteColor.Frequent)));
 
                 var daysAgo = (int)(DateTime.UtcNow - opened.lastOpened).TotalDays;
                 if (daysAgo < 1)
-                    candidates.Add((4, new SmartNote("오늘 열어봄", "Opened today", NoteColor.Opened)));
+                    candidates.Add((4, new SmartNote(_loc[StringKeys.SmartNote.OpenedToday], NoteColor.Opened)));
                 else if (daysAgo < 7)
-                    candidates.Add((4, new SmartNote($"{daysAgo}일 전에 열어봄", $"Opened {daysAgo} days ago", NoteColor.Opened)));
+                    candidates.Add((4, new SmartNote(_loc.Format(StringKeys.SmartNote.OpenedDaysAgo, daysAgo), NoteColor.Opened)));
                 else if (daysAgo < 14)
-                    candidates.Add((4, new SmartNote("지난주에 열어봄", "Opened last week", NoteColor.Opened)));
+                    candidates.Add((4, new SmartNote(_loc[StringKeys.SmartNote.OpenedLastWeek], NoteColor.Opened)));
                 else if (daysAgo < 60)
-                    candidates.Add((4, new SmartNote("지난달에 열어봄", "Opened last month", NoteColor.Opened)));
+                    candidates.Add((4, new SmartNote(_loc[StringKeys.SmartNote.OpenedLastMonth], NoteColor.Opened)));
             }
 
             // Category C: Content Match (P5, P6)
             if (chunkCounts.TryGetValue(file.FileId, out var chunks))
             {
                 if (chunks.firstMatchIndex == 0)
-                    candidates.Add((5, new SmartNote("제목에서 발견", "Found in title", NoteColor.Title)));
+                    candidates.Add((5, new SmartNote(_loc[StringKeys.SmartNote.FoundInTitle], NoteColor.Title)));
                 else if (chunks.firstMatchIndex <= 2)
-                    candidates.Add((5, new SmartNote("첫 페이지에서 발견", "Found in first page", NoteColor.Title)));
+                    candidates.Add((5, new SmartNote(_loc[StringKeys.SmartNote.FoundInFirstPage], NoteColor.Title)));
 
                 if (chunks.matchCount >= 2)
                     candidates.Add((6, new SmartNote(
-                        $"본문 {chunks.matchCount}곳에서 발견",
-                        $"Found in {chunks.matchCount} places",
+                        _loc.Format(StringKeys.SmartNote.FoundInPlaces, chunks.matchCount),
                         NoteColor.ContentMatch)));
             }
 
@@ -671,20 +713,19 @@ public partial class SearchViewModel : ObservableObject
             {
                 var daysSince = (DateTime.UtcNow - modDate).TotalDays;
                 if (daysSince < 1)
-                    candidates.Add((7, new SmartNote("오늘 수정됨", "Modified today", NoteColor.TimeRecent)));
+                    candidates.Add((7, new SmartNote(_loc[StringKeys.SmartNote.ModifiedToday], NoteColor.TimeRecent)));
                 else if (daysSince < 7)
-                    candidates.Add((7, new SmartNote("이번 주 수정됨", "Modified this week", NoteColor.TimeRecent)));
+                    candidates.Add((7, new SmartNote(_loc[StringKeys.SmartNote.ModifiedThisWeek], NoteColor.TimeRecent)));
                 else if (daysSince < 30)
-                    candidates.Add((9, new SmartNote("이번 달 수정됨", "Modified this month", NoteColor.TimeRecent)));
+                    candidates.Add((9, new SmartNote(_loc[StringKeys.SmartNote.ModifiedThisMonth], NoteColor.TimeRecent)));
                 else if (daysSince > 730)
-                    candidates.Add((10, new SmartNote("2년 이상 미수정", "Not modified in 2+ years", NoteColor.TimeOld)));
+                    candidates.Add((10, new SmartNote(_loc[StringKeys.SmartNote.NotModified2Years], NoteColor.TimeOld)));
             }
 
             // Category F: Location (P8)
             if (folderCounts.TryGetValue(file.FolderPath, out var folderCount) && folderCount >= 3)
                 candidates.Add((8, new SmartNote(
-                    $"같은 폴더에 관련 파일 {folderCount}개",
-                    $"{folderCount} related files in folder",
+                    _loc.Format(StringKeys.SmartNote.RelatedFilesInFolder, folderCount),
                     NoteColor.Location)));
 
             file.SmartNotes = candidates
@@ -696,7 +737,7 @@ public partial class SearchViewModel : ObservableObject
     }
 
     /// <summary>Detect PDF/PPT/DOCX siblings in same folder with similar filename.</summary>
-    private static Dictionary<string, SmartNote> DetectFormatSiblings(List<SearchResultFile> files)
+    private Dictionary<string, SmartNote> DetectFormatSiblings(List<SearchResultFile> files)
     {
         var result = new Dictionary<string, SmartNote>(StringComparer.OrdinalIgnoreCase);
         var groups = files
@@ -717,9 +758,9 @@ public partial class SearchViewModel : ObservableObject
                 foreach (var f in group)
                 {
                     if (f.Extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
-                        result[f.FileId] = new SmartNote("PDF 최종본", "PDF final version", NoteColor.Format);
+                        result[f.FileId] = new SmartNote(_loc[StringKeys.SmartNote.PdfFinalVersion], NoteColor.Format);
                     else if (f.Extension.ToLowerInvariant() is ".pptx" or ".ppt" or ".docx" or ".doc")
-                        result[f.FileId] = new SmartNote("같은 이름 PDF 있음", "Has PDF version", NoteColor.Format);
+                        result[f.FileId] = new SmartNote(_loc[StringKeys.SmartNote.HasPdfVersion], NoteColor.Format);
                 }
             }
         }
@@ -741,30 +782,30 @@ public partial class SearchViewModel : ObservableObject
         var ctFiles = FilterFiles(_allContentFiles);
 
         // "더 보기" — Filename
-        var fnVisible = IsFilenameShowingAll ? fnFiles : fnFiles.Take(5).ToList();
-        MoreFilenameCount = Math.Max(0, fnFiles.Count - 5);
+        var fnVisible = IsFilenameShowingAll ? fnFiles : fnFiles.Take(3).ToList();
+        MoreFilenameCount = Math.Max(0, fnFiles.Count - 3);
         ShowMoreFilename = MoreFilenameCount > 0;
-        MoreFilenameText = IsKorean
-            ? (IsFilenameShowingAll ? "- 접기" : $"+ {MoreFilenameCount}개 더 보기")
-            : (IsFilenameShowingAll ? "- Show less" : $"+ {MoreFilenameCount} more");
+        MoreFilenameText = IsFilenameShowingAll
+            ? _loc[StringKeys.Common.Less]
+            : _loc.Format(StringKeys.Common.More, MoreFilenameCount);
 
         // "더 보기" — Content
-        var ctVisible = IsContentShowingAll ? ctFiles : ctFiles.Take(5).ToList();
-        MoreContentCount = Math.Max(0, ctFiles.Count - 5);
+        var ctVisible = IsContentShowingAll ? ctFiles : ctFiles.Take(3).ToList();
+        MoreContentCount = Math.Max(0, ctFiles.Count - 3);
         ShowMoreContentVisible = MoreContentCount > 0;
-        MoreContentText = IsKorean
-            ? (IsContentShowingAll ? "- 접기" : $"+ {MoreContentCount}개 더 보기")
-            : (IsContentShowingAll ? "- Show less" : $"+ {MoreContentCount} more");
+        MoreContentText = IsContentShowingAll
+            ? _loc[StringKeys.Common.Less]
+            : _loc.Format(StringKeys.Common.More, MoreContentCount);
 
         // "더 보기" — Related Folders
         var fldrVisible = IsFoldersShowingAll
             ? _allRelatedFolders.Take(10).ToList()
-            : _allRelatedFolders.Take(5).ToList();
-        MoreFoldersCount = Math.Max(0, Math.Min(_allRelatedFolders.Count, 10) - 5);
+            : _allRelatedFolders.Take(3).ToList();
+        MoreFoldersCount = Math.Max(0, Math.Min(_allRelatedFolders.Count, 10) - 3);
         ShowMoreFolders = MoreFoldersCount > 0;
-        MoreFoldersText = IsKorean
-            ? (IsFoldersShowingAll ? "- 접기" : $"+ {MoreFoldersCount}개 더 보기")
-            : (IsFoldersShowingAll ? "- Show less" : $"+ {MoreFoldersCount} more");
+        MoreFoldersText = IsFoldersShowingAll
+            ? _loc[StringKeys.Common.Less]
+            : _loc.Format(StringKeys.Common.More, MoreFoldersCount);
 
         UpdateCollection(FilenameMatchFiles, fnVisible);
         UpdateCollection(PreviouslyOpenedFiles, poFiles);

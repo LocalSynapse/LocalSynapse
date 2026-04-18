@@ -1,7 +1,9 @@
+using System;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
+using LocalSynapse.UI.Services.Localization;
 
 namespace LocalSynapse.UI.ViewModels;
 
@@ -11,17 +13,23 @@ namespace LocalSynapse.UI.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsStore _settings;
+    private readonly ILocalizationService _loc;
 
     [ObservableProperty] private string _language = "en";
+    [ObservableProperty] private bool _isEnglishSelected;
+    [ObservableProperty] private bool _isKoreanSelected;
     [ObservableProperty] private string _appVersion = GetAssemblyVersion();
     [ObservableProperty] private string _dataFolder = "";
 
     /// <summary>SettingsViewModel 생성자.</summary>
-    public SettingsViewModel(ISettingsStore settings)
+    public SettingsViewModel(ISettingsStore settings, ILocalizationService loc)
     {
         _settings = settings;
-        Language = settings.GetLanguage();
+        _loc = loc;
+        Language = _loc.Current;
+        UpdateSelectionFlags();
         DataFolder = settings.GetDataFolder();
+        _loc.LanguageChanged += OnLanguageChanged;
     }
 
     /// <summary>csproj Version에서 자동으로 버전을 읽는다.</summary>
@@ -35,7 +43,20 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void ChangeLanguage(string cultureName)
     {
-        _settings.SetLanguage(cultureName);
-        Language = cultureName;
+        _loc.SetLanguage(cultureName);
+        Language = _loc.Current;
+        UpdateSelectionFlags();
+    }
+
+    private void UpdateSelectionFlags()
+    {
+        IsEnglishSelected = _loc.Current == "en";
+        IsKoreanSelected = _loc.Current == "ko";
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        Language = _loc.Current;
+        UpdateSelectionFlags();
     }
 }

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LocalSynapse.UI.ViewModels"
+             xmlns:i18n="using:LocalSynapse.UI.Markup"
              x:Class="LocalSynapse.UI.Views.DataSetupPage"
              x:DataType="vm:DataSetupViewModel"
              FontFamily="{StaticResource FontDefault}">
@@ -12,11 +13,11 @@
 
             <!-- Header -->
             <StackPanel Spacing="4" Margin="0,0,0,4">
-                <TextBlock Text="Data &amp; Indexing"
+                <TextBlock Text="{i18n:Tr Key=Data.Header}"
                            FontSize="{StaticResource FontSizeL}"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource TextPrimaryBrush}" />
-                <TextBlock Text="Manage file scanning and AI model for semantic search"
+                <TextBlock Text="{i18n:Tr Key=Data.Subtitle}"
                            FontSize="{StaticResource FontSizeS}"
                            Foreground="{StaticResource TextSecondaryBrush}" />
             </StackPanel>
@@ -32,7 +33,7 @@
                         <PathIcon Width="18" Height="18"
                                   Foreground="{StaticResource TextPrimaryBrush}"
                                   Data="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h6v7h6v9H6z" />
-                        <TextBlock Text="Pipeline status"
+                        <TextBlock Text="{i18n:Tr Key=Data.PipelineStatus}"
                                    FontSize="{StaticResource FontSizeM}"
                                    FontWeight="Medium" />
 
@@ -66,7 +67,7 @@
                                 IsVisible="{Binding !IsCycleRunning}">
                             <StackPanel Orientation="Horizontal" Spacing="5">
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource SuccessBrush}" />
-                                <TextBlock Text="Ready"
+                                <TextBlock Text="{i18n:Tr Key=Data.Ready}"
                                            FontSize="{StaticResource FontSizeS}"
                                            Foreground="{StaticResource SuccessBrush}" />
                             </StackPanel>
@@ -119,19 +120,14 @@
                                     IsVisible="{Binding IsScanPending}">
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
                             </Border>
-                            <TextBlock Text="Scan" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                            <TextBlock Text="{i18n:Tr Key=Data.Scan.Title}" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
                                        HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
                             <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
                                        FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
                                        HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
-                            <TextBlock FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource TextMutedBrush}">
-                                <TextBlock.Styles>
-                                    <Style Selector="TextBlock">
-                                        <Setter Property="Text" Value="files found" />
-                                    </Style>
-                                </TextBlock.Styles>
-                            </TextBlock>
+                            <TextBlock Text="{i18n:Tr Key=Data.Scan.FilesFound}"
+                                       FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
+                                       Foreground="{StaticResource TextMutedBrush}" />
                         </StackPanel>
 
                         <!-- Connector 1→2 -->
@@ -183,15 +179,15 @@
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
                             </Border>
                             <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="Extract" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                <TextBlock Text="{i18n:Tr Key=Data.Extract.Title}" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
                                            HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
-                                <TextBlock Text="text chunking" FontSize="{StaticResource FontSizeXxs}"
+                                <TextBlock Text="{i18n:Tr Key=Data.Extract.Subtitle}" FontSize="{StaticResource FontSizeXxs}"
                                            HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" />
                             </StackPanel>
                             <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
                                        FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
                                        HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
-                            <TextBlock Text="chunks" FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
+                            <TextBlock Text="{i18n:Tr Key=Data.Extract.Chunks}" FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
                                        Foreground="{StaticResource TextMutedBrush}" />
                         </StackPanel>
 
@@ -244,15 +240,15 @@
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource TextMutedBrush}" />
                             </Border>
                             <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="Embed" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                <TextBlock Text="{i18n:Tr Key=Data.Embed.Title}" FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
                                            HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
-                                <TextBlock Text="semantic vectors" FontSize="{StaticResource FontSizeXxs}"
+                                <TextBlock Text="{i18n:Tr Key=Data.Embed.Subtitle}" FontSize="{StaticResource FontSizeXxs}"
                                            HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" />
                             </StackPanel>
                             <TextBlock Text="{Binding Stamps.EmbeddingPercent, StringFormat='{}{0:F1}%'}"
                                        FontSize="{StaticResource FontSizeL}" FontWeight="Medium"
                                        HorizontalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" />
-                            <TextBlock Text="semantic search" FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
+                            <TextBlock Text="{i18n:Tr Key=Data.Embed.Stat}" FontSize="{StaticResource FontSizeXs}" HorizontalAlignment="Center"
                                        Foreground="{StaticResource TextMutedBrush}" />
                         </StackPanel>
                     </Grid>
@@ -281,15 +277,15 @@
                     <!-- ═══ Action Buttons ═══ -->
                     <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
                         <Button Classes="BtnSecondary"
-                                Content="Scan now"
+                                Content="{i18n:Tr Key=Data.ScanNow}"
                                 Command="{Binding ScanNowCommand}"
                                 IsEnabled="{Binding !IsCycleRunning}" />
                         <Button Classes="BtnSecondary"
-                                Content="Pause"
+                                Content="{i18n:Tr Key=Data.Pause}"
                                 Command="{Binding PausePipelineCommand}"
                                 IsVisible="{Binding !IsPipelinePaused}" />
                         <Button Classes="BtnSecondary"
-                                Content="Resume"
+                                Content="{i18n:Tr Key=Data.Resume}"
                                 Command="{Binding ResumePipelineCommand}"
                                 IsVisible="{Binding IsPipelinePaused}" />
                     </StackPanel>
@@ -304,13 +300,16 @@
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Ellipse Width="14" Height="14" Stroke="{StaticResource WarningBrush}"
                                              StrokeThickness="1.2" Fill="Transparent" VerticalAlignment="Center" />
-                                    <TextBlock FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
-                                               Foreground="{StaticResource WarningBrush}">
-                                        <Run Text="{Binding SkippedFiles, Mode=OneWay, StringFormat='{}{0:N0}'}" />
-                                        <Run Text=" files skipped" />
-                                    </TextBlock>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                                   Foreground="{StaticResource WarningBrush}"
+                                                   Text="{Binding SkippedFiles, Mode=OneWay, StringFormat='{}{0:N0}'}" />
+                                        <TextBlock FontSize="{StaticResource FontSizeBody}" FontWeight="Medium"
+                                                   Foreground="{StaticResource WarningBrush}"
+                                                   Text="{i18n:Tr Key=Data.FilesSkippedSuffix}" />
+                                    </StackPanel>
                                 </StackPanel>
-                                <TextBlock Text="Files are skipped when content extraction is not supported: images (.jpg, .png, .gif), videos, archives (.zip, .rar), executables, and other binary formats. Cloud files (OneDrive, Google Drive, iCloud) that are online-only are also skipped — once downloaded locally, they will be indexed on the next scan. All skipped files are still searchable by filename."
+                                <TextBlock Text="{i18n:Tr Key=Data.SkippedInfo}"
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            TextWrapping="Wrap" />
@@ -326,10 +325,10 @@
                                      Stroke="{StaticResource BorderDefaultBrush}" StrokeThickness="1"
                                      Fill="Transparent" Margin="0,1,10,0" VerticalAlignment="Top" />
                             <StackPanel Spacing="2">
-                                <TextBlock Text="Auto-scan on launch"
+                                <TextBlock Text="{i18n:Tr Key=Data.AutoScan.Title}"
                                            FontSize="{StaticResource FontSizeS}" FontWeight="Medium"
                                            Foreground="{StaticResource TextPrimaryBrush}" />
-                                <TextBlock Text="App automatically scans for new and modified files each time it starts. Only changed files are re-processed."
+                                <TextBlock Text="{i18n:Tr Key=Data.AutoScan.Info}"
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
                             </StackPanel>
@@ -340,10 +339,10 @@
                                      Stroke="{StaticResource BorderDefaultBrush}" StrokeThickness="1"
                                      Fill="Transparent" Margin="0,1,10,0" VerticalAlignment="Top" />
                             <StackPanel Spacing="2">
-                                <TextBlock Text="Manual re-scan"
+                                <TextBlock Text="{i18n:Tr Key=Data.ManualScan.Title}"
                                            FontSize="{StaticResource FontSizeS}" FontWeight="Medium"
                                            Foreground="{StaticResource TextPrimaryBrush}" />
-                                <TextBlock Text="Press &quot;Scan now&quot; to trigger a differential scan immediately. This picks up files added or changed since the last scan."
+                                <TextBlock Text="{i18n:Tr Key=Data.ManualScan.Info}"
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
                             </StackPanel>
@@ -364,7 +363,7 @@
                         <PathIcon Width="18" Height="18"
                                   Foreground="{StaticResource TextPrimaryBrush}"
                                   Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                        <TextBlock Text="AI semantic search"
+                        <TextBlock Text="{i18n:Tr Key=Data.AiSearchTitle}"
                                    FontSize="{StaticResource FontSizeM}"
                                    FontWeight="Medium" />
 
@@ -393,10 +392,10 @@
                             </Border>
                             <!-- Info -->
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="BGE-M3 embedding model"
+                                <TextBlock Text="{i18n:Tr Key=Data.Model.Title}"
                                            FontSize="{StaticResource FontSizeS}"
                                            FontWeight="Medium" />
-                                <TextBlock Text="~2.3 GB download · runs 100% locally"
+                                <TextBlock Text="{i18n:Tr Key=Data.Model.Subtitle}"
                                            FontSize="{StaticResource FontSizeXxs}"
                                            Foreground="{StaticResource TextMutedBrush}"
                                            Margin="0,2,0,0" />
@@ -405,13 +404,13 @@
                             <!-- H2 (M0-H): Install / ✓Installed 토글. 같은 Grid.Column, IsVisible로 전환. -->
                             <Button Grid.Column="2"
                                     Classes="BtnPrimary"
-                                    Content="Install"
+                                    Content="{i18n:Tr Key=Common.Install}"
                                     Command="{Binding DownloadModelCommand}"
                                     IsVisible="{Binding !IsModelInstalled}"
                                     VerticalAlignment="Center" />
                             <Button Grid.Column="2"
                                     Classes="BtnPrimary"
-                                    Content="✓ Installed"
+                                    Content="{i18n:Tr Key=Common.Installed}"
                                     IsEnabled="False"
                                     IsVisible="{Binding IsModelInstalled}"
                                     VerticalAlignment="Center" />
