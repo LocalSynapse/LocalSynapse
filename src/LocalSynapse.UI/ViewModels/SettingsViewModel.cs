@@ -16,7 +16,6 @@ public partial class SettingsViewModel : ObservableObject
     private readonly ISettingsStore _settings;
     private readonly ILocalizationService _loc;
     private readonly UpdateCheckService _updateCheck;
-    private readonly MainViewModel _mainVm;
 
     // Language
     [ObservableProperty] private string _language = "en";
@@ -44,13 +43,11 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(
         ISettingsStore settings,
         ILocalizationService loc,
-        UpdateCheckService updateCheck,
-        MainViewModel mainVm)
+        UpdateCheckService updateCheck)
     {
         _settings = settings;
         _loc = loc;
         _updateCheck = updateCheck;
-        _mainVm = mainVm;
 
         Language = _loc.Current;
         UpdateSelectionFlags();
@@ -62,7 +59,7 @@ public partial class SettingsViewModel : ObservableObject
         ShowFirstRunNotice = _updateCheck.IsFirstRun;
 
         // Load cached update info if available
-        if (_mainVm.HasUpdateAvailable && _updateCheck.LastResult is { } info)
+        if (_updateCheck.HasUpdateAvailable && _updateCheck.LastResult is { } info)
         {
             HasUpdate = true;
             UpdateVersion = info.LatestVersion;
@@ -127,7 +124,6 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(UpdateVersion))
             _updateCheck.DismissVersion(UpdateVersion);
         HasUpdate = false;
-        _mainVm.HasUpdateAvailable = false;
     }
 
     /// <summary>업데이트 체크 토글.</summary>

@@ -108,8 +108,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<SettingsViewModel>(sp => new SettingsViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<ILocalizationService>(),
-            sp.GetRequiredService<UpdateCheckService>(),
-            sp.GetRequiredService<MainViewModel>()));
+            sp.GetRequiredService<UpdateCheckService>()));
         services.AddTransient<SecurityViewModel>();
 
         return services;

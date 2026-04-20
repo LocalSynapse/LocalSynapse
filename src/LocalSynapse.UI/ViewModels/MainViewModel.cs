@@ -34,8 +34,8 @@ public partial class MainViewModel : ObservableObject
         {
             try
             {
-                var info = await _updateCheck.CheckAsync();
-                if (info != null)
+                await _updateCheck.CheckAsync();
+                if (_updateCheck.HasUpdateAvailable)
                 {
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
@@ -55,6 +55,8 @@ public partial class MainViewModel : ObservableObject
     private void NavigateTo(PageType page)
     {
         CurrentPage = page;
+        // Sync dot state from service (reflects dismiss)
+        HasUpdateAvailable = _updateCheck.HasUpdateAvailable;
         CurrentPageViewModel = page switch
         {
             PageType.Search => _services.GetService(typeof(SearchViewModel)),

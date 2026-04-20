@@ -10,6 +10,7 @@ namespace LocalSynapse.UI.Services;
 /// <summary>
 /// 1일 1회 GitHub Releases API로 업데이트 확인 + localsynapse.com에 통계 ping.
 /// 양쪽 모두 실패해도 앱 기능에 영향 없음 (fire-and-forget).
+/// HasUpdateAvailable 상태를 직접 관리하여 ViewModel 간 역참조를 제거한다.
 /// </summary>
 public sealed class UpdateCheckService
 {
@@ -20,6 +21,8 @@ public sealed class UpdateCheckService
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
 
     private readonly string _checkFilePath;
+    private bool _isFirstRunCached;
+    private bool _isFirstRunChecked;
 
     /// <summary>업데이트 정보.</summary>
     public record UpdateInfo(
@@ -43,8 +46,25 @@ public sealed class UpdateCheckService
         _checkFilePath = Path.Combine(settingsStore.GetDataFolder(), "update-check.json");
     }
 
-    /// <summary>첫 실행 여부 (update-check.json 미존재).</summary>
-    public bool IsFirstRun => !File.Exists(_checkFilePath);
+    /// <summary>첫 실행 여부 (캐시됨, 디스크 hit 최소화).</summary>
+    public bool IsFirstRun
+    {
+        get
+        {
+            if (!_isFirstRunChecked)
+            {
+                _isFirstRunCached = !File.Exists(_checkFilePath);
+                _isFirstRunChecked = true;
+            }
+            return _isFirstRunCached;
+        }
+    }
+
+    /// <summary>업데이트 가능 여부. MainViewModel/SettingsViewModel 양쪽에서 참조.</summary>
+    public bool HasUpdateAvailable { get; set; }
+
+    /// <summary>마지막 체크 결과 캐시.</summary>
+    public UpdateInfo? LastResult { get; private set; }
 
     /// <summary>업데이트 체크 활성화 여부.</summary>
     public bool IsCheckEnabled => LoadState().CheckEnabled;
@@ -60,15 +80,17 @@ public sealed class UpdateCheckService
     /// <summary>첫 실행 동의 (update-check.json 생성, checkEnabled=true).</summary>
     public void AcceptFirstRun()
     {
-        var state = new CheckState { CheckEnabled = true };
-        SaveState(state);
+        SaveState(new CheckState { CheckEnabled = true });
+        _isFirstRunCached = false;
+        _isFirstRunChecked = true;
     }
 
     /// <summary>첫 실행 비활성화 (update-check.json 생성, checkEnabled=false).</summary>
     public void DisableFromFirstRun()
     {
-        var state = new CheckState { CheckEnabled = false };
-        SaveState(state);
+        SaveState(new CheckState { CheckEnabled = false });
+        _isFirstRunCached = false;
+        _isFirstRunChecked = true;
     }
 
     /// <summary>특정 버전을 dismiss.</summary>
@@ -77,26 +99,22 @@ public sealed class UpdateCheckService
         var state = LoadState();
         state.DismissedVersion = version;
         SaveState(state);
+        HasUpdateAvailable = false;
+        LastResult = null;
     }
-
-    /// <summary>마지막 체크 결과 캐시. SettingsViewModel이 참조.</summary>
-    public UpdateInfo? LastResult { get; private set; }
 
     /// <summary>1일 1회 업데이트 체크 + 통계 ping. 첫 실행 시 skip.</summary>
     public async Task<UpdateInfo?> CheckAsync(CancellationToken ct = default)
     {
-        // 첫 실행이면 네트워크 호출 0 — AcceptFirstRun() 이후 다음 시작 시 첫 체크
         if (IsFirstRun) return null;
 
         var state = LoadState();
         if (!state.CheckEnabled) return null;
 
-        // 24시간 이내면 skip
         if (DateTime.TryParse(state.LastCheckAt, out var lastCheck)
             && DateTime.UtcNow - lastCheck < CheckInterval)
             return null;
 
-        // 타임스탬프 즉시 갱신 (중복 호출 방지)
         state.LastCheckAt = DateTime.UtcNow.ToString("o");
         SaveState(state);
 
@@ -107,18 +125,19 @@ public sealed class UpdateCheckService
         {
             result = await CheckGitHubReleaseAsync(state, ct);
             LastResult = result;
+            HasUpdateAvailable = result != null;
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[UpdateCheck] GitHub API error: {ex.Message}");
         }
 
-        // Task 2: Statistics ping (fire-and-forget)
+        // Task 2: Statistics ping (fire-and-forget, CancellationToken 전달)
         _ = Task.Run(async () =>
         {
-            try { await SendPingAsync(); }
+            try { await SendPingAsync(ct); }
             catch (Exception ex) { Debug.WriteLine($"[UpdateCheck] Ping error: {ex.Message}"); }
-        });
+        }, ct);
 
         return result;
     }
@@ -133,17 +152,18 @@ public sealed class UpdateCheckService
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        var tagName = root.GetProperty("tag_name").GetString() ?? "";
+        // TryGetProperty로 안전 파싱
+        if (!root.TryGetProperty("tag_name", out var tagProp)) return null;
+        var tagName = tagProp.GetString() ?? "";
         var versionStr = tagName.TrimStart('v');
         if (!Version.TryParse(versionStr, out var latest)) return null;
 
         var current = Assembly.GetEntryAssembly()?.GetName().Version;
         if (current == null || latest <= current) return null;
 
-        // dismiss된 버전이면 skip
         if (state.DismissedVersion == versionStr) return null;
 
-        var htmlUrl = root.GetProperty("html_url").GetString() ?? "";
+        var htmlUrl = root.TryGetProperty("html_url", out var urlProp) ? urlProp.GetString() ?? "" : "";
         var name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
         var body = root.TryGetProperty("body", out var bodyProp) ? bodyProp.GetString() : null;
 
@@ -155,8 +175,9 @@ public sealed class UpdateCheckService
     /// <summary>Release name 우선, bullet fallback.</summary>
     private static string ExtractSummary(string? name, string tagName, string? body)
     {
-        // 1. name 필드 (tag_name과 다른 경우만)
-        if (!string.IsNullOrWhiteSpace(name) && name != tagName && !name.StartsWith("v"))
+        // 1. name 필드 (tag_name과 다르고, tag_name 그 자체가 아닌 경우)
+        if (!string.IsNullOrWhiteSpace(name) && name != tagName
+            && !name.Equals(tagName.TrimStart('v'), StringComparison.OrdinalIgnoreCase))
             return name;
 
         // 2. body에서 첫 bullet 리스트
@@ -182,7 +203,7 @@ public sealed class UpdateCheckService
         return "";
     }
 
-    private async Task SendPingAsync()
+    private async Task SendPingAsync(CancellationToken ct = default)
     {
         using var http = new HttpClient { Timeout = HttpTimeout };
         var payload = JsonSerializer.Serialize(new
@@ -192,7 +213,7 @@ public sealed class UpdateCheckService
             locale = System.Globalization.CultureInfo.CurrentUICulture.Name
         });
         using var content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
-        await http.PostAsync(PingUrl, content);
+        await http.PostAsync(PingUrl, content, ct);
     }
 
     private static string GetCurrentVersion()
