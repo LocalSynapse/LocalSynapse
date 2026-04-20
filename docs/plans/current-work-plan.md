@@ -1,6 +1,6 @@
 # LocalSynapse Roadmap — SSOT (Milestone 중심)
 
-> **최종 업데이트**: 2026-04-16
+> **최종 업데이트**: 2026-04-20
 > **역할**: 전체 로드맵의 **단일 진실 공급원 (Single Source of Truth)**.
 > [PHASES.md](PHASES.md)는 2026-04-11 기준 감사 결함 중심 계획이었고 속도 진단(2026-04-14) + Ryan 후기 이후 outdated. 본 문서가 이를 대체하며, PHASES.md는 아카이브/참조용.
 > **원칙**: 비전 절대 유지 · 측정이 추측을 이긴다 · 사용자 체감 우선 · 가정 금지
@@ -47,7 +47,8 @@
 | **M3** | 검증 인프라 + 데이터 안전 | 회귀 자동 감지 + 고아 데이터 0 + opt-in telemetry | M0과 병렬 |
 
 ### ⚠️ 출시 정책
-- **v2.6 출시 보류** — Phase 2c EmptyDenseSearch 산출물은 M2 Dense 부활과 함께 출시.
+- **v2.6.0 출시 완료** (`c71d932`) — i18n + 검색 UX + 4섹션 Smart Notes. Dense 없이 BM25 단독 출시. Ryan 일상 사용 중.
+- **다음 릴리즈**: v2.7.0 — M2 Dense 부활 포함 시 출시.
 - **M3 베타 채널 도입 후** 외부 사용자에게 가시화.
 - 사업 트랙(Apple Developer, Pro tier, 마케팅)은 M0 + M3 완료 후 재개.
 
@@ -106,26 +107,43 @@
 - [x] NaturalQueryParser: 조사분리 40개 + 복합어 분해 + 쿼리확장
 - [x] TextChunker offset 버그 없음 확인, FTS5 injection 방어 충분
 
-**D. 검색 결과 순위 원칙 정의** (A/B/C 후 Ryan 결정)
-- [ ] "한 방에 정답" 구체 정의 (파일명/내용/최신/폴더/버전 우선순위)
-- [ ] filename boost 목표 배율 결정 (현재 5.0x, 권장 2.0~3.0x)
-- [ ] recency 반감기 유지(730일) vs 단축(365일)
-- [ ] folder_path boost 상향 검토 (현재 0.5x)
+**D. 검색 결과 순위 원칙** — RANK1에서 대부분 구현 완료. 잔여는 "검증 후 미세 조정"
+- [x] filename boost 가산 전환 + 2.5x→0.5 additive (`ce7d805`)
+- [x] recency 반감기 365일 + floor 0.3 (`ce7d805`)
+- [x] folder_path weight 0.5→1.0 (`ce7d805`)
+- [x] MatchSource [Flags] 컬럼별 BM25 판별 (`ce7d805`)
+- [ ] 재측정(O6) 후 미세 조정 여부 판단 — Wave 2에서 R3과 통합
 
-### M0-U. UI / 비전 가시화 (Hotfix + 진단 후)
+### M0-R. 검색 결과 품질 (RANK1/RANK2/RANK2-post 완료, 잔여 작업)
 
-**U1. 결과 UI 재설계** (구 Phase 0-D)
-- [ ] Top 결과 강조 블록
-- [ ] Semantic 탭: Dense 부활 전까지 숨김 (카운트 0 노출 제거)
-- [ ] Progressive rendering: QuickSearch 결과 먼저, BM25 뒤따라
+**R-RANK. 검색 랭킹 + UI 4섹션 + Smart Notes** ✅ done
+- [x] RANK1: MatchSource [Flags], 컬럼별 BM25 점수, 가산 boost, recency (`ce7d805` + `e4b750a`)
+- [x] RANK2: 4섹션 레이아웃 (Filename/Opened/Content/Folders) + 기본 Smart Notes (`96d46e3`)
+- [x] RANK2-post: 19종 뱃지 색상 UI + i18n + 파일행 2줄 리디자인 (`c15e9d0` + `76420ec`)
 
-**U2. 비전 메시지** (구 Phase 0-E)
-- [ ] Pipeline status를 사용자 언어로: "N pieces of your documents indexed"
-- [ ] 인덱싱 완료: "Ready to search inside everything you've saved"
-- [ ] 한국어/영어 동시
+**R1. 검색 결과 수 상한 상향** — Wave 1
+- [ ] Filename max 10→20, Content max 20→50 (현재 합계 35 → 75)
+- [ ] "더 보기" 접기 교착 버그 수정 (ShowMoreFilename 조건)
 
-**U3. 글로벌 사용자 피드백 채널**
-- [ ] 앱 내 "Send feedback" 버튼 (email/GitHub issue 연결)
+**R2. 검색 순위 미세 조정** — Wave 1 (R1과 동시)
+- [ ] R1 상한 확대 후 낮은 관련성 파일 노출 여부 확인
+- [ ] 필요 시 threshold 조정 또는 boost 파라미터 미세 튜닝
+
+### M0-U. UI / 비전 가시화
+
+**U1. 결과 UI 재설계** — 대부분 완료
+- [x] 4섹션 구조 + Smart Notes 뱃지 (RANK2/RANK2-post)
+- [x] Semantic 탭: 3탭 전체 제거, 4섹션으로 대체 (RANK2)
+- [ ] Progressive rendering — **조건부**: O6 재측정에서 P95 > 500ms인 쿼리가 존재할 때만 착수. 0.2~0.4s면 불필요 (깜빡임 리스크)
+
+**U2. 비전 메시지 + i18n** ✅ done
+- [x] ILocalizationService + LocalizationRegistry + StringKeys (`3e663d4`)
+- [x] TrExtension AXAML 마크업으로 전 페이지 다국어 (`3e663d4`)
+- [x] ComboBox FilterOption 토큰/표시 분리 (`38c9b1f`)
+- [x] 버전 v2.6.0 태깅 (`c71d932`)
+
+**U3. 글로벌 사용자 피드백 채널** — Wave 2 (R3과 동시)
+- [ ] Settings 페이지에 "Send Feedback" 버튼 (GitHub Issues 링크)
 - [ ] 간단한 익명 submit path (GitHub issue API 또는 전용 폼)
 
 ### M0-O. 최적화 (진단 결과 기반) ✅ 코드 완료 (`9b4f4ed`), O6 측정 진행 중
@@ -164,6 +182,33 @@
 | OCR (스캔 PDF) | 외부 의존성 큼 | Milestone 4+ |
 | Korean expansion 간소화 | A/B 측정 필요 | 검색 품질 Phase |
 | folder_path / recency boost 조정 | M0-D Ryan 결정 필요 | M0-D |
+
+### M0 실행 순서 (Wave 구조)
+
+```
+Wave 1: R1 (결과 수 상향) + R2 (순위 미세조정)        ≈ 1일
+  → 사용자가 "파일이 안 나온다" 문제 즉시 해결
+  → 상한과 순위를 동시 적용해야 품질 유지
+
+Wave 2: R3/O6 (재측정) + U3 (피드백 채널)             ≈ 1일
+  → 내부 측정(R3) + 외부 피드백(U3) 동시 확보
+  → M0 성공 기준 5개 사실상 달성 시점
+
+Wave 3: U1 Progressive rendering (조건부)              ≈ 0~1일
+  → O6 결과 P95 > 500ms일 때만 착수
+  → 0.2~0.4s면 skip (M0 완료 앞당김)
+
+Wave 4: M3 검증 인프라 (Golden set + 회귀 CI)          ≈ 1주
+
+Wave 5+: M1 MCP 출시, M2 Dense 부활                   ≈ 수주
+```
+
+**M0 완료 판정**: Wave 2 종료 시 성공 기준 5개 충족 여부 확인
+1. 검색 응답 200ms 이내 — R3/O6 재측정으로 확인
+2. 같은 검색 → 같은 결과 — RANK1에서 확보 (deterministic scoring)
+3. Top 결과 강조 UI — RANK2+RANK2-post 4섹션+뱃지로 달성
+4. 사용자 언어 UI 메시지 — Phase B i18n으로 달성
+5. 글로벌 사용자 피드백 채널 — U3으로 달성
 
 ---
 
@@ -213,7 +258,7 @@
 - [ ] M0 계측 틀로 Before/After 측정
 
 ### M2-Release
-- [ ] v2.6 출시 해제 (출시 정책: M2 완료가 조건)
+- [ ] v2.7.0 출시 (Dense 포함, v2.6.0은 BM25 단독 출시 완료)
 
 ---
 
@@ -289,3 +334,4 @@
 | 2026-04-14 | 초안 (Phase 0-A/0-B 명칭으로 혼란, Hotfix + 진단 A~D 중심) |
 | 2026-04-15 | **전면 재작성**. Milestone 0~3 체계 도입, PHASES.md의 완료/pending 작업 전체 재분류, SSOT로 승격. |
 | 2026-04-16 | **M0-D 진단 완료 반영** (A/B/C 전부 done). M0-H H3 완료 반영. **M0-O 구체화**: xlsx 텍스트만 추출 + 10MB 상한 (Ryan 확정), filename boost 감소, PDF CMap, DOCX/HWP 노이즈 수정, embed skip. 우선순위 6단계로 정리. 범위 밖 항목 명시. |
+| 2026-04-20 | **RANK1/RANK2/RANK2-post/Phase B 완료 반영**. M0-D-D를 "검증 후 미세 조정"으로 재정의 (RANK1에서 구현 완료). M0-R 섹션 신설 (R1 결과 수 상향 + R2 순위 미세조정). M0-U 재구성: U1 대부분 완료, U2 i18n 완료, U3 Wave 2로 승격. **Wave 실행 계획 추가**: Wave 1(R1+R2) → Wave 2(R3+U3, M0 완료 판정) → Wave 3(조건부 Progressive) → Wave 4(M3) → Wave 5+(M1/M2). R4 Progressive rendering을 O6 결과 조건부로 전환. |

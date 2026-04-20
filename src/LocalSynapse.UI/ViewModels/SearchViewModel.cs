@@ -535,17 +535,17 @@ public partial class SearchViewModel : ObservableObject
                 qf.Score = ComputeRecencyBoost(qf.ModifiedAt);
         }
 
-        // Section 1: Filename Match (max 10)
+        // Section 1: Filename Match (max 20)
         var filenameMatches = new List<SearchResultFile>();
         foreach (var f in hybridFiles.Where(h => h.Source.HasFlag(MatchSource.FileName))
                                       .OrderByDescending(h => h.Score))
         {
-            if (placed.Add(f.FileId) && filenameMatches.Count < 10)
+            if (placed.Add(f.FileId) && filenameMatches.Count < 20)
                 filenameMatches.Add(f);
         }
         foreach (var f in quickFiles.OrderByDescending(f => f.Score))
         {
-            if (placed.Add(f.FileId) && filenameMatches.Count < 10)
+            if (placed.Add(f.FileId) && filenameMatches.Count < 20)
                 filenameMatches.Add(f);
         }
 
@@ -575,7 +575,7 @@ public partial class SearchViewModel : ObservableObject
         var threshold = 0.0;
         if (contentMatches.Count >= 3)
             threshold = contentMatches.Take(3).Average(f => f.Score) * 0.25;
-        var visibleContent = contentMatches.Where(f => f.Score >= threshold).Take(20).ToList();
+        var visibleContent = contentMatches.Where(f => f.Score >= threshold).Take(50).ToList();
         foreach (var f in visibleContent) placed.Add(f.FileId);
 
         // Section 4: Related Folders (max 10)
@@ -816,17 +816,17 @@ public partial class SearchViewModel : ObservableObject
         var ctFiles = FilterFiles(_allContentFiles);
 
         // "더 보기" — Filename
-        var fnVisible = IsFilenameShowingAll ? fnFiles : fnFiles.Take(3).ToList();
-        MoreFilenameCount = Math.Max(0, fnFiles.Count - 3);
-        ShowMoreFilename = MoreFilenameCount > 0;
+        var fnVisible = IsFilenameShowingAll ? fnFiles : fnFiles.Take(5).ToList();
+        MoreFilenameCount = Math.Max(0, fnFiles.Count - 5);
+        ShowMoreFilename = (MoreFilenameCount > 0 || IsFilenameShowingAll) && fnFiles.Count > 0;
         MoreFilenameText = IsFilenameShowingAll
             ? _loc[StringKeys.Common.Less]
             : _loc.Format(StringKeys.Common.More, MoreFilenameCount);
 
         // "더 보기" — Content
-        var ctVisible = IsContentShowingAll ? ctFiles : ctFiles.Take(3).ToList();
-        MoreContentCount = Math.Max(0, ctFiles.Count - 3);
-        ShowMoreContentVisible = MoreContentCount > 0;
+        var ctVisible = IsContentShowingAll ? ctFiles : ctFiles.Take(5).ToList();
+        MoreContentCount = Math.Max(0, ctFiles.Count - 5);
+        ShowMoreContentVisible = (MoreContentCount > 0 || IsContentShowingAll) && ctFiles.Count > 0;
         MoreContentText = IsContentShowingAll
             ? _loc[StringKeys.Common.Less]
             : _loc.Format(StringKeys.Common.More, MoreContentCount);
@@ -834,9 +834,9 @@ public partial class SearchViewModel : ObservableObject
         // "더 보기" — Related Folders
         var fldrVisible = IsFoldersShowingAll
             ? _allRelatedFolders.Take(10).ToList()
-            : _allRelatedFolders.Take(3).ToList();
-        MoreFoldersCount = Math.Max(0, Math.Min(_allRelatedFolders.Count, 10) - 3);
-        ShowMoreFolders = MoreFoldersCount > 0;
+            : _allRelatedFolders.Take(5).ToList();
+        MoreFoldersCount = Math.Max(0, Math.Min(_allRelatedFolders.Count, 10) - 5);
+        ShowMoreFolders = (MoreFoldersCount > 0 || IsFoldersShowingAll) && fldrVisible.Count > 0;
         MoreFoldersText = IsFoldersShowingAll
             ? _loc[StringKeys.Common.Less]
             : _loc.Format(StringKeys.Common.More, MoreFoldersCount);
