@@ -82,9 +82,13 @@ public static class ServiceCollectionExtensions
         // ── Localization ──
         services.AddSingleton<ILocalizationService, LocalizationService>();
 
+        // ── Update Check ──
+        services.AddSingleton<UpdateCheckService>();
+
         // ── ViewModels ──
         // MainViewModel: Singleton (one navigation state for app lifetime)
-        services.AddSingleton<MainViewModel>();
+        services.AddSingleton<MainViewModel>(sp => new MainViewModel(
+            sp, sp.GetRequiredService<UpdateCheckService>()));
         // DataSetupViewModel: Singleton (observes pipeline, must survive tab switches)
         services.AddSingleton<DataSetupViewModel>();
         // Search: Singleton (survives tab switches, preserves search state)
@@ -101,7 +105,11 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<ILocalizationService>()));
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
-        services.AddTransient<SettingsViewModel>();
+        services.AddTransient<SettingsViewModel>(sp => new SettingsViewModel(
+            sp.GetRequiredService<ISettingsStore>(),
+            sp.GetRequiredService<ILocalizationService>(),
+            sp.GetRequiredService<UpdateCheckService>(),
+            sp.GetRequiredService<MainViewModel>()));
         services.AddTransient<SecurityViewModel>();
 
         return services;

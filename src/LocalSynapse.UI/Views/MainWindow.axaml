@@ -160,6 +160,12 @@
                                 CornerRadius="0,2,2,0"
                                 Background="{StaticResource AccentBrush}"
                                 IsVisible="{Binding CurrentPage, Converter={StaticResource NavActive}, ConverterParameter='Settings:Bar'}" />
+                        <!-- Update notification dot -->
+                        <Ellipse Width="8" Height="8"
+                                 Fill="{StaticResource DangerBrush}"
+                                 HorizontalAlignment="Right" VerticalAlignment="Top"
+                                 Margin="0,2,10,0"
+                                 IsVisible="{Binding HasUpdateAvailable}" />
                         <Border Background="{Binding CurrentPage, Converter={StaticResource NavActive}, ConverterParameter='Settings:Bg'}"
                                 CornerRadius="{StaticResource RadiusMd}"
                                 Margin="8,0,8,0">

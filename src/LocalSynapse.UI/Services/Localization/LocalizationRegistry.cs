@@ -178,6 +178,17 @@ internal static class LocalizationRegistry
             [StringKeys.Mcp.QuickStart3Desc] = ("Ask Claude about your files. Try: \"Find all documents related to Q3 budget\" or \"What files did I work on last week?\"", "Claude에게 파일에 대해 질문하세요. 예: \"Q3 예산 관련 문서 모두 찾아줘\" 또는 \"지난주에 작업한 파일이 뭐야?\""),
             [StringKeys.Mcp.NoteLabel] = ("Note: ", "참고: "),
             [StringKeys.Mcp.NoteText] = ("LocalSynapse does not need to be running for MCP to work. The MCP server starts as a separate process managed by Claude.", "MCP가 작동하는 데 LocalSynapse가 실행 중일 필요는 없습니다. MCP 서버는 Claude가 관리하는 별도 프로세스로 시작됩니다."),
+
+            // ── Update Check ──
+            [StringKeys.UpdateCheck.Available] = ("{0} available", "{0} 업데이트 가능"),
+            [StringKeys.UpdateCheck.Download] = ("Download", "다운로드"),
+            [StringKeys.UpdateCheck.WhatsNew] = ("What's new", "새로운 기능"),
+            [StringKeys.UpdateCheck.Dismiss] = ("Dismiss", "닫기"),
+            [StringKeys.UpdateCheck.Toggle] = ("Check for updates", "업데이트 확인"),
+            [StringKeys.UpdateCheck.FirstRunNotice] = ("LocalSynapse checks for updates once a day.", "LocalSynapse가 하루에 한 번 업데이트를 확인합니다."),
+            [StringKeys.UpdateCheck.FirstRunBody] = ("Your documents are never sent.", "문서 데이터는 전송되지 않습니다."),
+            [StringKeys.UpdateCheck.FirstRunOk] = ("OK", "확인"),
+            [StringKeys.UpdateCheck.FirstRunDisable] = ("Disable", "비활성화"),
         };
     }
 }

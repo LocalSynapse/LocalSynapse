@@ -1,10 +1,12 @@
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LocalSynapse.UI.Services;
 
 namespace LocalSynapse.UI.ViewModels;
 
 /// <summary>
-/// 메인 네비게이션 ViewModel. 페이지 전환을 관리한다.
+/// 메인 네비게이션 ViewModel. 페이지 전환 + 업데이트 알림 dot 관리.
 /// </summary>
 public partial class MainViewModel : ObservableObject
 {
@@ -14,13 +16,38 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private object? _currentPageViewModel;
 
+    [ObservableProperty]
+    private bool _hasUpdateAvailable;
+
     private readonly IServiceProvider _services;
+    private readonly UpdateCheckService _updateCheck;
 
     /// <summary>MainViewModel 생성자.</summary>
-    public MainViewModel(IServiceProvider services)
+    public MainViewModel(IServiceProvider services, UpdateCheckService updateCheck)
     {
         _services = services;
+        _updateCheck = updateCheck;
         NavigateTo(PageType.Search);
+
+        // fire-and-forget 업데이트 체크 (첫 실행이면 skip — C3 해결)
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var info = await _updateCheck.CheckAsync();
+                if (info != null)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        HasUpdateAvailable = true;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainVM] Update check error: {ex.Message}");
+            }
+        });
     }
 
     /// <summary>페이지 전환 커맨드.</summary>

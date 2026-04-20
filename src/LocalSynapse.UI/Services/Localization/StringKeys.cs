@@ -198,4 +198,17 @@ public static class StringKeys
         public const string NoteLabel = "Mcp.NoteLabel";
         public const string NoteText = "Mcp.NoteText";
     }
+
+    public static class UpdateCheck
+    {
+        public const string Available = "UpdateCheck.Available";
+        public const string Download = "UpdateCheck.Download";
+        public const string WhatsNew = "UpdateCheck.WhatsNew";
+        public const string Dismiss = "UpdateCheck.Dismiss";
+        public const string Toggle = "UpdateCheck.Toggle";
+        public const string FirstRunNotice = "UpdateCheck.FirstRunNotice";
+        public const string FirstRunBody = "UpdateCheck.FirstRunBody";
+        public const string FirstRunOk = "UpdateCheck.FirstRunOk";
+        public const string FirstRunDisable = "UpdateCheck.FirstRunDisable";
+    }
 }

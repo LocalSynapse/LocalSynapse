@@ -22,6 +22,68 @@
                            Foreground="{StaticResource TextSecondaryBrush}" />
             </StackPanel>
 
+            <!-- First Run Notice -->
+            <Border Classes="Card" Margin="0"
+                    Background="{StaticResource AccentLightBrush}"
+                    IsVisible="{Binding ShowFirstRunNotice}">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PathIcon Width="16" Height="16"
+                                  Foreground="{StaticResource AccentBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                        <TextBlock Text="{i18n:Tr Key=UpdateCheck.FirstRunNotice}"
+                                   FontSize="{StaticResource FontSizeS}"
+                                   FontWeight="Medium"
+                                   Foreground="{StaticResource AccentBrush}" />
+                    </StackPanel>
+                    <TextBlock Text="{i18n:Tr Key=UpdateCheck.FirstRunBody}"
+                               FontSize="{StaticResource FontSizeXs}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{i18n:Tr Key=UpdateCheck.FirstRunOk}"
+                                Classes="BtnPrimary"
+                                Command="{Binding AcceptFirstRunCommand}" />
+                        <Button Content="{i18n:Tr Key=UpdateCheck.FirstRunDisable}"
+                                Classes="BtnSecondary"
+                                Command="{Binding DisableFromFirstRunCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Update Available Card -->
+            <Border Classes="Card" Margin="0"
+                    Background="{StaticResource AccentLightBrush}"
+                    IsVisible="{Binding HasUpdate}">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PathIcon Width="16" Height="16"
+                                  Foreground="{StaticResource AccentBrush}"
+                                  Data="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
+                        <TextBlock Text="{Binding UpdateVersion, StringFormat='v{0} available'}"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentBrush}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding UpdateSummary}"
+                               FontSize="{StaticResource FontSizeS}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               IsVisible="{Binding UpdateSummary.Length}"
+                               TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{i18n:Tr Key=UpdateCheck.Download}"
+                                Classes="BtnPrimary"
+                                Command="{Binding OpenDownloadCommand}" />
+                        <Button Content="{i18n:Tr Key=UpdateCheck.WhatsNew}"
+                                Classes="BtnSecondary"
+                                Command="{Binding OpenReleaseNotesCommand}" />
+                        <Button Content="{i18n:Tr Key=UpdateCheck.Dismiss}"
+                                Classes="BtnSecondary"
+                                Command="{Binding DismissUpdateCommand}"
+                                HorizontalAlignment="Right" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Language -->
             <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">
@@ -94,6 +156,15 @@
                                            FontSize="{StaticResource FontSizeXs}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Width="60" />
+                            </DockPanel>
+                            <DockPanel>
+                                <ToggleSwitch DockPanel.Dock="Right"
+                                              IsChecked="{Binding IsUpdateCheckEnabled}"
+                                              VerticalAlignment="Center" />
+                                <TextBlock Text="{i18n:Tr Key=UpdateCheck.Toggle}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" />
                             </DockPanel>
                         </StackPanel>
                     </Border>
