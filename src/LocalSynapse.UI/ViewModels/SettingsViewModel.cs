@@ -61,9 +61,15 @@ public partial class SettingsViewModel : ObservableObject
         IsUpdateCheckEnabled = _updateCheck.IsCheckEnabled;
         ShowFirstRunNotice = _updateCheck.IsFirstRun;
 
-        // Load update info if available
-        if (_mainVm.HasUpdateAvailable)
-            LoadUpdateInfo();
+        // Load cached update info if available
+        if (_mainVm.HasUpdateAvailable && _updateCheck.LastResult is { } info)
+        {
+            HasUpdate = true;
+            UpdateVersion = info.LatestVersion;
+            UpdateSummary = info.Summary;
+            UpdateReleaseUrl = info.ReleaseNotesUrl;
+            UpdateDownloadUrl = info.DownloadUrl;
+        }
     }
 
     /// <summary>csproj Version에서 자동으로 버전을 읽는다.</summary>
@@ -97,27 +103,6 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     // ── Update Check ──
-
-    /// <summary>업데이트 정보 로드 (MainVM에서 체크 완료 후).</summary>
-    private async void LoadUpdateInfo()
-    {
-        try
-        {
-            var info = await _updateCheck.CheckAsync();
-            if (info != null)
-            {
-                HasUpdate = true;
-                UpdateVersion = info.LatestVersion;
-                UpdateSummary = info.Summary;
-                UpdateReleaseUrl = info.ReleaseNotesUrl;
-                UpdateDownloadUrl = info.DownloadUrl;
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[SettingsVM] LoadUpdateInfo error: {ex.Message}");
-        }
-    }
 
     /// <summary>다운로드 페이지 열기.</summary>
     [RelayCommand]

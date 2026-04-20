@@ -79,6 +79,9 @@ public sealed class UpdateCheckService
         SaveState(state);
     }
 
+    /// <summary>마지막 체크 결과 캐시. SettingsViewModel이 참조.</summary>
+    public UpdateInfo? LastResult { get; private set; }
+
     /// <summary>1일 1회 업데이트 체크 + 통계 ping. 첫 실행 시 skip.</summary>
     public async Task<UpdateInfo?> CheckAsync(CancellationToken ct = default)
     {
@@ -103,6 +106,7 @@ public sealed class UpdateCheckService
         try
         {
             result = await CheckGitHubReleaseAsync(state, ct);
+            LastResult = result;
         }
         catch (Exception ex)
         {
