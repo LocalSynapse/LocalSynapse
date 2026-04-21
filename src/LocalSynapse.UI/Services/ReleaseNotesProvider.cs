@@ -26,7 +26,7 @@ public static class ReleaseNotesProvider
         try
         {
             using var doc = JsonDocument.Parse(stream);
-            var key = locale.StartsWith("ko") ? "notes_ko" : "notes_en";
+            var key = (locale ?? "en").StartsWith("ko") ? "notes_ko" : "notes_en";
 
             if (doc.RootElement.TryGetProperty(key, out var notes))
             {

@@ -178,6 +178,11 @@ public partial class SettingsViewModel : ObservableObject
             _updateCheck.DismissVersion(UpdateVersion);
         HasUpdate = false;
         ShowUpdateButtons = false;
+        // Dismiss 후 상태를 "up to date"로 갱신
+        IsUpToDate = true;
+        StatusMessage = _loc[StringKeys.UpdateCheck.UpToDate];
+        StatusIcon = "✓";
+        StatusForegroundBrush = new(Avalonia.Media.Color.Parse("#065F46"));
     }
 
     /// <summary>업데이트 체크 토글.</summary>
