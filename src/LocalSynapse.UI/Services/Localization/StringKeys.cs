@@ -107,6 +107,7 @@ public static class StringKeys
         public const string RelatedFilesInFolder = "SmartNote.RelatedFilesInFolder";
         public const string PdfFinalVersion = "SmartNote.PdfFinalVersion";
         public const string HasPdfVersion = "SmartNote.HasPdfVersion";
+        public const string HasPptVersion = "SmartNote.HasPptVersion";
     }
 
     public static class Data
@@ -172,6 +173,7 @@ public static class StringKeys
         public const string LinksTitle = "Settings.Links.Title";
         public const string LinksWebsite = "Settings.Links.Website";
         public const string LinksGitHub = "Settings.Links.GitHub";
+        public const string LanguageSearchHint = "Settings.Language.SearchHint";
     }
 
     public static class Mcp

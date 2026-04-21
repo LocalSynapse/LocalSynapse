@@ -44,7 +44,9 @@ public class LocalizationServiceTests
 
         foreach (var kvp in registry)
         {
-            if (string.IsNullOrEmpty(kvp.Value.En) || string.IsNullOrEmpty(kvp.Value.Ko))
+            var locales = kvp.Value;
+            if (!locales.TryGetValue("en", out var en) || string.IsNullOrEmpty(en)
+                || !locales.TryGetValue("ko", out var ko) || string.IsNullOrEmpty(ko))
                 incomplete.Add(kvp.Key);
         }
 

@@ -4,6 +4,7 @@ using LocalSynapse.Core.Constants;
 using LocalSynapse.Core.Database;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
+using LocalSynapse.Core.Utils;
 using Microsoft.Data.Sqlite;
 
 namespace LocalSynapse.Core.Repositories;
@@ -166,8 +167,8 @@ public sealed class FileRepository : IFileRepository
                 ftsDelCmd.Parameters["$fts_del_id"].Value = id;
                 ftsDelCmd.ExecuteNonQuery();
                 ftsInsCmd.Parameters["$fts_id"].Value = id;
-                ftsInsCmd.Parameters["$fts_filename"].Value = file.Filename;
-                ftsInsCmd.Parameters["$fts_path"].Value = file.Path;
+                ftsInsCmd.Parameters["$fts_filename"].Value = CjkTextUtils.ApplyBigramSplit(file.Filename);
+                ftsInsCmd.Parameters["$fts_path"].Value = CjkTextUtils.ApplyBigramSplit(file.Path);
                 ftsInsCmd.Parameters["$fts_ext"].Value = file.Extension;
                 ftsInsCmd.ExecuteNonQuery();
             }
@@ -561,7 +562,19 @@ public sealed class FileRepository : IFileRepository
 
         var sanitized = new string(token.Where(c => !char.IsControl(c)).ToArray());
         var escaped = sanitized.Replace("\"", "\"\"");
-        var ftsQuery = $"\"{escaped}\"*";
+
+        string ftsQuery;
+        if (sanitized.Any(CjkTextUtils.IsCjk))
+        {
+            var bigrams = CjkTextUtils.ExtractBigrams(sanitized);
+            ftsQuery = bigrams.Count >= 2
+                ? string.Join(" AND ", bigrams.Select(b => $"\"{b.Replace("\"", "\"\"")}\"*"))
+                : $"\"{escaped}\"*";
+        }
+        else
+        {
+            ftsQuery = $"\"{escaped}\"*";
+        }
 
         cmd.CommandText = SelectColumns + @"
             FROM files

@@ -1,17 +1,33 @@
 {
-  "version": "2.6.1",
+  "version": "2.7.0",
   "notes_en": [
-    "Search results now show up to 75 files",
-    "Auto update check with GitHub Releases",
-    "Settings shows release notes and version status",
-    "Security page discloses update check data",
-    "Anonymous install ID for usage statistics"
+    "Improved search for French, German, and accented characters",
+    "Chinese document content search now works",
+    "Added French, German, and Chinese interface",
+    "Fixed filename matching for CJK characters"
   ],
   "notes_ko": [
-    "검색 결과가 최대 75개 파일까지 표시됩니다",
-    "GitHub Releases를 통한 자동 업데이트 확인",
-    "설정에서 릴리즈 노트와 버전 상태 확인",
-    "보안 페이지에 업데이트 확인 데이터 공개",
-    "사용 통계를 위한 익명 설치 ID"
+    "프랑스어, 독일어 및 악센트 문자 검색 개선",
+    "중국어 문서 내용 검색 지원",
+    "프랑스어, 독일어, 중국어 인터페이스 추가",
+    "CJK 파일명 매칭 수정"
+  ],
+  "notes_fr": [
+    "Amélioration de la recherche pour les caractères accentués",
+    "La recherche de contenu en chinois fonctionne désormais",
+    "Interface en français ajoutée",
+    "Correction de la correspondance des noms de fichiers CJK"
+  ],
+  "notes_de": [
+    "Verbesserte Suche für Umlaute und Akzentzeichen",
+    "Chinesische Dokumentensuche funktioniert jetzt",
+    "Deutsche Benutzeroberfläche hinzugefügt",
+    "CJK-Dateinamen-Matching behoben"
+  ],
+  "notes_zh": [
+    "改进了法语、德语及重音字符的搜索",
+    "中文文档内容搜索现已可用",
+    "添加了法语、德语和中文界面",
+    "修复了CJK文件名匹配问题"
   ]
 }

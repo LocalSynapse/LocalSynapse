@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using LocalSynapse.Core.Utils;
 using Porter2StemmerStandard;
 
 namespace LocalSynapse.Search.Services;
@@ -100,6 +101,27 @@ public static partial class NaturalQueryParser
             if (StopWords.Contains(token)) continue;
 
             var escaped = token.Replace("\"", "\"\"");
+
+            // CJK bigram 분기 (한국어 제외)
+            if (IsCjkToken(token))
+            {
+                var bigrams = CjkTextUtils.ExtractBigrams(token);
+                if (bigrams.Count >= 2)
+                {
+                    var andParts = bigrams.Select(b =>
+                    {
+                        var esc = b.Replace("\"", "\"\"");
+                        return $"\"{esc}\"*";
+                    });
+                    parts.Add($"({string.Join(" AND ", andParts)})");
+                }
+                else
+                {
+                    parts.Add($"\"{escaped}\"*");
+                }
+                continue;
+            }
+
             if (IsKorean(token) || token.Length >= 4 || AcronymWhitelist.Contains(token))
                 parts.Add($"\"{escaped}\"*");
             else
@@ -306,5 +328,17 @@ public static partial class NaturalQueryParser
     private static bool IsKorean(string text)
     {
         return text.Any(c => (c >= 0xAC00 && c <= 0xD7A3) || (c >= 0x3131 && c <= 0x318E));
+    }
+
+    /// <summary>토큰이 CJK 문자를 포함하고 한국어를 포함하지 않는지 확인한다.</summary>
+    private static bool IsCjkToken(string text)
+    {
+        bool hasCjk = false;
+        foreach (var c in text)
+        {
+            if (CjkTextUtils.IsKorean(c)) return false;
+            if (CjkTextUtils.IsCjk(c)) hasCjk = true;
+        }
+        return hasCjk;
     }
 }

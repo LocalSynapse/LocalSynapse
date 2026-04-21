@@ -7,27 +7,32 @@ using LocalSynapse.Core.Interfaces;
 namespace LocalSynapse.UI.Services.Localization;
 
 /// <summary>
-/// Runtime localization service. Holds En/Ko dictionary, normalizes language codes,
-/// persists via ISettingsStore, raises LanguageChanged on every SetLanguage call that actually changes state.
+/// Runtime localization service. Holds per-locale dictionaries for en/ko/fr/de/zh,
+/// normalizes language codes, persists via ISettingsStore,
+/// raises LanguageChanged on every SetLanguage call that actually changes state.
 /// </summary>
 public sealed class LocalizationService : ILocalizationService
 {
     private readonly ISettingsStore _settings;
-    private readonly Dictionary<string, (string En, string Ko)> _registry;
+    private readonly Dictionary<string, Dictionary<string, string>> _registry;
     private string _current;
 
-    /// <summary>Creates a new LocalizationService. Normalizes the stored language and persists if changed.</summary>
+    private static readonly HashSet<string> SupportedLocales = ["en", "ko", "fr", "de", "zh"];
+
+    /// <summary>Creates a new LocalizationService. Detects system locale on first run.</summary>
     public LocalizationService(ISettingsStore settings)
     {
         _settings = settings;
         _registry = LocalizationRegistry.Build();
 
-        var raw = settings.GetLanguage() ?? "en";
+        var raw = settings.GetLanguage();
+        if (string.IsNullOrWhiteSpace(raw))
+            raw = DetectSystemLanguage();
         _current = Normalize(raw);
         if (!string.Equals(raw, _current, StringComparison.Ordinal))
         {
             try { settings.SetLanguage(_current); }
-            catch (Exception ex) { Debug.WriteLine($"[LocalizationService] Failed to normalize stored language: {ex.Message}"); }
+            catch (Exception ex) { Debug.WriteLine($"[LocalizationService] Failed to persist language: {ex.Message}"); }
         }
     }
 
@@ -65,17 +70,37 @@ public sealed class LocalizationService : ILocalizationService
     /// <inheritdoc />
     public event EventHandler? LanguageChanged;
 
-    /// <summary>Normalizes arbitrary locale codes (e.g., "ko-KR", "en-US") to "ko" or "en".</summary>
+    /// <summary>Normalizes arbitrary locale codes to supported 2-letter codes.</summary>
     private static string Normalize(string code)
     {
         if (string.IsNullOrWhiteSpace(code)) return "en";
-        return code.StartsWith("ko", StringComparison.OrdinalIgnoreCase) ? "ko" : "en";
+        var prefix = code.Length >= 2 ? code[..2].ToLowerInvariant() : code.ToLowerInvariant();
+        return SupportedLocales.Contains(prefix) ? prefix : "en";
+    }
+
+    /// <summary>Detects system UI language on first run.</summary>
+    private static string DetectSystemLanguage()
+    {
+        var culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return culture switch
+        {
+            "ko" => "ko",
+            "fr" => "fr",
+            "de" => "de",
+            "zh" => "zh",
+            _ => "en"
+        };
     }
 
     private string Resolve(string key)
     {
-        if (_registry.TryGetValue(key, out var pair))
-            return _current == "ko" ? pair.Ko : pair.En;
+        if (_registry.TryGetValue(key, out var locales))
+        {
+            if (locales.TryGetValue(_current, out var value))
+                return value;
+            if (locales.TryGetValue("en", out var fallback))
+                return fallback;
+        }
 
 #if DEBUG
         throw new KeyNotFoundException($"Localization key not found: '{key}'");

@@ -1,6 +1,7 @@
 using LocalSynapse.Core.Database;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
+using LocalSynapse.Core.Utils;
 using Microsoft.Data.Sqlite;
 
 namespace LocalSynapse.Core.Repositories;
@@ -87,16 +88,35 @@ public sealed class ChunkRepository : IChunkRepository
                 delCmd.ExecuteNonQuery();
             }
 
-            using (var insCmd = conn.CreateCommand())
+            using (var readCmd = conn.CreateCommand())
             {
-                insCmd.CommandText = @"
-                    INSERT INTO chunks_fts (chunk_id, file_id, text, filename, folder_path)
-                    SELECT c.id, c.file_id, c.text, f.filename, f.folder_path
+                readCmd.CommandText = @"
+                    SELECT c.id, c.text, f.filename, f.folder_path
                     FROM file_chunks c
                     JOIN files f ON c.file_id = f.id
                     WHERE c.file_id = $file_id AND c.text IS NOT NULL AND LENGTH(c.text) > 0";
-                insCmd.Parameters.AddWithValue("$file_id", fileId);
-                insCmd.ExecuteNonQuery();
+                readCmd.Parameters.AddWithValue("$file_id", fileId);
+
+                using var insCmd = conn.CreateCommand();
+                insCmd.CommandText = @"
+                    INSERT INTO chunks_fts (chunk_id, file_id, text, filename, folder_path)
+                    VALUES ($cid, $fid, $txt, $fn, $fp)";
+                var pCid = insCmd.Parameters.Add("$cid", SqliteType.Text);
+                var pFid2 = insCmd.Parameters.Add("$fid", SqliteType.Text);
+                var pTxt = insCmd.Parameters.Add("$txt", SqliteType.Text);
+                var pFn = insCmd.Parameters.Add("$fn", SqliteType.Text);
+                var pFp = insCmd.Parameters.Add("$fp", SqliteType.Text);
+
+                using var reader = readCmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    pCid.Value = reader.GetString(0);
+                    pFid2.Value = fileId;
+                    pTxt.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(1));
+                    pFn.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(2));
+                    pFp.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(3));
+                    insCmd.ExecuteNonQuery();
+                }
             }
         }
 

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using LocalSynapse.Core.Database;
 using LocalSynapse.Core.Models;
+using LocalSynapse.Core.Utils;
 using LocalSynapse.Search.Constants;
 using LocalSynapse.Search.Interfaces;
 using Microsoft.Data.Sqlite;
@@ -286,9 +287,13 @@ public sealed class Bm25SearchService : IBm25Search
             var idx = filename.IndexOf(token, pos, StringComparison.OrdinalIgnoreCase);
             if (idx < 0) return false;
 
-            var before = idx == 0 || !char.IsLetterOrDigit(filename[idx - 1]);
+            var before = idx == 0
+                || !char.IsLetterOrDigit(filename[idx - 1])
+                || CjkTextUtils.IsCjkOrKorean(filename[idx - 1]);
             var afterIdx = idx + token.Length;
-            var after = afterIdx >= filename.Length || !char.IsLetterOrDigit(filename[afterIdx]);
+            var after = afterIdx >= filename.Length
+                || !char.IsLetterOrDigit(filename[afterIdx])
+                || CjkTextUtils.IsCjkOrKorean(filename[afterIdx]);
 
             if (before && after) return true;
             if (before && afterIdx < filename.Length && filename[afterIdx] == '.') return true;

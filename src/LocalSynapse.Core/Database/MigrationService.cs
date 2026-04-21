@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using LocalSynapse.Core.Interfaces;
+using LocalSynapse.Core.Utils;
 
 namespace LocalSynapse.Core.Database;
 
@@ -15,7 +16,7 @@ public sealed class MigrationService : IMigrationService
     //         한국어/CJK에는 영향 없음 (라틴 알파벳 기반 스테밍)
     // unicode61: 유니코드 정규화 + 토큰 분리
     // separators: 파일명에 흔한 구분자를 토큰 경계로 처리
-    private const string FtsTokenizer = "porter unicode61 separators ''_-().[]''";
+    private const string FtsTokenizer = "porter unicode61 remove_diacritics 2 separators ''_-().[]''";
 
     /// <summary>MigrationService 생성자.</summary>
     public MigrationService(SqliteConnectionFactory connectionFactory)
@@ -394,7 +395,7 @@ public sealed class MigrationService : IMigrationService
     private static void UpgradeFtsTokenizerIfNeeded(SqliteConnection conn)
     {
         const string versionKey = "fts_tokenizer_version";
-        const string currentVersion = "porter_v1";
+        const string currentVersion = "porter_v2";
 
         // 현재 버전 확인
         using (var checkCmd = conn.CreateCommand())
@@ -407,7 +408,7 @@ public sealed class MigrationService : IMigrationService
         }
 
         System.Diagnostics.Debug.WriteLine(
-            "[MigrationService] FTS tokenizer upgrade: rebuilding FTS tables with porter stemmer...");
+            "[MigrationService] FTS tokenizer upgrade to porter_v2 (diacritics + CJK bigram)...");
 
         using var tx = conn.BeginTransaction();
         try
@@ -474,25 +475,10 @@ public sealed class MigrationService : IMigrationService
                 END;
             ");
 
-            // 4) 소스 테이블에서 FTS 데이터 재적재
-            ExecuteNonQuery(conn, @"
-                INSERT INTO files_fts (file_id, filename, path, extension)
-                SELECT id, filename, path, extension FROM files;
-            ");
-
-            ExecuteNonQuery(conn, @"
-                INSERT INTO chunks_fts (chunk_id, file_id, text, filename, folder_path)
-                SELECT c.id, c.file_id, c.text, f.filename, f.folder_path
-                FROM file_chunks c
-                JOIN files f ON c.file_id = f.id
-                WHERE c.text IS NOT NULL AND LENGTH(c.text) > 0;
-            ");
-
-            ExecuteNonQuery(conn, @"
-                INSERT INTO emails_fts (email_id, subject, body_preview, sender_name, sender_email, recipients_json)
-                SELECT email_id, subject, body_preview, sender_name, sender_email, recipients_json
-                FROM emails;
-            ");
+            // 4) 소스 테이블에서 FTS 데이터 재적재 (CJK bigram 전처리 적용)
+            ReloadFilesFts(conn);
+            ReloadChunksFts(conn);
+            ReloadEmailsFts(conn);
 
             // 5) 버전 스탬프 기록
             ExecuteNonQuery(conn, $@"
@@ -519,5 +505,88 @@ public sealed class MigrationService : IMigrationService
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
         cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>files_fts 재적재 (CJK bigram 적용).</summary>
+    private static void ReloadFilesFts(SqliteConnection conn)
+    {
+        using var readCmd = conn.CreateCommand();
+        readCmd.CommandText = "SELECT id, filename, path, extension FROM files";
+
+        using var insCmd = conn.CreateCommand();
+        insCmd.CommandText = @"INSERT INTO files_fts (file_id, filename, path, extension)
+            VALUES ($fid, $fname, $fpath, $ext)";
+        var pFid = insCmd.Parameters.Add("$fid", SqliteType.Text);
+        var pFname = insCmd.Parameters.Add("$fname", SqliteType.Text);
+        var pFpath = insCmd.Parameters.Add("$fpath", SqliteType.Text);
+        var pExt = insCmd.Parameters.Add("$ext", SqliteType.Text);
+
+        using var reader = readCmd.ExecuteReader();
+        while (reader.Read())
+        {
+            pFid.Value = reader.GetString(0);
+            pFname.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(1));
+            pFpath.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(2));
+            pExt.Value = reader.GetString(3);
+            insCmd.ExecuteNonQuery();
+        }
+    }
+
+    /// <summary>chunks_fts 재적재 (CJK bigram 적용).</summary>
+    private static void ReloadChunksFts(SqliteConnection conn)
+    {
+        using var readCmd = conn.CreateCommand();
+        readCmd.CommandText = @"SELECT c.id, c.file_id, c.text, f.filename, f.folder_path
+            FROM file_chunks c JOIN files f ON c.file_id = f.id
+            WHERE c.text IS NOT NULL AND LENGTH(c.text) > 0";
+
+        using var insCmd = conn.CreateCommand();
+        insCmd.CommandText = @"INSERT INTO chunks_fts (chunk_id, file_id, text, filename, folder_path)
+            VALUES ($cid, $fid, $txt, $fname, $fpath)";
+        var pCid = insCmd.Parameters.Add("$cid", SqliteType.Text);
+        var pFid = insCmd.Parameters.Add("$fid", SqliteType.Text);
+        var pTxt = insCmd.Parameters.Add("$txt", SqliteType.Text);
+        var pFname = insCmd.Parameters.Add("$fname", SqliteType.Text);
+        var pFpath = insCmd.Parameters.Add("$fpath", SqliteType.Text);
+
+        using var reader = readCmd.ExecuteReader();
+        while (reader.Read())
+        {
+            pCid.Value = reader.GetString(0);
+            pFid.Value = reader.GetString(1);
+            pTxt.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(2));
+            pFname.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(3));
+            pFpath.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(4));
+            insCmd.ExecuteNonQuery();
+        }
+    }
+
+    /// <summary>emails_fts 재적재 (CJK bigram 적용).</summary>
+    private static void ReloadEmailsFts(SqliteConnection conn)
+    {
+        using var readCmd = conn.CreateCommand();
+        readCmd.CommandText = "SELECT email_id, subject, body_preview, sender_name, sender_email, recipients_json FROM emails";
+
+        using var insCmd = conn.CreateCommand();
+        insCmd.CommandText = @"INSERT INTO emails_fts (email_id, subject, body_preview, sender_name, sender_email, recipients_json)
+            VALUES ($eid, $subj, $body, $sname, $semail, $recip)";
+        var pEid = insCmd.Parameters.Add("$eid", SqliteType.Text);
+        var pSubj = insCmd.Parameters.Add("$subj", SqliteType.Text);
+        var pBody = insCmd.Parameters.Add("$body", SqliteType.Text);
+        var pSname = insCmd.Parameters.Add("$sname", SqliteType.Text);
+        var pSemail = insCmd.Parameters.Add("$semail", SqliteType.Text);
+        var pRecip = insCmd.Parameters.Add("$recip", SqliteType.Text);
+
+        using var reader = readCmd.ExecuteReader();
+        while (reader.Read())
+        {
+            pEid.Value = reader.GetString(0);
+            pSubj.Value = CjkTextUtils.ApplyBigramSplit(reader.GetString(1));
+            pBody.Value = CjkTextUtils.ApplyBigramSplit(reader.IsDBNull(2) ? "" : reader.GetString(2));
+            pSname.Value = CjkTextUtils.ApplyBigramSplit(reader.IsDBNull(3) ? "" : reader.GetString(3));
+            pSemail.Value = reader.IsDBNull(4) ? "" : reader.GetString(4);
+            pRecip.Value = reader.IsDBNull(5) ? "" : reader.GetString(5);
+            insCmd.ExecuteNonQuery();
+        }
     }
 }

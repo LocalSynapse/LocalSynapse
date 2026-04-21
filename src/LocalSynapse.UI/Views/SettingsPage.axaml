@@ -74,16 +74,38 @@
                                        Foreground="{StaticResource TextSecondaryBrush}" />
                         </DockPanel>
                     </Border>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <WrapPanel Orientation="Horizontal">
                         <Button Content="English"
                                 Classes.BtnPrimary="{Binding IsEnglishSelected}"
                                 Classes.BtnSecondary="{Binding !IsEnglishSelected}"
-                                Command="{Binding ChangeLanguageCommand}" CommandParameter="en" />
+                                Command="{Binding ChangeLanguageCommand}" CommandParameter="en"
+                                Margin="0,0,8,4" />
                         <Button Content="한국어"
                                 Classes.BtnPrimary="{Binding IsKoreanSelected}"
                                 Classes.BtnSecondary="{Binding !IsKoreanSelected}"
-                                Command="{Binding ChangeLanguageCommand}" CommandParameter="ko" />
-                    </StackPanel>
+                                Command="{Binding ChangeLanguageCommand}" CommandParameter="ko"
+                                Margin="0,0,8,4" />
+                        <Button Content="Français"
+                                Classes.BtnPrimary="{Binding IsFrenchSelected}"
+                                Classes.BtnSecondary="{Binding !IsFrenchSelected}"
+                                Command="{Binding ChangeLanguageCommand}" CommandParameter="fr"
+                                Margin="0,0,8,4" />
+                        <Button Content="Deutsch"
+                                Classes.BtnPrimary="{Binding IsGermanSelected}"
+                                Classes.BtnSecondary="{Binding !IsGermanSelected}"
+                                Command="{Binding ChangeLanguageCommand}" CommandParameter="de"
+                                Margin="0,0,8,4" />
+                        <Button Content="中文"
+                                Classes.BtnPrimary="{Binding IsChineseSelected}"
+                                Classes.BtnSecondary="{Binding !IsChineseSelected}"
+                                Command="{Binding ChangeLanguageCommand}" CommandParameter="zh"
+                                Margin="0,0,8,4" />
+                    </WrapPanel>
+                    <TextBlock Text="{i18n:Tr Key=Settings.Language.SearchHint}"
+                               FontSize="12"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,0" />
                 </StackPanel>
             </Border>
 

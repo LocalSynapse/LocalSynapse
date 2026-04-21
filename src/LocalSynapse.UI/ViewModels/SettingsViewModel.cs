@@ -21,6 +21,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _language = "en";
     [ObservableProperty] private bool _isEnglishSelected;
     [ObservableProperty] private bool _isKoreanSelected;
+    [ObservableProperty] private bool _isFrenchSelected;
+    [ObservableProperty] private bool _isGermanSelected;
+    [ObservableProperty] private bool _isChineseSelected;
 
     // About — version
     [ObservableProperty] private string _appVersion = GetAssemblyVersion();
@@ -144,6 +147,9 @@ public partial class SettingsViewModel : ObservableObject
     {
         IsEnglishSelected = _loc.Current == "en";
         IsKoreanSelected = _loc.Current == "ko";
+        IsFrenchSelected = _loc.Current == "fr";
+        IsGermanSelected = _loc.Current == "de";
+        IsChineseSelected = _loc.Current == "zh";
     }
 
     private void OnLanguageChanged(object? sender, EventArgs e)
