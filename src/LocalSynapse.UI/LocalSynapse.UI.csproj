@@ -10,6 +10,9 @@
     <ApplicationIcon>..\..\assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources\ReleaseNotes.json" />
+  </ItemGroup>
+  <ItemGroup>
     <AvaloniaResource Include="..\..\assets\app-icon.ico">
       <Link>Assets/app-icon.ico</Link>
     </AvaloniaResource>

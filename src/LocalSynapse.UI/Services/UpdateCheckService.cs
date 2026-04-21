@@ -30,7 +30,11 @@ public sealed class UpdateCheckService
         string CurrentVersion,
         string ReleaseNotesUrl,
         string DownloadUrl,
-        string Summary);
+        string Summary,
+        List<string> ReleaseNotes);
+
+    /// <summary>체크 완료 여부.</summary>
+    public bool HasChecked { get; private set; }
 
     /// <summary>update-check.json 스키마.</summary>
     private sealed class CheckState
@@ -100,7 +104,6 @@ public sealed class UpdateCheckService
         state.DismissedVersion = version;
         SaveState(state);
         HasUpdateAvailable = false;
-        LastResult = null;
     }
 
     /// <summary>1일 1회 업데이트 체크 + 통계 ping. 첫 실행 시 skip.</summary>
@@ -131,6 +134,7 @@ public sealed class UpdateCheckService
         {
             Debug.WriteLine($"[UpdateCheck] GitHub API error: {ex.Message}");
         }
+        HasChecked = true;
 
         // Task 2: Statistics ping (fire-and-forget, CancellationToken 전달)
         _ = Task.Run(async () =>
@@ -168,8 +172,9 @@ public sealed class UpdateCheckService
         var body = root.TryGetProperty("body", out var bodyProp) ? bodyProp.GetString() : null;
 
         var summary = ExtractSummary(name, tagName, body);
+        var releaseNotes = ParseReleaseNotes(body);
 
-        return new UpdateInfo(versionStr, GetCurrentVersion(), htmlUrl, DownloadPageUrl, summary);
+        return new UpdateInfo(versionStr, GetCurrentVersion(), htmlUrl, DownloadPageUrl, summary, releaseNotes);
     }
 
     /// <summary>Release name 우선, bullet fallback.</summary>
@@ -201,6 +206,43 @@ public sealed class UpdateCheckService
         }
 
         return "";
+    }
+
+    /// <summary>Release body에서 사용자 대상 bullet 리스트를 추출한다.</summary>
+    private static List<string> ParseReleaseNotes(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body)) return [];
+
+        var lines = body.Split('\n');
+        var notes = new List<string>();
+        bool inUserSection = false;
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("### For users") ||
+                (trimmed.StartsWith("### v") && trimmed.Contains("새로운")))
+            {
+                inUserSection = true;
+                continue;
+            }
+            if (inUserSection && trimmed.StartsWith("###"))
+                break;
+            if (inUserSection && (trimmed.StartsWith("- ") || trimmed.StartsWith("· ")))
+                notes.Add(trimmed.TrimStart('-', '·', ' '));
+        }
+
+        if (notes.Count == 0)
+        {
+            notes = lines
+                .Select(l => l.Trim())
+                .Where(l => l.StartsWith("- ") || l.StartsWith("· "))
+                .Select(l => l.TrimStart('-', '·', ' '))
+                .Take(5)
+                .ToList();
+        }
+
+        return notes;
     }
 
     private async Task SendPingAsync(CancellationToken ct = default)

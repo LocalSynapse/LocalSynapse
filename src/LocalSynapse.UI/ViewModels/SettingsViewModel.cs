@@ -9,7 +9,7 @@ using LocalSynapse.UI.Services.Localization;
 namespace LocalSynapse.UI.ViewModels;
 
 /// <summary>
-/// 설정 페이지 ViewModel. 언어 설정 + 업데이트 체크 UI.
+/// 설정 페이지 ViewModel. 언어 설정 + About 카드 (버전 상태 + What's new + 업데이트).
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
@@ -22,16 +22,30 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _isEnglishSelected;
     [ObservableProperty] private bool _isKoreanSelected;
 
-    // About
+    // About — version
     [ObservableProperty] private string _appVersion = GetAssemblyVersion();
     [ObservableProperty] private string _dataFolder = "";
+    [ObservableProperty] private string _versionDisplay = "";
 
-    // Update card
+    // About — status
+    [ObservableProperty] private bool _isUpToDate;
+    [ObservableProperty] private string _statusMessage = "";
+    [ObservableProperty] private string _statusIcon = "";
+    [ObservableProperty] private bool _showStatus;
+    [ObservableProperty] private Avalonia.Media.SolidColorBrush _statusForegroundBrush
+        = new(Avalonia.Media.Color.Parse("#065F46"));
+
+    // About — What's new
+    [ObservableProperty] private string _whatsNewTitle = "";
+    [ObservableProperty] private List<string> _whatsNewItems = [];
+    [ObservableProperty] private bool _showWhatsNew;
+
+    // About — update buttons
     [ObservableProperty] private bool _hasUpdate;
     [ObservableProperty] private string _updateVersion = "";
-    [ObservableProperty] private string _updateSummary = "";
     [ObservableProperty] private string _updateReleaseUrl = "";
     [ObservableProperty] private string _updateDownloadUrl = "";
+    [ObservableProperty] private bool _showUpdateButtons;
 
     // Update toggle
     [ObservableProperty] private bool _isUpdateCheckEnabled = true;
@@ -54,19 +68,10 @@ public partial class SettingsViewModel : ObservableObject
         DataFolder = settings.GetDataFolder();
         _loc.LanguageChanged += OnLanguageChanged;
 
-        // Update check state
         IsUpdateCheckEnabled = _updateCheck.IsCheckEnabled;
         ShowFirstRunNotice = _updateCheck.IsFirstRun;
 
-        // Load cached update info if available
-        if (_updateCheck.HasUpdateAvailable && _updateCheck.LastResult is { } info)
-        {
-            HasUpdate = true;
-            UpdateVersion = info.LatestVersion;
-            UpdateSummary = info.Summary;
-            UpdateReleaseUrl = info.ReleaseNotesUrl;
-            UpdateDownloadUrl = info.DownloadUrl;
-        }
+        LoadVersionInfo();
     }
 
     /// <summary>csproj Version에서 자동으로 버전을 읽는다.</summary>
@@ -74,6 +79,54 @@ public partial class SettingsViewModel : ObservableObject
     {
         var ver = Assembly.GetEntryAssembly()?.GetName().Version;
         return ver != null ? $"{ver.Major}.{ver.Minor}.{ver.Build}" : "dev";
+    }
+
+    /// <summary>버전 상태 + What's new + 업데이트 정보 로드.</summary>
+    private void LoadVersionInfo()
+    {
+        var currentVersion = AppVersion;
+
+        // 1. 항상: 번들 릴리즈 노트
+        var locale = _loc.Current;
+        var currentNotes = ReleaseNotesProvider.GetCurrentNotes(locale);
+        WhatsNewTitle = _loc.Format(StringKeys.UpdateCheck.WhatsNewTitle, currentVersion);
+        WhatsNewItems = currentNotes;
+        ShowWhatsNew = currentNotes.Count > 0;
+
+        // 2. 업데이트 체크 결과 반영
+        if (_updateCheck.HasUpdateAvailable && _updateCheck.LastResult is { } info)
+        {
+            HasUpdate = true;
+            UpdateVersion = info.LatestVersion;
+            VersionDisplay = $"{currentVersion} → {info.LatestVersion}";
+            StatusMessage = _loc[StringKeys.UpdateCheck.UpdateAvailable];
+            StatusIcon = "↑";
+            ShowStatus = true;
+            ShowUpdateButtons = true;
+            StatusForegroundBrush = new(Avalonia.Media.Color.Parse("#1E40AF"));
+            UpdateReleaseUrl = info.ReleaseNotesUrl;
+            UpdateDownloadUrl = info.DownloadUrl;
+
+            if (info.ReleaseNotes.Count > 0)
+            {
+                WhatsNewTitle = _loc.Format(StringKeys.UpdateCheck.WhatsNewTitle, info.LatestVersion);
+                WhatsNewItems = info.ReleaseNotes;
+            }
+        }
+        else if (_updateCheck.HasChecked)
+        {
+            IsUpToDate = true;
+            VersionDisplay = currentVersion;
+            StatusMessage = _loc[StringKeys.UpdateCheck.UpToDate];
+            StatusIcon = "✓";
+            ShowStatus = true;
+            StatusForegroundBrush = new(Avalonia.Media.Color.Parse("#065F46"));
+        }
+        else
+        {
+            VersionDisplay = currentVersion;
+            ShowStatus = false;
+        }
     }
 
     // ── Language ──
@@ -124,6 +177,7 @@ public partial class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(UpdateVersion))
             _updateCheck.DismissVersion(UpdateVersion);
         HasUpdate = false;
+        ShowUpdateButtons = false;
     }
 
     /// <summary>업데이트 체크 토글.</summary>

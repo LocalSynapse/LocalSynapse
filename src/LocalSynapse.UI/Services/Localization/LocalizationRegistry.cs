@@ -189,6 +189,9 @@ internal static class LocalizationRegistry
             [StringKeys.UpdateCheck.FirstRunBody] = ("Your documents are never sent.", "문서 데이터는 전송되지 않습니다."),
             [StringKeys.UpdateCheck.FirstRunOk] = ("OK", "확인"),
             [StringKeys.UpdateCheck.FirstRunDisable] = ("Disable", "비활성화"),
+            [StringKeys.UpdateCheck.WhatsNewTitle] = ("What's new in v{0}", "v{0}의 새로운 기능"),
+            [StringKeys.UpdateCheck.UpToDate] = ("You're up to date", "최신 버전입니다"),
+            [StringKeys.UpdateCheck.UpdateAvailable] = ("Update available", "업데이트가 있습니다"),
         };
     }
 }

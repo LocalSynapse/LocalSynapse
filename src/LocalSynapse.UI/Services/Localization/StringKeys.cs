@@ -210,5 +210,8 @@ public static class StringKeys
         public const string FirstRunBody = "UpdateCheck.FirstRunBody";
         public const string FirstRunOk = "UpdateCheck.FirstRunOk";
         public const string FirstRunDisable = "UpdateCheck.FirstRunDisable";
+        public const string WhatsNewTitle = "UpdateCheck.WhatsNewTitle";
+        public const string UpToDate = "UpdateCheck.UpToDate";
+        public const string UpdateAvailable = "UpdateCheck.UpdateAvailable";
     }
 }

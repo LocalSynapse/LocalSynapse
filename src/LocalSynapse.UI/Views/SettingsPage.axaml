@@ -50,40 +50,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- Update Available Card -->
-            <Border Classes="Card" Margin="0"
-                    Background="{StaticResource AccentLightBrush}"
-                    IsVisible="{Binding HasUpdate}">
-                <StackPanel Spacing="8">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <PathIcon Width="16" Height="16"
-                                  Foreground="{StaticResource AccentBrush}"
-                                  Data="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
-                        <TextBlock Text="{Binding UpdateVersion, StringFormat='v{0} available'}"
-                                   FontSize="{StaticResource FontSizeM}"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource AccentBrush}" />
-                    </StackPanel>
-                    <TextBlock Text="{Binding UpdateSummary}"
-                               FontSize="{StaticResource FontSizeS}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               IsVisible="{Binding UpdateSummary.Length}"
-                               TextWrapping="Wrap" />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="{i18n:Tr Key=UpdateCheck.Download}"
-                                Classes="BtnPrimary"
-                                Command="{Binding OpenDownloadCommand}" />
-                        <Button Content="{i18n:Tr Key=UpdateCheck.WhatsNew}"
-                                Classes="BtnSecondary"
-                                Command="{Binding OpenReleaseNotesCommand}" />
-                        <Button Content="{i18n:Tr Key=UpdateCheck.Dismiss}"
-                                Classes="BtnSecondary"
-                                Command="{Binding DismissUpdateCommand}"
-                                HorizontalAlignment="Right" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
             <!-- Language -->
             <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">
@@ -121,9 +87,10 @@
                 </StackPanel>
             </Border>
 
-            <!-- About -->
+            <!-- About (version status + What's new + update buttons + data + toggle) -->
             <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">
+                    <!-- 헤더 -->
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <PathIcon Width="18" Height="18"
                                   Foreground="{StaticResource TextPrimaryBrush}"
@@ -132,41 +99,83 @@
                                    FontSize="{StaticResource FontSizeM}"
                                    FontWeight="Medium" />
                     </StackPanel>
+
+                    <!-- 버전 행 -->
                     <Border Classes="StatCard">
-                        <StackPanel Spacing="6">
-                            <DockPanel>
-                                <TextBlock Text="{Binding AppVersion}"
-                                           DockPanel.Dock="Right"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontFamily="{StaticResource FontMono}"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" />
-                                <TextBlock Text="{i18n:Tr Key=Settings.About.Version}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           Foreground="{StaticResource TextSecondaryBrush}" />
-                            </DockPanel>
-                            <DockPanel>
-                                <TextBlock Text="{Binding DataFolder}"
-                                           DockPanel.Dock="Right"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           FontFamily="{StaticResource FontMono}"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{i18n:Tr Key=Settings.About.Data}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                           Width="60" />
-                            </DockPanel>
-                            <DockPanel>
-                                <ToggleSwitch DockPanel.Dock="Right"
-                                              IsChecked="{Binding IsUpdateCheckEnabled}"
-                                              VerticalAlignment="Center" />
-                                <TextBlock Text="{i18n:Tr Key=UpdateCheck.Toggle}"
-                                           FontSize="{StaticResource FontSizeXs}"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center" />
-                            </DockPanel>
-                        </StackPanel>
+                        <DockPanel>
+                            <TextBlock Text="{Binding VersionDisplay}" DockPanel.Dock="Right"
+                                       FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource FontMono}"
+                                       FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="{i18n:Tr Key=Settings.About.Version}"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- 상태 행 (체크 완료 시만) -->
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                IsVisible="{Binding ShowStatus}" Margin="4,0,0,0">
+                        <TextBlock Text="{Binding StatusIcon}" FontWeight="SemiBold"
+                                   Foreground="{Binding StatusForegroundBrush}"
+                                   FontSize="{StaticResource FontSizeS}" />
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Foreground="{Binding StatusForegroundBrush}"
+                                   FontSize="{StaticResource FontSizeS}" />
+                    </StackPanel>
+
+                    <!-- What's new 섹션 -->
+                    <StackPanel IsVisible="{Binding ShowWhatsNew}" Spacing="6">
+                        <TextBlock Text="{Binding WhatsNewTitle}"
+                                   FontSize="{StaticResource FontSizeXs}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                        <ItemsControl ItemsSource="{Binding WhatsNewItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,2,0,2">
+                                        <TextBlock Text="·" Foreground="{StaticResource TextMutedBrush}" />
+                                        <TextBlock Text="{Binding}" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   FontSize="{StaticResource FontSizeXs}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- 업데이트 버튼 (업데이트 있을 때만) -->
+                    <StackPanel IsVisible="{Binding ShowUpdateButtons}"
+                                Orientation="Horizontal" Spacing="8">
+                        <Button Content="{i18n:Tr Key=UpdateCheck.Download}" Classes="BtnPrimary"
+                                Command="{Binding OpenDownloadCommand}" />
+                        <Button Content="{i18n:Tr Key=UpdateCheck.WhatsNew}" Classes="BtnSecondary"
+                                Command="{Binding OpenReleaseNotesCommand}" />
+                        <Button Content="{i18n:Tr Key=UpdateCheck.Dismiss}" Classes="BtnSecondary"
+                                Command="{Binding DismissUpdateCommand}" />
+                    </StackPanel>
+
+                    <!-- Data 행 -->
+                    <Border Classes="StatCard">
+                        <DockPanel>
+                            <TextBlock Text="{Binding DataFolder}" DockPanel.Dock="Right"
+                                       FontSize="{StaticResource FontSizeXs}" FontFamily="{StaticResource FontMono}"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{i18n:Tr Key=Settings.About.Data}"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Width="60" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- 토글 행 -->
+                    <Border Classes="StatCard">
+                        <DockPanel>
+                            <ToggleSwitch DockPanel.Dock="Right"
+                                          IsChecked="{Binding IsUpdateCheckEnabled}"
+                                          VerticalAlignment="Center" />
+                            <TextBlock Text="{i18n:Tr Key=UpdateCheck.Toggle}"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
                     </Border>
                 </StackPanel>
             </Border>
