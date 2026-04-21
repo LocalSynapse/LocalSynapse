@@ -42,6 +42,7 @@ public sealed class UpdateCheckService
         public string? LastCheckAt { get; set; }
         public string? DismissedVersion { get; set; }
         public bool CheckEnabled { get; set; } = true;
+        public string? Iid { get; set; }
     }
 
     /// <summary>UpdateCheckService 생성자.</summary>
@@ -118,9 +119,14 @@ public sealed class UpdateCheckService
             && DateTime.UtcNow - lastCheck < CheckInterval)
             return null;
 
+        // iid 인라인 생성 (race 방지 — 동일 state 객체 사용)
+        if (string.IsNullOrEmpty(state.Iid))
+            state.Iid = Guid.NewGuid().ToString();
+
         state.LastCheckAt = DateTime.UtcNow.ToString("o");
         SaveState(state);
 
+        var iid = state.Iid;
         UpdateInfo? result = null;
 
         // Task 1: GitHub API (업데이트 체크)
@@ -139,7 +145,7 @@ public sealed class UpdateCheckService
         // Task 2: Statistics ping (fire-and-forget, CancellationToken 전달)
         _ = Task.Run(async () =>
         {
-            try { await SendPingAsync(ct); }
+            try { await SendPingAsync(iid, ct); }
             catch (Exception ex) { Debug.WriteLine($"[UpdateCheck] Ping error: {ex.Message}"); }
         }, ct);
 
@@ -245,11 +251,12 @@ public sealed class UpdateCheckService
         return notes;
     }
 
-    private async Task SendPingAsync(CancellationToken ct = default)
+    private async Task SendPingAsync(string iid, CancellationToken ct = default)
     {
         using var http = new HttpClient { Timeout = HttpTimeout };
         var payload = JsonSerializer.Serialize(new
         {
+            iid,
             v = GetCurrentVersion(),
             os = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier,
             locale = System.Globalization.CultureInfo.CurrentUICulture.Name

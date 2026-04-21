@@ -154,6 +154,9 @@ public static class StringKeys
         public const string HowItWorksBullet2 = "Security.HowItWorks.Bullet2";
         public const string HowItWorksBullet3 = "Security.HowItWorks.Bullet3";
         public const string HowItWorksBullet4 = "Security.HowItWorks.Bullet4";
+        public const string HowItWorksBullet5 = "Security.HowItWorks.Bullet5";
+        public const string PingTitle = "Security.PingTitle";
+        public const string PingDescription = "Security.PingDescription";
     }
 
     public static class Settings

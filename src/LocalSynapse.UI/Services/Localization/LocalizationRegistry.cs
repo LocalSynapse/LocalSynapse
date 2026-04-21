@@ -129,7 +129,7 @@ internal static class LocalizationRegistry
             [StringKeys.Security.Header] = ("Privacy & Security", "개인정보 보호 및 보안"),
             [StringKeys.Security.Subtitle] = ("Your data stays on your machine. Always.", "데이터는 항상 사용자의 기기에만 저장됩니다."),
             [StringKeys.Security.OfflineTitle] = ("100% offline AI", "100% 오프라인 AI"),
-            [StringKeys.Security.OfflineDescription] = ("All file indexing, search, and AI embedding runs entirely on your local machine. No data is ever sent to external servers. No login or account required.", "모든 파일 인덱싱, 검색, AI 임베딩이 로컬 기기에서만 실행됩니다. 외부 서버로 전송되는 데이터가 없으며 로그인이나 계정도 필요 없습니다."),
+            [StringKeys.Security.OfflineDescription] = ("All file indexing, search, and AI embedding runs entirely on your local machine. Your documents never leave your device. No login or account required.", "모든 파일 인덱싱, 검색, AI 임베딩은 사용자의 컴퓨터에서만 실행됩니다. 문서 데이터는 절대 외부로 전송되지 않습니다. 로그인이나 계정이 필요하지 않습니다."),
             [StringKeys.Security.StorageTitle] = ("Data storage", "데이터 저장소"),
             [StringKeys.Security.StorageLocation] = ("Location", "위치"),
             [StringKeys.Security.StorageSize] = ("Size", "크기"),
@@ -139,6 +139,9 @@ internal static class LocalizationRegistry
             [StringKeys.Security.HowItWorksBullet2] = ("AI embeddings (BGE-M3) run via ONNX Runtime — no API calls, no cloud", "AI 임베딩(BGE-M3)은 ONNX Runtime으로 실행됩니다 — API 호출 없음, 클라우드 없음"),
             [StringKeys.Security.HowItWorksBullet3] = ("MCP server communicates only with local AI clients via stdio — no network", "MCP 서버는 stdio로 로컬 AI 클라이언트와만 통신합니다 — 네트워크 사용 없음"),
             [StringKeys.Security.HowItWorksBullet4] = ("Uninstalling removes the app. Delete the data folder to remove all indexed data.", "앱을 제거하면 앱만 삭제됩니다. 인덱싱된 데이터를 모두 지우려면 데이터 폴더를 삭제하세요."),
+            [StringKeys.Security.HowItWorksBullet5] = ("Update checks send only app version and OS info, including an anonymous install ID — no document data", "업데이트 확인은 앱 버전과 OS 정보, 익명 설치 ID만 전송합니다 — 문서 데이터 없음"),
+            [StringKeys.Security.PingTitle] = ("Update check", "업데이트 확인"),
+            [StringKeys.Security.PingDescription] = ("LocalSynapse sends only app version, system info (OS, language), and an anonymous install ID to check for updates. No files, no search history, no personal data is ever transmitted. You can disable this in Settings.", "LocalSynapse는 업데이트 확인을 위해 앱 버전, 시스템 정보(OS, 언어), 익명 설치 ID만 전송합니다. 파일, 검색 기록, 개인 정보는 전송되지 않습니다. 설정에서 비활성화할 수 있습니다."),
 
             // Settings
             [StringKeys.Settings.Header] = ("Settings", "설정"),

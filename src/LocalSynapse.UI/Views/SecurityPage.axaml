@@ -46,6 +46,27 @@
                 </DockPanel>
             </Border>
 
+            <!-- Update check disclosure -->
+            <Border Background="{StaticResource AccentLightBrush}"
+                    CornerRadius="{StaticResource RadiusLg}"
+                    Padding="20,16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="&#x1F4E1;"
+                               FontSize="20" Margin="0,0,14,0" VerticalAlignment="Top" />
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{i18n:Tr Key=Security.PingTitle}"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentBrush}" />
+                        <TextBlock Text="{i18n:Tr Key=Security.PingDescription}"
+                                   TextWrapping="Wrap"
+                                   FontSize="{StaticResource FontSizeS}"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   Opacity="0.8" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
             <!-- Data Storage -->
             <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">
@@ -125,6 +146,14 @@
                             <TextBlock DockPanel.Dock="Left" Text="•" Margin="0,0,8,0"
                                        Foreground="{StaticResource TextMutedBrush}" FontSize="{StaticResource FontSizeS}" />
                             <TextBlock Text="{i18n:Tr Key=Security.HowItWorks.Bullet3}"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="•" Margin="0,0,8,0"
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="{StaticResource FontSizeS}" />
+                            <TextBlock Text="{i18n:Tr Key=Security.HowItWorks.Bullet5}"
                                        FontSize="{StaticResource FontSizeS}"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        TextWrapping="Wrap" />
