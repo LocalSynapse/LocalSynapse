@@ -1,13 +1,17 @@
 {
-  "version": "2.6.0",
+  "version": "2.6.1",
   "notes_en": [
-    "Search results organized by match type",
-    "Smart badges show version and match info",
-    "Full Korean/English interface support"
+    "Search results now show up to 75 files",
+    "Auto update check with GitHub Releases",
+    "Settings shows release notes and version status",
+    "Security page discloses update check data",
+    "Anonymous install ID for usage statistics"
   ],
   "notes_ko": [
-    "검색 결과가 매치 유형별로 분류됩니다",
-    "스마트 뱃지로 버전과 매치 정보를 한눈에 확인",
-    "한국어/영어 전체 인터페이스 지원"
+    "검색 결과가 최대 75개 파일까지 표시됩니다",
+    "GitHub Releases를 통한 자동 업데이트 확인",
+    "설정에서 릴리즈 노트와 버전 상태 확인",
+    "보안 페이지에 업데이트 확인 데이터 공개",
+    "사용 통계를 위한 익명 설치 ID"
   ]
 }
