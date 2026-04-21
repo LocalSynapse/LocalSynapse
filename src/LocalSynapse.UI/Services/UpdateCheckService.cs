@@ -82,18 +82,22 @@ public sealed class UpdateCheckService
         SaveState(state);
     }
 
-    /// <summary>첫 실행 동의 (update-check.json 생성, checkEnabled=true).</summary>
+    /// <summary>첫 실행 동의 (update-check.json 생성, checkEnabled=true). 기존 Iid 보존.</summary>
     public void AcceptFirstRun()
     {
-        SaveState(new CheckState { CheckEnabled = true });
+        var state = LoadState();
+        state.CheckEnabled = true;
+        SaveState(state);
         _isFirstRunCached = false;
         _isFirstRunChecked = true;
     }
 
-    /// <summary>첫 실행 비활성화 (update-check.json 생성, checkEnabled=false).</summary>
+    /// <summary>첫 실행 비활성화 (update-check.json 생성, checkEnabled=false). 기존 Iid 보존.</summary>
     public void DisableFromFirstRun()
     {
-        SaveState(new CheckState { CheckEnabled = false });
+        var state = LoadState();
+        state.CheckEnabled = false;
+        SaveState(state);
         _isFirstRunCached = false;
         _isFirstRunChecked = true;
     }
