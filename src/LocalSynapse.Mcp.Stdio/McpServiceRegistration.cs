@@ -37,9 +37,8 @@ internal static class McpServiceRegistration
             sp.GetRequiredService<SearchClickService>()));
         services.AddSingleton<IBm25Search>(sp => sp.GetRequiredService<Bm25SearchService>());
         services.AddSingleton<IDenseSearch, EmptyDenseSearch>();
+        // Placeholder for M2 dense search — NullEmbeddingBridge disables dense path
         services.AddSingleton<IEmbeddingBridge, NullEmbeddingBridge>();
-        services.AddSingleton<IDocumentFamilyService, DocumentFamilyService>();
-        services.AddSingleton<ISnippetExtractor, SnippetExtractor>();
         services.AddSingleton<IHybridSearch, HybridSearchService>();
 
         // ── MCP ──
