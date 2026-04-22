@@ -18,8 +18,16 @@ public sealed class McpConfigService
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Claude", "claude_desktop_config.json");
 
-    /// <summary>현재 실행 중인 EXE의 절대 경로.</summary>
-    public static string ExePath => PlatformHelper.GetExecutableName();
+    /// <summary>MCP Stdio 서버 바이너리 경로. GUI와 같은 디렉토리에 위치.</summary>
+    public static string McpExePath
+    {
+        get
+        {
+            var baseDir = AppContext.BaseDirectory;
+            var exeName = OperatingSystem.IsWindows() ? "localsynapse-mcp.exe" : "localsynapse-mcp";
+            return Path.Combine(baseDir, exeName);
+        }
+    }
 
     /// <summary>Claude Desktop이 설치되어 있는지 확인.</summary>
     public bool IsClaudeDesktopInstalled()
@@ -74,8 +82,8 @@ public sealed class McpConfigService
             // localsynapse 엔트리 추가/덮어쓰기
             var entry = new JsonObject
             {
-                ["command"] = ExePath,
-                ["args"] = new JsonArray("mcp")
+                ["command"] = McpExePath,
+                ["args"] = new JsonArray()
             };
             servers[ServerName] = entry;
 
@@ -118,11 +126,11 @@ public sealed class McpConfigService
     /// <summary>Claude Code CLI 등록 명령어를 생성한다.</summary>
     public string GetClaudeCodeAddCommand()
     {
-        var path = ExePath;
+        var path = McpExePath;
         // Windows: 백슬래시 이스케이프, macOS: 그대로
         if (PlatformHelper.IsWindows)
             path = path.Replace("\\", "\\\\");
-        return $"claude mcp add {ServerName} -- \"{path}\" mcp";
+        return $"claude mcp add {ServerName} -- \"{path}\"";
     }
 
     /// <summary>Claude Code CLI 제거 명령어를 생성한다.</summary>

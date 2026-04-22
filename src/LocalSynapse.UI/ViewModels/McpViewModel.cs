@@ -45,7 +45,7 @@ public partial class McpViewModel : ObservableObject
     /// <summary>상태를 새로고침한다.</summary>
     public void RefreshState()
     {
-        ExePath = McpConfigService.ExePath;
+        ExePath = McpConfigService.McpExePath;
         ConfigFilePath = McpConfigService.ClaudeDesktopConfigPath;
         IsClaudeDesktopInstalled = _configService.IsClaudeDesktopInstalled();
         IsClaudeDesktopRegistered = _configService.IsRegisteredInClaudeDesktop();

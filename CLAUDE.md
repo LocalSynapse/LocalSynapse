@@ -20,10 +20,12 @@ Core ← Pipeline
 Core ← Search
 Core ← Email
 Core, Search ← Mcp
+Core, Search, Mcp ← Mcp.Stdio
 Core, Pipeline, Search, Email ← UI
 ```
 
 Reverse references are forbidden. Pipeline must not reference Search. Core must not reference UI.
+Mcp.Stdio must not reference Pipeline or UI.
 
 ## Project Structure
 
@@ -34,6 +36,7 @@ src/
 ├── LocalSynapse.Search/      # BM25, Dense, Hybrid search — Core only
 ├── LocalSynapse.Email/       # Email parsing, Graph sync — Core only
 ├── LocalSynapse.Mcp/         # MCP stdio server — Core, Search
+├── LocalSynapse.Mcp.Stdio/   # Headless MCP stdio server — Core, Search, Mcp
 └── LocalSynapse.UI/          # Avalonia MVVM — references all (entry point)
 ```
 
@@ -71,6 +74,7 @@ src/
 | xunit | tests/LocalSynapse.Core.Tests | 2.9.3 — Test framework. v3 3.2.2 attempted first (Phase 1 Step 0 probe), failed VSTest compatibility → fell back to v2. Do NOT revert to v3 without verifying VSTest adapter compatibility. |
 | xunit.runner.visualstudio | tests/LocalSynapse.Core.Tests | 2.8.2 — VSTest adapter for `dotnet test`. Compatible with both v2 and v3 test projects. |
 | Microsoft.NET.Test.Sdk | tests/LocalSynapse.Core.Tests | 17.12.0 — Required by VSTest runner. |
+| Microsoft.Extensions.DependencyInjection | Mcp.Stdio | DI container |
 
 Do NOT add packages without approval.
 
