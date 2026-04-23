@@ -3,6 +3,6 @@
   "name": "io.github.localsynapse/localsynapse-mcp",
   "title": "LocalSynapse - Local File Search MCP Server",
   "description": "AI-powered local document search. Indexes Word, Excel, PowerPoint, PDF, HWP contents with hybrid BM25 search. 100% offline. Windows + macOS.",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "packages": []
 }
