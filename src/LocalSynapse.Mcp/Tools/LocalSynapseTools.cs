@@ -208,12 +208,4 @@ public sealed class LocalSynapseTools
         }));
     }
 
-    // ── Helper ────────────────────────────────────────────────────
-
-    private static string? TruncateText(string? text, int maxLength)
-    {
-        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
-            return text;
-        return text[..maxLength] + "...";
-    }
 }

@@ -635,7 +635,7 @@ public sealed class FileRepository : IFileRepository
 
         if (!string.IsNullOrEmpty(folder))
         {
-            sql.Append(" AND path LIKE @folder ESCAPE '\\'");
+            sql.Append(@" AND path LIKE @folder ESCAPE '\'");
             var escaped = EscapeLike(folder.TrimEnd(
                 System.IO.Path.DirectorySeparatorChar,
                 System.IO.Path.AltDirectorySeparatorChar));
