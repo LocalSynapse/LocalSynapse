@@ -4,6 +4,8 @@ using System.Text.Json;
 using LocalSynapse.Core.Constants;
 using LocalSynapse.Pipeline.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace LocalSynapse.UI;
 
@@ -43,16 +45,24 @@ public static class Program
 
     private static async Task RunMcpServer(string[] args)
     {
-        Console.Error.WriteLine("LocalSynapse MCP Server starting...");
+        var builder = Host.CreateApplicationBuilder(args);
 
-        var sc = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
-        Services.DI.ServiceCollectionExtensions.AddLocalSynapseServices(sc);
-        var sp = sc.BuildServiceProvider();
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole(options =>
+        {
+            options.LogToStandardErrorThreshold = LogLevel.Trace;
+        });
 
-        sp.GetRequiredService<Core.Interfaces.IMigrationService>().RunMigrations();
+        Services.DI.ServiceCollectionExtensions.AddLocalSynapseServices(builder.Services);
 
-        var server = sp.GetRequiredService<Mcp.Interfaces.IMcpServer>();
-        await server.RunAsync(CancellationToken.None);
+        builder.Services
+            .AddMcpServer()
+            .WithStdioServerTransport()
+            .WithToolsFromAssembly(typeof(LocalSynapse.Mcp.Tools.LocalSynapseTools).Assembly);
+
+        var host = builder.Build();
+        host.Services.GetRequiredService<Core.Interfaces.IMigrationService>().RunMigrations();
+        await host.RunAsync();
     }
 
     // M0-B: Parser quality verification dump mode.

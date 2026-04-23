@@ -75,6 +75,8 @@ src/
 | xunit.runner.visualstudio | tests/LocalSynapse.Core.Tests | 2.8.2 — VSTest adapter for `dotnet test`. Compatible with both v2 and v3 test projects. |
 | Microsoft.NET.Test.Sdk | tests/LocalSynapse.Core.Tests | 17.12.0 — Required by VSTest runner. |
 | Microsoft.Extensions.DependencyInjection | Mcp.Stdio | DI container |
+| ModelContextProtocol | Mcp, UI | MCP C# SDK (official) |
+| Microsoft.Extensions.Hosting | Mcp, Mcp.Stdio, UI | Generic Host for MCP stdio server |
 
 Do NOT add packages without approval.
 

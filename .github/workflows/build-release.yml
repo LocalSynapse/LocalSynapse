@@ -51,6 +51,16 @@ jobs:
             -p:PublishSingleFile=true `
             -p:Version=${{ steps.version.outputs.VERSION }} `
             -o ./publish/win-x64
+      - name: Publish MCP Stdio (win-x64)
+        run: |
+          dotnet publish src/LocalSynapse.Mcp.Stdio/LocalSynapse.Mcp.Stdio.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:Version=${{ steps.version.outputs.VERSION }} `
+            -o ./publish/win-x64
       - name: Build Installer (Inno Setup)
         shell: cmd
         run: |
@@ -121,6 +131,16 @@ jobs:
             -c Release \
             -r ${{ matrix.rid }} \
             --self-contained true \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            -o ./publish/${{ matrix.rid }}
+      - name: Publish MCP Stdio (${{ matrix.rid }})
+        run: |
+          dotnet publish src/LocalSynapse.Mcp.Stdio/LocalSynapse.Mcp.Stdio.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:Version=${{ steps.version.outputs.VERSION }} \
             -o ./publish/${{ matrix.rid }}
       - name: Install create-dmg

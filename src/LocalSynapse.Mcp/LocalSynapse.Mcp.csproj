@@ -9,4 +9,9 @@
     <ProjectReference Include="..\LocalSynapse.Core\LocalSynapse.Core.csproj" />
     <ProjectReference Include="..\LocalSynapse.Search\LocalSynapse.Search.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="1.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
 </Project>

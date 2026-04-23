@@ -10,8 +10,6 @@ using LocalSynapse.Pipeline.Scanning;
 using LocalSynapse.Search;
 using LocalSynapse.Search.Interfaces;
 using LocalSynapse.Search.Services;
-using LocalSynapse.Mcp.Interfaces;
-using LocalSynapse.Mcp.Server;
 using LocalSynapse.UI.ViewModels;
 using LocalSynapse.UI.Services;
 using LocalSynapse.UI.Services.Localization;
@@ -60,24 +58,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDocumentFamilyService, DocumentFamilyService>();
         services.AddSingleton<ISnippetExtractor, SnippetExtractor>();
         services.AddSingleton<SearchClickService>();
-
-        // ── MCP ──
-        services.AddSingleton<McpToolRouter>(sp =>
-        {
-            var router = new McpToolRouter();
-            var searchTool = new LocalSynapse.Mcp.Tools.SearchFilesTool(sp.GetRequiredService<IHybridSearch>());
-            var fileTool = new LocalSynapse.Mcp.Tools.GetFileContentTool(
-                sp.GetRequiredService<IFileRepository>(),
-                sp.GetRequiredService<IChunkRepository>());
-            var statusTool = new LocalSynapse.Mcp.Tools.GetPipelineStatusTool(sp.GetRequiredService<IPipelineStampRepository>());
-            var listTool = new LocalSynapse.Mcp.Tools.ListIndexedFilesTool(sp.GetRequiredService<IFileRepository>());
-            router.Register("search_files", searchTool.ExecuteAsync);
-            router.Register("get_file_content", fileTool.ExecuteAsync);
-            router.Register("get_pipeline_status", statusTool.ExecuteAsync);
-            router.Register("list_indexed_files", listTool.ExecuteAsync);
-            return router;
-        });
-        services.AddSingleton<IMcpServer, McpServer>();
 
         // ── Localization ──
         services.AddSingleton<ILocalizationService, LocalizationService>();

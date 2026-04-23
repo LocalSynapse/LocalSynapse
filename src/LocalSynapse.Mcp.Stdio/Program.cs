@@ -1,47 +1,30 @@
-using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using LocalSynapse.Core.Interfaces;
-using LocalSynapse.Mcp.Interfaces;
+using LocalSynapse.Mcp.Stdio;
 
-namespace LocalSynapse.Mcp.Stdio;
+var builder = Host.CreateApplicationBuilder(args);
 
-internal class Program
+// MCP 서버는 stdout을 JSON-RPC로 사용하므로, 로그는 stderr로 보낸다
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole(options =>
 {
-    private static async Task Main(string[] args)
-    {
-        Console.Error.WriteLine("localsynapse-mcp starting...");
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
+});
 
-        try
-        {
-            var services = new ServiceCollection();
-            McpServiceRegistration.AddMcpServices(services);
+// LocalSynapse 서비스 등록 (Core + Search만, Pipeline/UI 제외)
+McpServiceRegistration.AddLocalSynapseServices(builder.Services);
 
-            var provider = services.BuildServiceProvider();
+// MCP 서버 등록 — SDK가 stdio transport + 도구 스캔 처리
+builder.Services
+    .AddMcpServer()
+    .WithStdioServerTransport()
+    .WithToolsFromAssembly(typeof(LocalSynapse.Mcp.Tools.LocalSynapseTools).Assembly);
 
-            // DB 마이그레이션 (GUI가 먼저 실행되어 DB를 생성했을 수도 있고, 아닐 수도 있음)
-            provider.GetRequiredService<IMigrationService>().RunMigrations();
+var host = builder.Build();
 
-            // MCP stdio 서버 시작 — stdin/stdout으로 JSON-RPC 수신 대기
-            var server = provider.GetRequiredService<IMcpServer>();
+// DB 마이그레이션
+host.Services.GetRequiredService<IMigrationService>().RunMigrations();
 
-            using var cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) =>
-            {
-                e.Cancel = true;
-                cts.Cancel();
-            };
-
-            await server.RunAsync(cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            // Ctrl+C — 정상 종료
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[localsynapse-mcp] Fatal error: {ex}");
-            Console.Error.WriteLine($"localsynapse-mcp fatal error: {ex.Message}");
-            Environment.ExitCode = 1;
-        }
-    }
-}
+await host.RunAsync();

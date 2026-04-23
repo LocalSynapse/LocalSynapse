@@ -24,6 +24,12 @@ public interface IFileRepository
     Task<bool> ExistsByPathAsync(string filePath);
 
     /// <summary>
+    /// 지정 폴더 하위의 파일 목록을 단일 쿼리로 반환한다.
+    /// folder가 null이면 전체 파일 대상.
+    /// </summary>
+    IReadOnlyList<FileMetadata> ListFilesUnderFolder(string? folder, string? extension, int limit);
+
+    /// <summary>
     /// Get path → mtime_ms map for all non-directory files.
     /// Used by FileScanner for unchanged file detection (skip files with same mtime).
     /// Single query, loaded once before each scan cycle.

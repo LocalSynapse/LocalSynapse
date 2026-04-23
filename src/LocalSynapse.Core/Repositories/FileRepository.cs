@@ -624,6 +624,43 @@ public sealed class FileRepository : IFileRepository
         return text.Any(c => (c >= 0xAC00 && c <= 0xD7A3) || (c >= 0x3131 && c <= 0x318E));
     }
 
+    /// <summary>지정 폴더 하위의 파일 목록을 단일 쿼리로 반환한다.</summary>
+    public IReadOnlyList<FileMetadata> ListFilesUnderFolder(string? folder, string? extension, int limit)
+    {
+        using var conn = _connectionFactory.CreateConnection();
+        using var cmd = conn.CreateCommand();
+
+        var sql = new System.Text.StringBuilder(SelectColumns);
+        sql.Append(" FROM files WHERE is_directory = 0");
+
+        if (!string.IsNullOrEmpty(folder))
+        {
+            sql.Append(" AND path LIKE @folder ESCAPE '\\'");
+            var escaped = EscapeLike(folder.TrimEnd(
+                System.IO.Path.DirectorySeparatorChar,
+                System.IO.Path.AltDirectorySeparatorChar));
+            cmd.Parameters.AddWithValue("@folder", escaped + "%");
+        }
+
+        if (!string.IsNullOrEmpty(extension))
+        {
+            sql.Append(" AND LOWER(extension) = LOWER(@ext)");
+            cmd.Parameters.AddWithValue("@ext", extension.StartsWith('.') ? extension : "." + extension);
+        }
+
+        sql.Append(" ORDER BY modified_at DESC LIMIT @limit");
+        cmd.Parameters.AddWithValue("@limit", limit);
+
+        cmd.CommandText = sql.ToString();
+
+        var results = new List<FileMetadata>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+            results.Add(ReadRow(reader));
+
+        return results;
+    }
+
     /// <summary>Get path → mtime_ms for all non-directory files.</summary>
     public Dictionary<string, long> GetAllFileMtimes()
     {

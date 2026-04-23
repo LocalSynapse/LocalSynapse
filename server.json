@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.localsynapse/localsynapse-mcp",
   "title": "LocalSynapse - Local File Search MCP Server",
-  "description": "Offline AI-powered file search MCP server (Windows only). Cross-platform support planned for a future release. See GitHub Releases for manual setup instructions.",
-  "version": "2.5.2",
+  "description": "AI-powered local document search. Indexes Word, Excel, PowerPoint, PDF, HWP contents with hybrid BM25 search. 100% offline. Windows + macOS.",
+  "version": "2.7.0",
   "packages": []
 }
