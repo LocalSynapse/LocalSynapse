@@ -163,6 +163,53 @@ public sealed class EmbeddingRepository : IEmbeddingRepository
         }, ct);
     }
 
+    /// <summary>지정 모델의 전체 임베딩을 배치 단위로 스트리밍 반환한다.</summary>
+    public async IAsyncEnumerable<EmbeddingRecord> EnumerateAllEmbeddingsAsync(
+        string modelId, int batchSize = 500,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var offset = 0;
+
+        while (!ct.IsCancellationRequested)
+        {
+            var batch = await Task.Run(() =>
+            {
+                var results = new List<EmbeddingRecord>();
+                using var conn = _connectionFactory.CreateConnection();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT file_id, chunk_id, vector
+                    FROM embeddings
+                    WHERE model_id = $modelId
+                    ORDER BY id
+                    LIMIT $limit OFFSET $offset";
+                cmd.Parameters.AddWithValue("$modelId", modelId);
+                cmd.Parameters.AddWithValue("$limit", batchSize);
+                cmd.Parameters.AddWithValue("$offset", offset);
+
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    results.Add(new EmbeddingRecord
+                    {
+                        FileId = r.GetString(0),
+                        ChunkId = r.GetInt32(1),
+                        Vector = BlobToVector((byte[])r.GetValue(2))
+                    });
+                }
+                return results;
+            }, ct);
+
+            if (batch.Count == 0) break;
+
+            foreach (var record in batch)
+                yield return record;
+
+            if (batch.Count < batchSize) break;
+            offset += batchSize;
+        }
+    }
+
     private static byte[] VectorToBlob(float[] vector)
     {
         var bytes = new byte[vector.Length * 4];

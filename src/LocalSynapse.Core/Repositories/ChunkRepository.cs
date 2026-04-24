@@ -77,6 +77,18 @@ public sealed class ChunkRepository : IChunkRepository
 
         // Bulk FTS sync: file별 DELETE + INSERT
         var fileIds = chunkList.Select(c => c.FileId).Distinct().ToList();
+
+        // ── Stale 임베딩 삭제 (file별 배치) ──
+        // 청크 텍스트가 변경되었으므로 기존 벡터는 무효.
+        // 다음 파이프라인 사이클에서 EnumerateChunksMissingEmbeddingAsync가 재생성.
+        foreach (var fid in fileIds)
+        {
+            using var delEmbCmd = conn.CreateCommand();
+            delEmbCmd.CommandText = "DELETE FROM embeddings WHERE file_id = $fid";
+            delEmbCmd.Parameters.AddWithValue("$fid", fid);
+            delEmbCmd.ExecuteNonQuery();
+        }
+
         foreach (var fileId in fileIds)
         {
             using (var delCmd = conn.CreateCommand())

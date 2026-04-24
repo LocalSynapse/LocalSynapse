@@ -53,7 +53,7 @@ public static class ServiceCollectionExtensions
             var embSvc = sp.GetRequiredService<EmbeddingService>();
             return new EmbeddingBridgeAdapter(embSvc);
         });
-        services.AddSingleton<IDenseSearch, EmptyDenseSearch>();
+        services.AddSingleton<IDenseSearch, DenseSearchService>();
         services.AddSingleton<IHybridSearch, HybridSearchService>();
         services.AddSingleton<IDocumentFamilyService, DocumentFamilyService>();
         services.AddSingleton<ISnippetExtractor, SnippetExtractor>();

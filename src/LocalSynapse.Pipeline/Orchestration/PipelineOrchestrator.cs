@@ -33,8 +33,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     private const int BatchSize = 500;
     private static readonly TimeSpan AutoRunInterval = TimeSpan.FromMinutes(10);
 
-    /// <summary>Dense search 비활성 기간 동안 embedding 생성을 건너뛴다. M2에서 제거.</summary>
-    private const bool SkipEmbeddingPhase = true;
+    private const bool SkipEmbeddingPhase = false;
 
     public PipelinePhase CurrentPhase { get; private set; } = PipelinePhase.Idle;
     public bool IsRunning => CurrentPhase != PipelinePhase.Idle

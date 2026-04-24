@@ -24,24 +24,31 @@ public sealed class HybridSearchService : IHybridSearch
         _dense = dense;
     }
 
-    /// <summary>하이브리드 검색을 실행한다.</summary>
+    /// <summary>하이브리드 검���을 실행한다.</summary>
     public async Task<SearchResponse> SearchAsync(string query, SearchOptions options, CancellationToken ct = default)
     {
         var sw = Stopwatch.StartNew();
         var cleaned = NaturalQueryParser.RemoveStopwords(query);
 
-        // BM25 search
-        var bm25Results = await Task.Run(() => _bm25.Search(cleaned, options), ct);
+        // BM25 + Dense 병렬 시작
+        var bm25Task = Task.Run(() => _bm25.Search(cleaned, options), ct);
+        var denseAvailable = _dense.IsAvailable;
+
+        Task<IReadOnlyList<DenseHit>>? denseTask = denseAvailable
+            ? _dense.SearchAsync(query, options, ct)
+            : null;
+
+        // BM25 결과 대기
+        var bm25Results = await bm25Task;
         ct.ThrowIfCancellationRequested();
 
         IReadOnlyList<HybridHit> hybridHits;
 
-        if (_dense.IsAvailable)
+        if (denseAvailable && denseTask is not null)
         {
             try
             {
-                // Dense search with original query (preserves semantic context)
-                var denseResults = await _dense.SearchAsync(query, options, ct);
+                var denseResults = await denseTask;
                 ct.ThrowIfCancellationRequested();
 
                 if (denseResults.Count > 0)
@@ -74,7 +81,7 @@ public sealed class HybridSearchService : IHybridSearch
             Stats = new SearchStats
             {
                 Bm25Count = bm25Results.Count,
-                DenseCount = _dense.IsAvailable ? hybridHits.Count(h => h.DenseScore > 0) : 0,
+                DenseCount = denseAvailable ? hybridHits.Count(h => h.DenseScore > 0) : 0,
                 TotalCandidates = bm25Results.Count,
                 FinalCount = hybridHits.Count,
                 DurationMs = (int)sw.ElapsedMilliseconds,
