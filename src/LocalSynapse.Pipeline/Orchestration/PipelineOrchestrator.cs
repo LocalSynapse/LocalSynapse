@@ -19,6 +19,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     private readonly IContentExtractor _contentExtractor;
     private readonly ITextChunker _textChunker;
     private readonly IEmbeddingService _embeddingService;
+    private readonly IModelInstaller _modelInstaller;
     private readonly IFileRepository _fileRepo;
     private readonly IChunkRepository _chunkRepo;
     private readonly IEmbeddingRepository _embeddingRepo;
@@ -54,6 +55,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         IContentExtractor contentExtractor,
         ITextChunker textChunker,
         IEmbeddingService embeddingService,
+        IModelInstaller modelInstaller,
         IFileRepository fileRepo,
         IChunkRepository chunkRepo,
         IEmbeddingRepository embeddingRepo,
@@ -63,6 +65,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         _contentExtractor = contentExtractor;
         _textChunker = textChunker;
         _embeddingService = embeddingService;
+        _modelInstaller = modelInstaller;
         _fileRepo = fileRepo;
         _chunkRepo = chunkRepo;
         _embeddingRepo = embeddingRepo;
@@ -101,6 +104,22 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             if (_isPaused || ct.IsCancellationRequested) return;
 
             // Phase 3: Embed (slow — only if model ready)
+            // Auto-initialize embedding model if installed but not loaded
+            if (!SkipEmbeddingPhase && !_embeddingService.IsReady
+                && _modelInstaller.IsModelInstalled("bge-m3"))
+            {
+                try
+                {
+                    Debug.WriteLine("[Orch] Auto-initializing embedding model bge-m3...");
+                    await _embeddingService.InitializeAsync("bge-m3", ct);
+                    Debug.WriteLine($"[Orch] Embedding model initialized: IsReady={_embeddingService.IsReady}");
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    Debug.WriteLine($"[Orch] Embedding model init failed: {ex.Message}");
+                }
+            }
+
             if (!SkipEmbeddingPhase && _embeddingService.IsReady)
             {
                 var embSw = Stopwatch.StartNew();
