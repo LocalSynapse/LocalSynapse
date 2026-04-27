@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using LocalSynapse.UI.Services;
 
 namespace LocalSynapse.UI.ViewModels;
@@ -27,6 +28,10 @@ public partial class MainViewModel : ObservableObject
     {
         _services = services;
         _updateCheck = updateCheck;
+
+        WeakReferenceMessenger.Default.Register<NavigateMessage>(this, (r, m) =>
+            ((MainViewModel)r).NavigateTo(m.Page));
+
         NavigateTo(PageType.Search);
 
         // fire-and-forget 업데이트 체크 (첫 실행이면 skip — C3 해결)
@@ -83,3 +88,6 @@ public enum PageType
     /// <summary>설정 페이지.</summary>
     Settings,
 }
+
+/// <summary>Cross-VM navigation request message.</summary>
+public sealed record NavigateMessage(PageType Page);

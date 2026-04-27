@@ -6,10 +6,13 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
+using LocalSynapse.Pipeline.Interfaces;
 using LocalSynapse.Search;
 using LocalSynapse.Search.Interfaces;
 using LocalSynapse.Search.Services;
@@ -125,6 +128,8 @@ public partial class SearchViewModel : ObservableObject
     private readonly SearchClickService _clickService;
     private readonly IDocumentFamilyService _familyService;
     private readonly ILocalizationService _loc;
+    private readonly IModelInstaller _modelInstaller;
+    private System.Threading.Timer? _bannerTimer;
 
     // Search-as-you-type debounce
     private System.Threading.Timer? _debounceTimer;
@@ -150,6 +155,17 @@ public partial class SearchViewModel : ObservableObject
     [ObservableProperty] private bool _isSearching;
     [ObservableProperty] private string _searchTime = "";
     [ObservableProperty] private PipelineStamps _stamps = new();
+
+    // ── Banner state ──
+    [ObservableProperty] private string _bannerText = "";
+    [ObservableProperty] private bool _showBanner;
+    [ObservableProperty] private bool _bannerHasAction;
+    [ObservableProperty] private IBrush? _bannerBackground;
+
+    // ── Search mode badge ──
+    [ObservableProperty] private bool _showModeBadge;
+    [ObservableProperty] private string _modeBadgeText = "";
+    [ObservableProperty] private IBrush? _modeBadgeBackground;
 
     // Filter — string tokens are the source of truth; *Option properties wrap for ComboBox SelectedItem binding
     [ObservableProperty] private string _activeTypeFilter = "All";
@@ -290,7 +306,8 @@ public partial class SearchViewModel : ObservableObject
         IChunkRepository chunkRepo,
         SearchClickService clickService,
         IDocumentFamilyService familyService,
-        ILocalizationService loc)
+        ILocalizationService loc,
+        IModelInstaller modelInstaller)
     {
         _hybridSearch = hybridSearch;
         _bm25Search = bm25Search;
@@ -304,7 +321,61 @@ public partial class SearchViewModel : ObservableObject
         _loc = loc;
         Stamps = _stampRepo.GetCurrent();
         _loc.LanguageChanged += OnLanguageChanged;
+        _modelInstaller = modelInstaller;
+
+        _bannerTimer = new System.Threading.Timer(_ =>
+            Avalonia.Threading.Dispatcher.UIThread.Post(RefreshBannerState),
+            null, 0, 3000);
     }
+
+    private static IBrush GetBrush(string key)
+    {
+        Avalonia.Application.Current!.TryGetResource(key, null, out var res);
+        return (IBrush)res!;
+    }
+
+    private void RefreshBannerState()
+    {
+        Stamps = _stampRepo.GetCurrent();
+
+        if (!Stamps.ScanComplete)
+        {
+            BannerText = $"Scanning files... ({Stamps.TotalFiles:N0} found)";
+            BannerBackground = GetBrush("AccentLightBrush");
+            BannerHasAction = false;
+            ShowBanner = true;
+        }
+        else if (!Stamps.IndexingComplete)
+        {
+            BannerText = $"Indexing documents... {Stamps.IndexingPercent:F0}%";
+            BannerBackground = GetBrush("AccentLightBrush");
+            BannerHasAction = false;
+            ShowBanner = true;
+        }
+        else if (!_modelInstaller.IsModelInstalled("bge-m3"))
+        {
+            BannerText = "Download AI model for semantic search";
+            BannerBackground = GetBrush("WarningLightBrush");
+            BannerHasAction = true;
+            ShowBanner = true;
+        }
+        else if (!Stamps.EmbeddingComplete)
+        {
+            BannerText = $"Building semantic index... {Stamps.EmbeddingPercent:F0}%";
+            BannerBackground = GetBrush("AccentLightBrush");
+            BannerHasAction = false;
+            ShowBanner = true;
+        }
+        else
+        {
+            ShowBanner = false;
+        }
+    }
+
+    /// <summary>Navigate to DataSetup page (for model download).</summary>
+    [RelayCommand]
+    private void GoToDataSetup()
+        => WeakReferenceMessenger.Default.Send(new NavigateMessage(PageType.DataSetup));
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
@@ -403,6 +474,12 @@ public partial class SearchViewModel : ObservableObject
             CategorizeIntoSections(response, quickHits);
             ApplyTypeAndDateFilter();
             var catMs = catSw.ElapsedMilliseconds;
+
+            // Search mode badge
+            var mode = response.Mode;
+            ShowModeBadge = true;
+            ModeBadgeText = mode == SearchMode.Hybrid ? "Hybrid" : "FTS";
+            ModeBadgeBackground = GetBrush(mode == SearchMode.Hybrid ? "SuccessLightBrush" : "BgMutedBrush");
 
             // Cache for language-change rebuild
             _lastResponse = response;

@@ -82,7 +82,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IChunkRepository>(),
             sp.GetRequiredService<SearchClickService>(),
             sp.GetRequiredService<IDocumentFamilyService>(),
-            sp.GetRequiredService<ILocalizationService>()));
+            sp.GetRequiredService<ILocalizationService>(),
+            sp.GetRequiredService<IModelInstaller>()));
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
         services.AddTransient<SettingsViewModel>(sp => new SettingsViewModel(

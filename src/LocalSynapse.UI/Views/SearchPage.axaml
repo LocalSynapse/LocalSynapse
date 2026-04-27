@@ -124,6 +124,24 @@
         </Border>
 
         <!-- ═══════════════════════════════════════════════ -->
+        <!-- A2. STATUS BANNER                              -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <Border DockPanel.Dock="Top" Padding="12,8" Margin="16,0,16,0"
+                CornerRadius="8"
+                IsVisible="{Binding ShowBanner}"
+                Background="{Binding BannerBackground}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Classes="BtnSecondary"
+                        Content="Setup →" FontSize="11" Padding="10,4"
+                        Command="{Binding GoToDataSetupCommand}"
+                        IsVisible="{Binding BannerHasAction}"
+                        Margin="8,0,0,0"/>
+                <TextBlock Text="{Binding BannerText}" VerticalAlignment="Center"
+                           FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+            </DockPanel>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════ -->
         <!-- B. RESULT COUNT + FILTERS (single row)         -->
         <!-- ═══════════════════════════════════════════════ -->
         <Border DockPanel.Dock="Top"
@@ -182,6 +200,14 @@
                                FontSize="{StaticResource FontSizeBody}"
                                FontWeight="Medium"
                                Foreground="{StaticResource TextSecondaryBrush}" />
+                    <!-- Search mode badge -->
+                    <Border Padding="5,2" CornerRadius="4" Margin="8,0,0,0"
+                            IsVisible="{Binding ShowModeBadge}"
+                            Background="{Binding ModeBadgeBackground}">
+                        <TextBlock Text="{Binding ModeBadgeText}" FontSize="10"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </Border>
                 </StackPanel>
             </DockPanel>
         </Border>
