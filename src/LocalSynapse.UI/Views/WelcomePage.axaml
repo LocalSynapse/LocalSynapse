@@ -1,0 +1,137 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LocalSynapse.UI.ViewModels"
+             xmlns:i18n="using:LocalSynapse.UI.Markup"
+             x:Class="LocalSynapse.UI.Views.WelcomePage"
+             x:DataType="vm:WelcomeViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel MaxWidth="560" Margin="40,60,40,40"
+                    HorizontalAlignment="Center" Spacing="0">
+
+            <!-- Title -->
+            <TextBlock Text="{i18n:Tr Key=Welcome.Title}"
+                       FontSize="24" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+            <!-- Subtitle -->
+            <TextBlock Text="{i18n:Tr Key=Welcome.Subtitle}"
+                       FontSize="14"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center" Margin="0,0,0,32"/>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- Three-card selector                     -->
+            <!-- ═══════════════════════════════════════ -->
+            <UniformGrid Columns="3" Margin="0,0,0,20">
+
+                <!-- Card 1: All Drives -->
+                <Button Command="{Binding SelectOptionCommand}"
+                        CommandParameter="{x:Static vm:ScanScopeOption.AllDrives}"
+                        Padding="0" Margin="0,0,8,0" HorizontalContentAlignment="Stretch"
+                        Background="Transparent" BorderThickness="0" CornerRadius="10">
+                    <Border Classes="Card" Padding="16,20" CornerRadius="10"
+                            BorderThickness="2"
+                            BorderBrush="{Binding CardBrushAllDrives}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock Text="💻" FontSize="24" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{i18n:Tr Key=Welcome.ScanAll}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{i18n:Tr Key=Welcome.ScanAll.Desc}"
+                                       FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                       Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Card 2: My Documents -->
+                <Button Command="{Binding SelectOptionCommand}"
+                        CommandParameter="{x:Static vm:ScanScopeOption.MyDocuments}"
+                        Padding="0" Margin="4,0,4,0" HorizontalContentAlignment="Stretch"
+                        Background="Transparent" BorderThickness="0" CornerRadius="10">
+                    <Border Classes="Card" Padding="16,20" CornerRadius="10"
+                            BorderThickness="2"
+                            BorderBrush="{Binding CardBrushMyDocuments}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock Text="📁" FontSize="24" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{i18n:Tr Key=Welcome.MyDocs}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{i18n:Tr Key=Welcome.MyDocs.Desc}"
+                                       FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                       Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+
+                <!-- Card 3: Custom -->
+                <Button Command="{Binding SelectOptionCommand}"
+                        CommandParameter="{x:Static vm:ScanScopeOption.Custom}"
+                        Padding="0" Margin="8,0,0,0" HorizontalContentAlignment="Stretch"
+                        Background="Transparent" BorderThickness="0" CornerRadius="10">
+                    <Border Classes="Card" Padding="16,20" CornerRadius="10"
+                            BorderThickness="2"
+                            BorderBrush="{Binding CardBrushCustom}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock Text="📂" FontSize="24" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{i18n:Tr Key=Welcome.Custom}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{i18n:Tr Key=Welcome.Custom.Desc}"
+                                       FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                       Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </Button>
+            </UniformGrid>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- Custom folder list (visible when Custom selected) -->
+            <!-- ═══════════════════════════════════════ -->
+            <Border Padding="12" CornerRadius="8" Margin="0,0,0,16"
+                    Background="{StaticResource BgSurfaceBrush}"
+                    BorderBrush="{StaticResource BorderDefaultBrush}"
+                    BorderThickness="1"
+                    IsVisible="{Binding ShowFolderList}">
+                <StackPanel Spacing="8">
+                    <ItemsControl ItemsSource="{Binding CustomFolders}" Name="WelcomeFolderList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Classes="StatCard" Padding="8,6" Margin="0,0,0,4">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="✕" Padding="6,2"
+                                                Classes="BtnSecondary" FontSize="11"
+                                                Command="{Binding #WelcomeFolderList.DataContext.RemoveFolderCommand}"
+                                                CommandParameter="{Binding}"/>
+                                        <TextBlock Text="{Binding}" VerticalAlignment="Center"
+                                                   FontSize="12" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Classes="BtnSecondary"
+                            Content="{i18n:Tr Key=Welcome.AddFolder}"
+                            Command="{Binding AddFolderCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- Start button                           -->
+            <!-- ═══════════════════════════════════════ -->
+            <Button Classes="BtnPrimary" HorizontalAlignment="Center"
+                    Padding="32,10" FontSize="14"
+                    Content="{i18n:Tr Key=Welcome.Start}"
+                    Command="{Binding StartIndexingCommand}"
+                    IsEnabled="{Binding CanStart}"/>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

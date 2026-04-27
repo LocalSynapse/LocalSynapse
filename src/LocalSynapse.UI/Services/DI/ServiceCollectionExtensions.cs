@@ -71,7 +71,8 @@ public static class ServiceCollectionExtensions
         // ── ViewModels ──
         // MainViewModel: Singleton (one navigation state for app lifetime)
         services.AddSingleton<MainViewModel>(sp => new MainViewModel(
-            sp, sp.GetRequiredService<UpdateCheckService>()));
+            sp, sp.GetRequiredService<UpdateCheckService>(),
+            sp.GetRequiredService<IPipelineStampRepository>()));
         // DataSetupViewModel: Singleton (observes pipeline, must survive tab switches)
         services.AddSingleton<DataSetupViewModel>();
         // Search: Singleton (survives tab switches, preserves search state)
@@ -95,6 +96,9 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<UpdateCheckService>(),
             sp.GetRequiredService<IPipelineOrchestrator>()));
         services.AddTransient<SecurityViewModel>();
+        services.AddTransient<WelcomeViewModel>(sp => new WelcomeViewModel(
+            sp.GetRequiredService<ISettingsStore>(),
+            sp.GetRequiredService<IPipelineOrchestrator>()));
 
         return services;
     }

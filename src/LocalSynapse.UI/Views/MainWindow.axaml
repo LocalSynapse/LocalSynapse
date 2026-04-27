@@ -20,9 +20,10 @@
 
     <DockPanel>
 
-        <!-- Left Navigation Rail -->
+        <!-- Left Navigation Rail (hidden during Welcome) -->
         <Border DockPanel.Dock="Left"
                 Width="56"
+                IsVisible="{Binding ShowNavRail}"
                 Background="{StaticResource NavBgBrush}"
                 BorderBrush="{StaticResource BorderDefaultBrush}"
                 BorderThickness="0,0,1,0">
@@ -210,6 +211,9 @@
                 </DataTemplate>
                 <DataTemplate DataType="vm:SettingsViewModel">
                     <views:SettingsPage />
+                </DataTemplate>
+                <DataTemplate DataType="vm:WelcomeViewModel">
+                    <views:WelcomePage />
                 </DataTemplate>
             </ContentControl.DataTemplates>
         </ContentControl>

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using LocalSynapse.Core.Interfaces;
 using LocalSynapse.UI.Services;
 
 namespace LocalSynapse.UI.ViewModels;
@@ -24,7 +25,11 @@ public partial class MainViewModel : ObservableObject
     private readonly UpdateCheckService _updateCheck;
 
     /// <summary>MainViewModel 생성자.</summary>
-    public MainViewModel(IServiceProvider services, UpdateCheckService updateCheck)
+    /// <summary>Whether the nav rail should be visible (hidden on Welcome).</summary>
+    public bool ShowNavRail => CurrentPage != PageType.Welcome;
+
+    public MainViewModel(IServiceProvider services, UpdateCheckService updateCheck,
+        IPipelineStampRepository stampRepo)
     {
         _services = services;
         _updateCheck = updateCheck;
@@ -32,7 +37,10 @@ public partial class MainViewModel : ObservableObject
         WeakReferenceMessenger.Default.Register<NavigateMessage>(this, (r, m) =>
             ((MainViewModel)r).NavigateTo(m.Page));
 
-        NavigateTo(PageType.Search);
+        // First-run detection: no scan has ever completed
+        var stamps = stampRepo.GetCurrent();
+        var isFirstRun = !stamps.ScanComplete && stamps.TotalFiles == 0;
+        NavigateTo(isFirstRun ? PageType.Welcome : PageType.Search);
 
         // fire-and-forget 업데이트 체크 (첫 실행이면 skip — C3 해결)
         _ = Task.Run(async () =>
@@ -60,6 +68,7 @@ public partial class MainViewModel : ObservableObject
     private void NavigateTo(PageType page)
     {
         CurrentPage = page;
+        OnPropertyChanged(nameof(ShowNavRail));
         // Sync dot state from service (reflects dismiss)
         HasUpdateAvailable = _updateCheck.HasUpdateAvailable;
         CurrentPageViewModel = page switch
@@ -69,6 +78,7 @@ public partial class MainViewModel : ObservableObject
             PageType.McpSetup => _services.GetService(typeof(McpViewModel)),
             PageType.Security => _services.GetService(typeof(SecurityViewModel)),
             PageType.Settings => _services.GetService(typeof(SettingsViewModel)),
+            PageType.Welcome => _services.GetService(typeof(WelcomeViewModel)),
             _ => null
         };
     }
@@ -87,6 +97,8 @@ public enum PageType
     Security,
     /// <summary>설정 페이지.</summary>
     Settings,
+    /// <summary>첫 실행 Welcome 페이지.</summary>
+    Welcome,
 }
 
 /// <summary>Cross-VM navigation request message.</summary>

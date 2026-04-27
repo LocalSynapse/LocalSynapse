@@ -198,6 +198,18 @@ internal static class LocalizationRegistry
             [StringKeys.UpdateCheck.WhatsNewTitle] = new() { ["en"] = "What's new in v{0}", ["ko"] = "v{0}의 새로운 기능", ["fr"] = "Nouveautés de la v{0}", ["de"] = "Neues in v{0}", ["zh"] = "v{0}的新功能" },
             [StringKeys.UpdateCheck.UpToDate] = new() { ["en"] = "You're up to date", ["ko"] = "최신 버전입니다", ["fr"] = "Vous êtes à jour", ["de"] = "Sie sind auf dem neuesten Stand", ["zh"] = "已是最新版本" },
             [StringKeys.UpdateCheck.UpdateAvailable] = new() { ["en"] = "Update available", ["ko"] = "업데이트가 있습니다", ["fr"] = "Mise à jour disponible", ["de"] = "Update verfügbar", ["zh"] = "有可用更新" },
+
+            // ── Welcome ──
+            [StringKeys.Welcome.Title] = new() { ["en"] = "Welcome to LocalSynapse", ["ko"] = "LocalSynapse에 오신 것을 환영합니다", ["fr"] = "Bienvenue sur LocalSynapse", ["de"] = "Willkommen bei LocalSynapse", ["zh"] = "欢迎使用 LocalSynapse" },
+            [StringKeys.Welcome.Subtitle] = new() { ["en"] = "Your local file search assistant. Let's set up what to index.", ["ko"] = "로컬 파일 검색 도우미입니다. 인덱싱 대상을 설정하세요.", ["fr"] = "Votre assistant de recherche. Configurons l'indexation.", ["de"] = "Ihr lokaler Dateisuch-Assistent. Richten wir die Indexierung ein.", ["zh"] = "您的本地文件搜索助手。让我们设置索引范围。" },
+            [StringKeys.Welcome.ScanAll] = new() { ["en"] = "All Drives", ["ko"] = "전체 드라이브", ["fr"] = "Tous les disques", ["de"] = "Alle Laufwerke", ["zh"] = "所有驱动器" },
+            [StringKeys.Welcome.ScanAllDesc] = new() { ["en"] = "Scan everything on all fixed drives", ["ko"] = "모든 고정 드라이브를 스캔합니다", ["fr"] = "Analyser tous les disques fixes", ["de"] = "Alle Festplatten scannen", ["zh"] = "扫描所有固定驱动器" },
+            [StringKeys.Welcome.MyDocs] = new() { ["en"] = "My Documents", ["ko"] = "내 문서", ["fr"] = "Mes documents", ["de"] = "Meine Dokumente", ["zh"] = "我的文档" },
+            [StringKeys.Welcome.MyDocsDesc] = new() { ["en"] = "Documents, Desktop, and Downloads", ["ko"] = "문서, 바탕화면, 다운로드 폴더", ["fr"] = "Documents, Bureau et Téléchargements", ["de"] = "Dokumente, Desktop und Downloads", ["zh"] = "文档、桌面和下载" },
+            [StringKeys.Welcome.Custom] = new() { ["en"] = "Custom", ["ko"] = "직접 선택", ["fr"] = "Personnalisé", ["de"] = "Benutzerdefiniert", ["zh"] = "自定义" },
+            [StringKeys.Welcome.CustomDesc] = new() { ["en"] = "Choose exactly which folders to index", ["ko"] = "인덱싱할 폴더를 직접 선택합니다", ["fr"] = "Choisir les dossiers à indexer", ["de"] = "Ordner zum Indexieren auswählen", ["zh"] = "选择要索引的文件夹" },
+            [StringKeys.Welcome.AddFolder] = new() { ["en"] = "+ Add Folder", ["ko"] = "+ 폴더 추가", ["fr"] = "+ Ajouter un dossier", ["de"] = "+ Ordner hinzufügen", ["zh"] = "+ 添加文件夹" },
+            [StringKeys.Welcome.Start] = new() { ["en"] = "Start Indexing →", ["ko"] = "인덱싱 시작 →", ["fr"] = "Démarrer l'indexation →", ["de"] = "Indexierung starten →", ["zh"] = "开始索引 →" },
         };
     }
 }

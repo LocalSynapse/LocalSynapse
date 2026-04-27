@@ -185,9 +185,20 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         // Recover pipeline_stamps if previous scan was interrupted
         RecoverStampsIfNeeded();
 
-        // Run first cycle immediately on startup
-        try { await RunCycleAsync(ct); }
-        catch (Exception ex) { Debug.WriteLine($"[Orch] Initial cycle error: {ex.Message}"); }
+        // First-run detection: defer first cycle until user chooses scan scope
+        var stamps = _stampRepo.GetCurrent();
+        var isFirstRun = !stamps.ScanComplete && stamps.TotalFiles == 0;
+
+        if (!isFirstRun)
+        {
+            try { await RunCycleAsync(ct); }
+            catch (Exception ex) { Debug.WriteLine($"[Orch] Initial cycle error: {ex.Message}"); }
+        }
+        else
+        {
+            Debug.WriteLine("[Orch] First-run: deferring initial cycle until user chooses scan scope");
+            SpeedDiagLog.Log("FIRST_RUN_DEFER", "reason", "awaiting scan scope choice");
+        }
 
         while (!ct.IsCancellationRequested)
         {
@@ -445,7 +456,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
 
         ReportProgress(PipelinePhase.Embedding, 0, total: totalEmbeddable,
             statusText: "Starting embedding...");
+        SpeedDiagLog.Log("EMB_PHASE_START", "total_embeddable", totalEmbeddable, "model", modelId);
 
+        var errorCount = 0;
         await foreach (var chunk in _embeddingRepo.EnumerateChunksMissingEmbeddingAsync(modelId, BatchSize, ct))
         {
             ct.ThrowIfCancellationRequested();
@@ -453,14 +466,20 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
 
             try
             {
+                var sw = Stopwatch.StartNew();
                 var vector = await _embeddingService.GenerateEmbeddingAsync(chunk.Text, ct);
+                var inferMs = sw.ElapsedMilliseconds;
                 await _embeddingRepo.UpsertEmbeddingAsync(chunk.FileId, chunk.ChunkIndex, modelId, vector, ct);
                 embeddedCount++;
 
-                if (embeddedCount % 100 == 0)
+                if (embeddedCount <= 3 || embeddedCount % 100 == 0)
                 {
                     var currentCount = await _embeddingRepo.GetEmbeddingCountAsync(modelId, ct);
                     _stampRepo.UpdateEmbeddingProgress(currentCount);
+
+                    SpeedDiagLog.Log("EMB_PROGRESS",
+                        "count", currentCount, "total", totalEmbeddable,
+                        "last_infer_ms", inferMs, "text_len", chunk.Text.Length);
 
                     ReportProgress(PipelinePhase.Embedding, currentCount,
                         total: totalEmbeddable,
@@ -470,6 +489,10 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
+                errorCount++;
+                if (errorCount <= 5)
+                    SpeedDiagLog.Log("EMB_CHUNK_ERROR", "chunk", chunk.ChunkId,
+                        "text_len", chunk.Text.Length, "error", ex.Message);
                 Debug.WriteLine($"[Orch] Embedding error: chunk {chunk.ChunkId} - {ex.Message}");
             }
         }

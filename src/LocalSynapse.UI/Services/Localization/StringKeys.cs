@@ -219,4 +219,18 @@ public static class StringKeys
         public const string UpToDate = "UpdateCheck.UpToDate";
         public const string UpdateAvailable = "UpdateCheck.UpdateAvailable";
     }
+
+    public static class Welcome
+    {
+        public const string Title = "Welcome.Title";
+        public const string Subtitle = "Welcome.Subtitle";
+        public const string ScanAll = "Welcome.ScanAll";
+        public const string ScanAllDesc = "Welcome.ScanAll.Desc";
+        public const string MyDocs = "Welcome.MyDocs";
+        public const string MyDocsDesc = "Welcome.MyDocs.Desc";
+        public const string Custom = "Welcome.Custom";
+        public const string CustomDesc = "Welcome.Custom.Desc";
+        public const string AddFolder = "Welcome.AddFolder";
+        public const string Start = "Welcome.Start";
+    }
 }
