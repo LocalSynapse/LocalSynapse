@@ -215,14 +215,14 @@
                                Text="Default: scanning all fixed drives. Add folders below to customize."/>
 
                     <!-- Folder list -->
-                    <ItemsControl ItemsSource="{Binding ScanFolders}">
+                    <ItemsControl ItemsSource="{Binding ScanFolders}" Name="ScanFoldersList">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Classes="StatCard" Padding="8,6" Margin="0,0,0,4">
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Content="✕" Padding="6,2"
                                                 Classes="BtnSecondary" FontSize="11"
-                                                Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).RemoveFolderCommand}"
+                                                Command="{Binding #ScanFoldersList.DataContext.RemoveFolderCommand}"
                                                 CommandParameter="{Binding}"/>
                                         <TextBlock Text="{Binding}" VerticalAlignment="Center" FontSize="12"
                                                    TextTrimming="CharacterEllipsis"
