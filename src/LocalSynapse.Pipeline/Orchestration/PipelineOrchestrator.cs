@@ -105,18 +105,27 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
 
             // Phase 3: Embed (slow — only if model ready)
             // Auto-initialize embedding model if installed but not loaded
-            if (!SkipEmbeddingPhase && !_embeddingService.IsReady
-                && _modelInstaller.IsModelInstalled("bge-m3"))
+            if (!SkipEmbeddingPhase && !_embeddingService.IsReady)
             {
-                try
+                var installed = _modelInstaller.IsModelInstalled("bge-m3");
+                var modelPath = _modelInstaller.GetModelPath("bge-m3");
+                SpeedDiagLog.Log("EMB_AUTO_INIT_CHECK",
+                    "is_ready", _embeddingService.IsReady,
+                    "is_installed", installed,
+                    "model_path", modelPath);
+
+                if (installed)
                 {
-                    Debug.WriteLine("[Orch] Auto-initializing embedding model bge-m3...");
-                    await _embeddingService.InitializeAsync("bge-m3", ct);
-                    Debug.WriteLine($"[Orch] Embedding model initialized: IsReady={_embeddingService.IsReady}");
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    Debug.WriteLine($"[Orch] Embedding model init failed: {ex.Message}");
+                    try
+                    {
+                        await _embeddingService.InitializeAsync("bge-m3", ct);
+                        SpeedDiagLog.Log("EMB_AUTO_INIT_OK",
+                            "is_ready", _embeddingService.IsReady);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        SpeedDiagLog.Log("EMB_AUTO_INIT_FAIL", "error", ex.Message);
+                    }
                 }
             }
 

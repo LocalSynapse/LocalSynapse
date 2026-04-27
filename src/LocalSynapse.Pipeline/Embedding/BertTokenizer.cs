@@ -24,17 +24,31 @@ public sealed partial class BertTokenizer
         var tokenizerPath = Path.Combine(modelDir, "tokenizer.json");
         var vocabPath = Path.Combine(modelDir, "vocab.txt");
 
+        // Fallback: BgeM3Installer stores files in onnx/ subdirectory
+        var onnxDir = Path.Combine(modelDir, "onnx");
+        var onnxTokenizerPath = Path.Combine(onnxDir, "tokenizer.json");
+        var onnxVocabPath = Path.Combine(onnxDir, "vocab.txt");
+
         if (File.Exists(tokenizerPath))
         {
             await LoadTokenizerJsonAsync(tokenizerPath, ct);
+        }
+        else if (File.Exists(onnxTokenizerPath))
+        {
+            await LoadTokenizerJsonAsync(onnxTokenizerPath, ct);
         }
         else if (File.Exists(vocabPath))
         {
             await LoadVocabTxtAsync(vocabPath, ct);
         }
+        else if (File.Exists(onnxVocabPath))
+        {
+            await LoadVocabTxtAsync(onnxVocabPath, ct);
+        }
         else
         {
-            throw new FileNotFoundException($"No tokenizer.json or vocab.txt found in {modelDir}");
+            throw new FileNotFoundException(
+                $"No tokenizer.json or vocab.txt found in {modelDir} or {onnxDir}");
         }
 
         // Resolve special tokens
@@ -127,14 +141,33 @@ public sealed partial class BertTokenizer
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        // Try model.vocab (object format)
         if (root.TryGetProperty("model", out var model) && model.TryGetProperty("vocab", out var vocab))
         {
-            foreach (var prop in vocab.EnumerateObject())
-                _vocab[prop.Name] = prop.Value.GetInt32();
+            if (vocab.ValueKind == JsonValueKind.Object)
+            {
+                // WordPiece/BPE format: {"token": id, ...}
+                foreach (var prop in vocab.EnumerateObject())
+                    _vocab[prop.Name] = prop.Value.GetInt32();
+            }
+            else if (vocab.ValueKind == JsonValueKind.Array)
+            {
+                // Unigram (SentencePiece) format: [["token", score], ...]
+                // Index in array = token ID
+                int idx = 0;
+                foreach (var entry in vocab.EnumerateArray())
+                {
+                    if (entry.ValueKind == JsonValueKind.Array && entry.GetArrayLength() >= 1)
+                    {
+                        var token = entry[0].GetString();
+                        if (token != null)
+                            _vocab[token] = idx;
+                    }
+                    idx++;
+                }
+            }
         }
 
-        // Add added_tokens
+        // Add added_tokens (overrides vocab entries if present)
         if (root.TryGetProperty("added_tokens", out var addedTokens))
         {
             foreach (var token in addedTokens.EnumerateArray())
