@@ -35,7 +35,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPipelineStampRepository, PipelineStampRepository>();
 
         // ── Pipeline ──
-        services.AddSingleton<IFileScanner, FileScanner>();
+        services.AddSingleton<IFileScanner>(sp => new FileScanner(
+            sp.GetRequiredService<IFileRepository>(),
+            sp.GetRequiredService<IPipelineStampRepository>(),
+            sp.GetRequiredService<ISettingsStore>()));
         services.AddSingleton<IContentExtractor, ContentExtractor>();
         services.AddSingleton<ITextChunker, TextChunker>();
         services.AddSingleton<EmbeddingService>();
@@ -86,10 +89,11 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IModelInstaller>()));
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
-        services.AddTransient<SettingsViewModel>(sp => new SettingsViewModel(
+        services.AddSingleton<SettingsViewModel>(sp => new SettingsViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<ILocalizationService>(),
-            sp.GetRequiredService<UpdateCheckService>()));
+            sp.GetRequiredService<UpdateCheckService>(),
+            sp.GetRequiredService<IPipelineOrchestrator>()));
         services.AddTransient<SecurityViewModel>();
 
         return services;

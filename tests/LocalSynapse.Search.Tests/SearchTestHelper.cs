@@ -157,4 +157,6 @@ internal sealed class TempSettingsStore : ISettingsStore
     public string GetLogFolder() => Path.Combine(_tempDir, "logs");
     public string GetModelFolder() => Path.Combine(_tempDir, "models");
     public string GetDatabasePath() => Path.Combine(_tempDir, "test.db");
+    public string[]? GetScanRoots() => null;
+    public void SetScanRoots(string[]? roots) { }
 }

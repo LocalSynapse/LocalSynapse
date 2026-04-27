@@ -18,21 +18,36 @@ public sealed class FileScanner : IFileScanner
 {
     private readonly IFileRepository _fileRepo;
     private readonly IPipelineStampRepository _stampRepo;
+    private readonly ISettingsStore _settingsStore;
     private readonly string[]? _scanRoots;
     private const int BatchSize = 500;
 
     /// <summary>Production constructor.</summary>
-    public FileScanner(IFileRepository fileRepo, IPipelineStampRepository stampRepo)
+    public FileScanner(IFileRepository fileRepo, IPipelineStampRepository stampRepo, ISettingsStore settingsStore)
     {
         _fileRepo = fileRepo;
         _stampRepo = stampRepo;
+        _settingsStore = settingsStore;
     }
 
     /// <summary>Test constructor with explicit scan roots.</summary>
     public FileScanner(IFileRepository fileRepo, IPipelineStampRepository stampRepo, string[] scanRoots)
-        : this(fileRepo, stampRepo)
+        : this(fileRepo, stampRepo, new NullSettingsStoreForTest())
     {
         _scanRoots = scanRoots;
+    }
+
+    /// <summary>Minimal ISettingsStore for test constructor (returns defaults).</summary>
+    private sealed class NullSettingsStoreForTest : ISettingsStore
+    {
+        public string GetLanguage() => "en";
+        public void SetLanguage(string cultureName) { }
+        public string GetDataFolder() => "";
+        public string GetLogFolder() => "";
+        public string GetModelFolder() => "";
+        public string GetDatabasePath() => "";
+        public string[]? GetScanRoots() => null;
+        public void SetScanRoots(string[]? roots) { }
     }
 
     /// <summary>Scan all fixed drives and upsert file metadata to DB.</summary>
@@ -50,7 +65,7 @@ public sealed class FileScanner : IFileScanner
 
         var rootPaths = _scanRoots != null
             ? _scanRoots.ToList()
-            : GetDefaultScanRoots();
+            : (_settingsStore.GetScanRoots()?.ToList() ?? GetDefaultScanRoots());
 
         Debug.WriteLine($"[Scan] Starting scan on roots: {string.Join(", ", rootPaths)}");
 

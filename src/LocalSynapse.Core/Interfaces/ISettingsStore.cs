@@ -8,4 +8,10 @@ public interface ISettingsStore
     string GetLogFolder();
     string GetModelFolder();
     string GetDatabasePath();
+
+    /// <summary>Returns user-configured scan root folders, or null if using defaults.</summary>
+    string[]? GetScanRoots();
+
+    /// <summary>Sets scan root folders. Pass null to revert to default behavior.</summary>
+    void SetScanRoots(string[]? roots);
 }

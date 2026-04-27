@@ -78,6 +78,20 @@ public sealed class SettingsStore : ISettingsStore
     /// <summary>SQLite 데이터베이스 파일 경로를 반환한다.</summary>
     public string GetDatabasePath() => _dbPath;
 
+    /// <summary>사용자 지정 스캔 루트 폴더를 반환한다. 미설정 시 null.</summary>
+    public string[]? GetScanRoots()
+    {
+        var roots = _settings.ScanRoots;
+        return roots is { Length: > 0 } ? roots : null;
+    }
+
+    /// <summary>스캔 루트 폴더를 저장한다. null이면 기본 동작으로 복귀.</summary>
+    public void SetScanRoots(string[]? roots)
+    {
+        _settings.ScanRoots = roots is { Length: > 0 } ? roots : null;
+        WriteSettingsAtomic(_settings);
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     //  Private helpers
     // ═══════════════════════════════════════════════════════════════════
@@ -178,4 +192,5 @@ internal sealed class SettingsFile
 {
     public int Version { get; set; } = 1;
     public string? Language { get; set; }
+    public string[]? ScanRoots { get; set; }
 }

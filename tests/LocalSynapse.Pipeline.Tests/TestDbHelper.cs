@@ -2,7 +2,7 @@ using LocalSynapse.Core.Database;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Repositories;
 
-namespace LocalSynapse.Core.Tests;
+namespace LocalSynapse.Pipeline.Tests;
 
 /// <summary>
 /// Creates a temp file-based SQLite DB for each test.
@@ -22,10 +22,7 @@ internal static class TestDbHelper
         {
             Settings = settings,
             Factory = factory,
-            Migration = migration,
             FileRepo = new FileRepository(factory),
-            ChunkRepo = new ChunkRepository(factory),
-            EmbeddingRepo = new EmbeddingRepository(factory),
             StampRepo = new PipelineStampRepository(factory),
         };
     }
@@ -35,10 +32,7 @@ internal sealed class TestDb : IDisposable
 {
     public required TempSettingsStore Settings { get; init; }
     public required SqliteConnectionFactory Factory { get; init; }
-    public required MigrationService Migration { get; init; }
     public required FileRepository FileRepo { get; init; }
-    public required ChunkRepository ChunkRepo { get; init; }
-    public required EmbeddingRepository EmbeddingRepo { get; init; }
     public required PipelineStampRepository StampRepo { get; init; }
 
     public void Dispose()
@@ -54,7 +48,7 @@ internal sealed class TempSettingsStore : ISettingsStore
 
     public TempSettingsStore()
     {
-        _tempDir = Path.Combine(Path.GetTempPath(), "ls_test_" + Guid.NewGuid().ToString("N")[..8]);
+        _tempDir = Path.Combine(Path.GetTempPath(), "ls_pipe_test_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempDir);
     }
 
