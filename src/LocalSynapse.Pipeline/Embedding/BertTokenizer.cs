@@ -68,8 +68,9 @@ public sealed partial class BertTokenizer
         if (tokens.Count > maxTokens)
             tokens = tokens.GetRange(0, maxTokens);
 
-        var ids = new long[maxLength];
-        var mask = new long[maxLength];
+        var seqLen = tokens.Count + 2; // [CLS] + actual tokens + [SEP]
+        var ids = new long[seqLen];
+        var mask = new long[seqLen];
 
         ids[0] = _clsId;
         mask[0] = 1;
@@ -82,10 +83,6 @@ public sealed partial class BertTokenizer
 
         ids[tokens.Count + 1] = _sepId;
         mask[tokens.Count + 1] = 1;
-
-        // Remaining positions already 0 (PAD)
-        for (int i = tokens.Count + 2; i < maxLength; i++)
-            ids[i] = _padId;
 
         return (ids, mask);
     }
