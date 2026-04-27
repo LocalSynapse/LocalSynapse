@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media;
@@ -132,7 +133,11 @@ public partial class WelcomeViewModel : ObservableObject
                 var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 var downloads = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-                _settingsStore.SetScanRoots(new[] { docs, desktop, downloads });
+                var roots = new[] { docs, desktop, downloads }
+                    .Where(p => !string.IsNullOrEmpty(p) && Directory.Exists(p))
+                    .ToArray();
+                if (roots.Length > 0)
+                    _settingsStore.SetScanRoots(roots);
                 break;
 
             case ScanScopeOption.Custom:
