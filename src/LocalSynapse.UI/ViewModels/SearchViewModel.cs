@@ -325,12 +325,12 @@ public partial class SearchViewModel : ObservableObject
 
         _bannerTimer = new System.Threading.Timer(_ =>
             Avalonia.Threading.Dispatcher.UIThread.Post(RefreshBannerState),
-            null, 0, 3000);
+            null, 1000, 3000);
     }
 
     private static IBrush GetBrush(string key)
     {
-        Avalonia.Application.Current!.TryGetResource(key, null, out var res);
+        Avalonia.Application.Current!.TryGetResource(key, Avalonia.Styling.ThemeVariant.Default, out var res);
         return (IBrush)res!;
     }
 
