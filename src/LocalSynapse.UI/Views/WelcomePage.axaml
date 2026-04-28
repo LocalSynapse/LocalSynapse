@@ -11,15 +11,15 @@
 
             <!-- Title -->
             <TextBlock Text="{i18n:Tr Key=Welcome.Title}"
-                       FontSize="24" FontWeight="Bold"
+                       FontSize="28" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimaryBrush}"
-                       HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
             <!-- Subtitle -->
             <TextBlock Text="{i18n:Tr Key=Welcome.Subtitle}"
-                       FontSize="14"
+                       FontSize="15"
                        Foreground="{StaticResource TextSecondaryBrush}"
-                       HorizontalAlignment="Center" Margin="0,0,0,32"/>
+                       HorizontalAlignment="Center" Margin="0,0,0,36"/>
 
             <!-- ═══════════════════════════════════════ -->
             <!-- Three-card selector                     -->
@@ -41,7 +41,7 @@
                                        Foreground="{StaticResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"/>
                             <TextBlock Text="{i18n:Tr Key=Welcome.ScanAll.Desc}"
-                                       FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                       FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
                                        Foreground="{StaticResource TextMutedBrush}"/>
                         </StackPanel>
                     </Border>
@@ -62,7 +62,7 @@
                                        Foreground="{StaticResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"/>
                             <TextBlock Text="{i18n:Tr Key=Welcome.MyDocs.Desc}"
-                                       FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                       FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
                                        Foreground="{StaticResource TextMutedBrush}"/>
                         </StackPanel>
                     </Border>
@@ -83,7 +83,7 @@
                                        Foreground="{StaticResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"/>
                             <TextBlock Text="{i18n:Tr Key=Welcome.Custom.Desc}"
-                                       FontSize="11" TextWrapping="Wrap" TextAlignment="Center"
+                                       FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
                                        Foreground="{StaticResource TextMutedBrush}"/>
                         </StackPanel>
                     </Border>
@@ -127,7 +127,7 @@
             <!-- Start button                           -->
             <!-- ═══════════════════════════════════════ -->
             <Button Classes="BtnPrimary" HorizontalAlignment="Center"
-                    Padding="32,10" FontSize="14"
+                    Padding="40,12" FontSize="15" MinHeight="44"
                     Content="{i18n:Tr Key=Welcome.Start}"
                     Command="{Binding StartIndexingCommand}"
                     IsEnabled="{Binding CanStart}"/>
