@@ -675,4 +675,17 @@ public sealed class FileRepository : IFileRepository
         }
         return result;
     }
+
+    /// <summary>Returns paths of files previously skipped as cloud files.</summary>
+    public HashSet<string> GetCloudSkippedPaths()
+    {
+        using var conn = _connectionFactory.CreateConnection();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT path FROM files WHERE last_extract_error_code = 'CLOUD_FILE'";
+        using var reader = cmd.ExecuteReader();
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        while (reader.Read())
+            result.Add(reader.GetString(0));
+        return result;
+    }
 }

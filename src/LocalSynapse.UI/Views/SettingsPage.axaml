@@ -202,48 +202,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- ═══════════════════════════════════════ -->
-            <!-- SCAN FOLDERS                            -->
-            <!-- ═══════════════════════════════════════ -->
-            <Border Classes="Card" Margin="0">
-                <StackPanel Spacing="10">
-                    <TextBlock Classes="SectionHeader" Text="SCAN FOLDERS"/>
-
-                    <!-- Default hint -->
-                    <TextBlock IsVisible="{Binding IsUsingDefaults}" FontSize="12"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Default: scanning all fixed drives. Add folders below to customize."/>
-
-                    <!-- Folder list -->
-                    <ItemsControl ItemsSource="{Binding ScanFolders}" Name="ScanFoldersList">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Classes="StatCard" Padding="8,6" Margin="0,0,0,4">
-                                    <DockPanel>
-                                        <Button DockPanel.Dock="Right" Content="✕" Padding="6,2"
-                                                Classes="BtnSecondary" FontSize="11"
-                                                Command="{Binding #ScanFoldersList.DataContext.RemoveFolderCommand}"
-                                                CommandParameter="{Binding}"/>
-                                        <TextBlock Text="{Binding}" VerticalAlignment="Center" FontSize="12"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    </DockPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <!-- Add / Reset buttons -->
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Classes="BtnSecondary" Content="+ Add Folder"
-                                Command="{Binding AddFolderCommand}"/>
-                        <Button Classes="BtnSecondary" Content="Reset to Default"
-                                Command="{Binding ResetToDefaultsCommand}"
-                                IsVisible="{Binding !IsUsingDefaults}"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
             <!-- Links -->
             <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">

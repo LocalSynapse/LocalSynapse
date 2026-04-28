@@ -1,10 +1,8 @@
 using System;
-using System.Collections.ObjectModel;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
-using LocalSynapse.Pipeline.Interfaces;
 using LocalSynapse.UI.Services;
 using LocalSynapse.UI.Services.Localization;
 
@@ -18,7 +16,6 @@ public partial class SettingsViewModel : ObservableObject
     private readonly ISettingsStore _settings;
     private readonly ILocalizationService _loc;
     private readonly UpdateCheckService _updateCheck;
-    private readonly IPipelineOrchestrator _orchestrator;
 
     // Language
     [ObservableProperty] private string _language = "en";
@@ -59,21 +56,15 @@ public partial class SettingsViewModel : ObservableObject
     // First run notice
     [ObservableProperty] private bool _showFirstRunNotice;
 
-    // Scan folders
-    [ObservableProperty] private ObservableCollection<string> _scanFolders = new();
-    [ObservableProperty] private bool _isUsingDefaults = true;
-
     /// <summary>SettingsViewModel 생성자.</summary>
     public SettingsViewModel(
         ISettingsStore settings,
         ILocalizationService loc,
-        UpdateCheckService updateCheck,
-        IPipelineOrchestrator orchestrator)
+        UpdateCheckService updateCheck)
     {
         _settings = settings;
         _loc = loc;
         _updateCheck = updateCheck;
-        _orchestrator = orchestrator;
 
         Language = _loc.Current;
         UpdateSelectionFlags();
@@ -82,12 +73,6 @@ public partial class SettingsViewModel : ObservableObject
 
         IsUpdateCheckEnabled = _updateCheck.IsCheckEnabled;
         ShowFirstRunNotice = _updateCheck.IsFirstRun;
-
-        // Load scan folders
-        var roots = _settings.GetScanRoots();
-        IsUsingDefaults = roots == null;
-        if (roots != null)
-            foreach (var r in roots) ScanFolders.Add(r);
 
         LoadVersionInfo();
     }
@@ -230,60 +215,4 @@ public partial class SettingsViewModel : ObservableObject
         IsUpdateCheckEnabled = false;
     }
 
-    // ═══════════════════════════════════════════════════════
-    //  Scan Folder Selection
-    // ═══════════════════════════════════════════════════════
-
-    /// <summary>Open folder picker and add selected folders.</summary>
-    [RelayCommand]
-    private async Task AddFolderAsync()
-    {
-        var topLevel = Avalonia.Application.Current?.ApplicationLifetime
-            is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
-            ? desktop.MainWindow : null;
-        if (topLevel == null) return;
-
-        var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
-            new Avalonia.Platform.Storage.FolderPickerOpenOptions
-            {
-                AllowMultiple = true,
-                Title = "Select folders to index"
-            });
-
-        if (folders.Count == 0) return;
-
-        foreach (var folder in folders)
-        {
-            var path = folder.Path.LocalPath;
-            if (!ScanFolders.Contains(path))
-                ScanFolders.Add(path);
-        }
-        SaveAndTriggerRescan();
-    }
-
-    /// <summary>Remove a folder from the scan list.</summary>
-    [RelayCommand]
-    private void RemoveFolder(string path)
-    {
-        ScanFolders.Remove(path);
-        SaveAndTriggerRescan();
-    }
-
-    /// <summary>Clear custom folders, revert to default scan behavior.</summary>
-    [RelayCommand]
-    private void ResetToDefaults()
-    {
-        ScanFolders.Clear();
-        _settings.SetScanRoots(null);
-        IsUsingDefaults = true;
-        _orchestrator.RequestImmediateCycle();
-    }
-
-    private void SaveAndTriggerRescan()
-    {
-        var roots = ScanFolders.Count > 0 ? ScanFolders.ToArray() : null;
-        _settings.SetScanRoots(roots);
-        IsUsingDefaults = roots == null;
-        _orchestrator.RequestImmediateCycle();
-    }
 }

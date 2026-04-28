@@ -71,6 +71,7 @@ public sealed class FileScanner : IFileScanner
 
         // Load existing mtime_ms for unchanged file detection (performance critical)
         var existingMtimes = _fileRepo.GetAllFileMtimes();
+        var cloudSkippedPaths = _fileRepo.GetCloudSkippedPaths();
         Debug.WriteLine($"[Scan] Loaded {existingMtimes.Count} existing file mtimes for skip detection");
 
         var batch = new List<FileMetadata>(BatchSize);
@@ -132,7 +133,8 @@ public sealed class FileScanner : IFileScanner
 
                     // --- Filter 2: Unchanged file (same mtime = no modification) ---
                     if (existingMtimes.TryGetValue(file.FullPath, out var existingMtime)
-                        && existingMtime == file.MtimeMs)
+                        && existingMtime == file.MtimeMs
+                        && !cloudSkippedPaths.Contains(file.FullPath))
                     {
                         unchangedSkipped++;
 
@@ -144,9 +146,8 @@ public sealed class FileScanner : IFileScanner
                         continue;
                     }
 
-                    // --- Filter 3: Cloud placeholder or cloud sync path (add to DB but skip content) ---
-                    var isCloud = ScanFilterHelper.IsCloudPlaceholder(file.Attributes)
-                               || ScanFilterHelper.IsCloudSyncPath(file.FullPath);
+                    // --- Filter 3: Cloud placeholder (add to DB but skip content) ---
+                    var isCloud = ScanFilterHelper.IsCloudPlaceholder(file.Attributes);
                     if (isCloud) cloudSkipped++;
 
                     batch.Add(new FileMetadata

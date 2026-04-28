@@ -101,15 +101,6 @@ public static class ScanFilterHelper
         return false;
     }
 
-    /// <summary>Detect if path is inside a cloud sync folder.</summary>
-    public static bool IsCloudSyncPath(string filePath)
-    {
-        return filePath.Contains("OneDrive", StringComparison.OrdinalIgnoreCase)
-            || filePath.Contains("Dropbox", StringComparison.OrdinalIgnoreCase)
-            || filePath.Contains("Google Drive", StringComparison.OrdinalIgnoreCase)
-            || filePath.Contains("iCloudDrive", StringComparison.OrdinalIgnoreCase);
-    }
-
     /// <summary>Comprehensive directory skip check.</summary>
     public static bool ShouldSkipDirectory(string name, FileAttributes attributes)
     {

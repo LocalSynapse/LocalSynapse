@@ -23,6 +23,45 @@
             </StackPanel>
 
             <!-- ═══════════════════════════════════════════ -->
+            <!-- Scan Folders Card                          -->
+            <!-- ═══════════════════════════════════════════ -->
+            <Border Classes="Card">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="SectionHeader" Text="SCAN FOLDERS"/>
+
+                    <TextBlock IsVisible="{Binding IsUsingDefaults}" FontSize="12"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Default: scanning all fixed drives. Add folders below to customize."/>
+
+                    <ItemsControl ItemsSource="{Binding ScanFolders}" Name="DataScanFolderList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Classes="StatCard" Padding="8,6" Margin="0,0,0,4">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="✕" Padding="6,2"
+                                                Classes="BtnSecondary" FontSize="11"
+                                                Command="{Binding #DataScanFolderList.DataContext.RemoveFolderCommand}"
+                                                CommandParameter="{Binding}"/>
+                                        <TextBlock Text="{Binding}" VerticalAlignment="Center" FontSize="12"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="BtnSecondary" Content="+ Add Folder"
+                                Command="{Binding AddFolderCommand}"/>
+                        <Button Classes="BtnSecondary" Content="Reset to Default"
+                                Command="{Binding ResetToDefaultsCommand}"
+                                IsVisible="{Binding !IsUsingDefaults}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════════════════════════════ -->
             <!-- Pipeline Status Card                       -->
             <!-- ═══════════════════════════════════════════ -->
             <Border Classes="Card">

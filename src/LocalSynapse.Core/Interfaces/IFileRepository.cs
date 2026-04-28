@@ -35,4 +35,7 @@ public interface IFileRepository
     /// Single query, loaded once before each scan cycle.
     /// </summary>
     Dictionary<string, long> GetAllFileMtimes();
+
+    /// <summary>Returns paths of files previously skipped as cloud files (for re-evaluation).</summary>
+    HashSet<string> GetCloudSkippedPaths();
 }

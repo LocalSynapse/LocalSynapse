@@ -93,8 +93,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SettingsViewModel>(sp => new SettingsViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<ILocalizationService>(),
-            sp.GetRequiredService<UpdateCheckService>(),
-            sp.GetRequiredService<IPipelineOrchestrator>()));
+            sp.GetRequiredService<UpdateCheckService>()));
         services.AddTransient<SecurityViewModel>();
         services.AddTransient<WelcomeViewModel>(sp => new WelcomeViewModel(
             sp.GetRequiredService<ISettingsStore>(),

@@ -120,6 +120,7 @@ public class PipelineOrchestratorStateTest
         public Task DeleteByPathAsync(string filePath) => Task.CompletedTask;
         public Task<bool> ExistsByPathAsync(string filePath) => Task.FromResult(false);
         public Dictionary<string, long> GetAllFileMtimes() => new();
+        public HashSet<string> GetCloudSkippedPaths() => new();
     }
 
     private sealed class StubChunkRepository : IChunkRepository

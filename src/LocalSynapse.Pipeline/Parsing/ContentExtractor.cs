@@ -22,12 +22,6 @@ public sealed class ContentExtractor : IContentExtractor
 
         try
         {
-            // Defensive: never open cloud placeholder or cloud sync path files
-            if (ScanFilterHelper.IsCloudSyncPath(filePath))
-            {
-                Debug.WriteLine($"[Extract] Blocked cloud file access: {filePath}");
-                return ExtractionResult.Fail("CLOUD_FILE");
-            }
             return ext switch
             {
                 ".txt" or ".md" or ".csv" or ".json" or ".log" or ".xml"

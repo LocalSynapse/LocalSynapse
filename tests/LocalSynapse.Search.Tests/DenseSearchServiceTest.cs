@@ -211,6 +211,7 @@ public sealed class DenseSearchServiceTest
         public Task<bool> ExistsByPathAsync(string filePath) => Task.FromResult(false);
         public IReadOnlyList<FileMetadata> ListFilesUnderFolder(string? folder, string? extension, int limit) => [];
         public Dictionary<string, long> GetAllFileMtimes() => new();
+        public HashSet<string> GetCloudSkippedPaths() => new();
     }
 
     private sealed class FakeChunkRepository : IChunkRepository

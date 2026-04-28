@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,6 +20,7 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     private readonly IPipelineStampRepository _stampRepo;
     private readonly IModelInstaller _modelInstaller;
     private readonly IFileRepository _fileRepo;
+    private readonly ISettingsStore _settingsStore;
 
     [ObservableProperty] private PipelineStamps _stamps = new();
     [ObservableProperty] private PipelinePhase _currentPhase;
@@ -45,22 +47,34 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _isExtractPending;
     [ObservableProperty] private bool _isEmbedPending;
 
+    // Scan folders
+    [ObservableProperty] private ObservableCollection<string> _scanFolders = new();
+    [ObservableProperty] private bool _isUsingDefaults = true;
+
     private readonly System.Threading.Timer _refreshTimer;
 
     public DataSetupViewModel(
         IPipelineOrchestrator orchestrator,
         IPipelineStampRepository stampRepo,
         IModelInstaller modelInstaller,
-        IFileRepository fileRepo)
+        IFileRepository fileRepo,
+        ISettingsStore settingsStore)
     {
         _orchestrator = orchestrator;
         _stampRepo = stampRepo;
         _modelInstaller = modelInstaller;
         _fileRepo = fileRepo;
+        _settingsStore = settingsStore;
 
         // Subscribe to pipeline events (these fire on background threads)
         _orchestrator.ProgressChanged += OnProgressChanged;
         _orchestrator.CycleCompleted += OnCycleCompleted;
+
+        // Load scan folders
+        var roots = _settingsStore.GetScanRoots();
+        IsUsingDefaults = roots == null;
+        if (roots != null)
+            foreach (var r in roots) ScanFolders.Add(r);
 
         // Load current state
         RefreshState();
@@ -255,6 +269,63 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         }
         else
             PipelineStatusText = "";
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  Scan Folder Selection
+    // ═══════════════════════════════════════════════════════
+
+    /// <summary>Open folder picker and add selected folders.</summary>
+    [RelayCommand]
+    private async Task AddFolderAsync()
+    {
+        var topLevel = Avalonia.Application.Current?.ApplicationLifetime
+            is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+            ? desktop.MainWindow : null;
+        if (topLevel == null) return;
+
+        var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
+            new Avalonia.Platform.Storage.FolderPickerOpenOptions
+            {
+                AllowMultiple = true,
+                Title = "Select folders to index"
+            });
+
+        if (folders.Count == 0) return;
+
+        foreach (var folder in folders)
+        {
+            var path = folder.Path.LocalPath;
+            if (!ScanFolders.Contains(path))
+                ScanFolders.Add(path);
+        }
+        SaveAndTriggerRescan();
+    }
+
+    /// <summary>Remove a folder from the scan list.</summary>
+    [RelayCommand]
+    private void RemoveFolder(string path)
+    {
+        ScanFolders.Remove(path);
+        SaveAndTriggerRescan();
+    }
+
+    /// <summary>Clear custom folders, revert to default scan behavior.</summary>
+    [RelayCommand]
+    private void ResetToDefaults()
+    {
+        ScanFolders.Clear();
+        _settingsStore.SetScanRoots(null);
+        IsUsingDefaults = true;
+        _orchestrator.RequestImmediateCycle();
+    }
+
+    private void SaveAndTriggerRescan()
+    {
+        var roots = ScanFolders.Count > 0 ? ScanFolders.ToArray() : null;
+        _settingsStore.SetScanRoots(roots);
+        IsUsingDefaults = roots == null;
+        _orchestrator.RequestImmediateCycle();
     }
 
     public void Dispose()
