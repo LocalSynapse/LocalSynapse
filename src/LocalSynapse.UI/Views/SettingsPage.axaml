@@ -22,7 +22,7 @@
                            Foreground="{StaticResource TextSecondaryBrush}" />
             </StackPanel>
 
-            <!-- First Run Notice -->
+            <!-- First Launch Info Card -->
             <Border Classes="Card" Margin="0"
                     Background="{StaticResource AccentLightBrush}"
                     IsVisible="{Binding ShowFirstRunNotice}">
@@ -31,21 +31,18 @@
                         <PathIcon Width="16" Height="16"
                                   Foreground="{StaticResource AccentBrush}"
                                   Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                        <TextBlock Text="{i18n:Tr Key=UpdateCheck.FirstRunNotice}"
-                                   FontSize="{StaticResource FontSizeS}"
-                                   FontWeight="Medium"
-                                   Foreground="{StaticResource AccentBrush}" />
+                        <TextBlock Text="{i18n:Tr Key=FirstLaunch.Info.Body}"
+                                   FontSize="{StaticResource FontSizeXs}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap" />
                     </StackPanel>
-                    <TextBlock Text="{i18n:Tr Key=UpdateCheck.FirstRunBody}"
-                               FontSize="{StaticResource FontSizeXs}"
-                               Foreground="{StaticResource TextSecondaryBrush}" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="{i18n:Tr Key=UpdateCheck.FirstRunOk}"
+                        <Button Content="{i18n:Tr Key=FirstLaunch.Info.Dismiss}"
                                 Classes="BtnPrimary"
-                                Command="{Binding AcceptFirstRunCommand}" />
-                        <Button Content="{i18n:Tr Key=UpdateCheck.FirstRunDisable}"
+                                Command="{Binding GotItCommand}" />
+                        <Button Content="{i18n:Tr Key=FirstLaunch.Info.Navigate}"
                                 Classes="BtnSecondary"
-                                Command="{Binding DisableFromFirstRunCommand}" />
+                                Command="{Binding ManageInSecurityCommand}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -187,18 +184,7 @@
                         </DockPanel>
                     </Border>
 
-                    <!-- 토글 행 -->
-                    <Border Classes="StatCard">
-                        <DockPanel>
-                            <ToggleSwitch DockPanel.Dock="Right"
-                                          IsChecked="{Binding IsUpdateCheckEnabled}"
-                                          VerticalAlignment="Center" />
-                            <TextBlock Text="{i18n:Tr Key=UpdateCheck.Toggle}"
-                                       FontSize="{StaticResource FontSizeXs}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       VerticalAlignment="Center" />
-                        </DockPanel>
-                    </Border>
+                    <!-- Update toggle moved to Security tab (M2-F) -->
                 </StackPanel>
             </Border>
 

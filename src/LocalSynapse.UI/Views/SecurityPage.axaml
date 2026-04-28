@@ -149,6 +149,97 @@
                 </StackPanel>
             </Border>
 
+            <!-- What LocalSynapse Sends -->
+            <Border Classes="Card" Margin="0">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                        <TextBlock Text="{i18n:Tr Key=Security.Sends.Title}"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+
+                    <TextBlock Text="{i18n:Tr Key=Security.Sends.Subtitle}"
+                               FontSize="{StaticResource FontSizeS}"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+
+                    <!-- Receives / Sends rows -->
+                    <Border Classes="StatCard" Padding="10,8">
+                        <StackPanel Spacing="6">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right"
+                                           Text="{i18n:Tr Key=Security.Sends.Frequency}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="⬇" FontSize="12" Foreground="{StaticResource SuccessBrush}" />
+                                    <TextBlock Text="{i18n:Tr Key=Security.Sends.Receives}"
+                                               FontSize="{StaticResource FontSizeXs}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right"
+                                           Text="{i18n:Tr Key=Security.Sends.Frequency}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="⬆" FontSize="12" Foreground="{StaticResource AccentBrush}" />
+                                    <TextBlock Text="{i18n:Tr Key=Security.Sends.Sends}"
+                                               FontSize="{StaticResource FontSizeXs}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                </StackPanel>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Toggle -->
+                    <DockPanel>
+                        <ToggleSwitch DockPanel.Dock="Right"
+                                      IsChecked="{Binding IsExternalCommunicationEnabled}"
+                                      VerticalAlignment="Center" />
+                        <TextBlock Text="{i18n:Tr Key=Security.Sends.Toggle}"
+                                   FontSize="{StaticResource FontSizeS}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <!-- Confirmation dialog (inline) -->
+                    <Border IsVisible="{Binding ShowTurnOffConfirmation}"
+                            Background="{StaticResource WarningLightBrush}"
+                            CornerRadius="8" Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{i18n:Tr Key=Security.Sends.ConfirmTitle}"
+                                       FontSize="{StaticResource FontSizeS}" FontWeight="SemiBold" />
+                            <TextBlock Text="{i18n:Tr Key=Security.Sends.ConfirmBody}"
+                                       FontSize="{StaticResource FontSizeXs}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="{i18n:Tr Key=Security.Sends.ConfirmAction}"
+                                        Classes="BtnSecondary" FontSize="12"
+                                        Command="{Binding ConfirmTurnOffCommand}" />
+                                <Button Content="{i18n:Tr Key=Security.Sends.ConfirmCancel}"
+                                        Classes="BtnPrimary" FontSize="12"
+                                        Command="{Binding CancelTurnOffCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Expandable ping disclosure -->
+                    <Button Classes="BtnSecondary" HorizontalAlignment="Left"
+                            Command="{Binding TogglePingExpandedCommand}"
+                            Content="{i18n:Tr Key=Security.Sends.ExpandTitle}" FontSize="12" />
+
+                    <TextBlock IsVisible="{Binding IsPingExpanded}"
+                               Text="{i18n:Tr Key=Security.Sends.ExpandBody}"
+                               FontSize="{StaticResource FontSizeXs}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap" Margin="0,0,0,4" />
+                </StackPanel>
+            </Border>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>

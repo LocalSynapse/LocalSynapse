@@ -6,21 +6,74 @@ using LocalSynapse.UI.Services;
 namespace LocalSynapse.UI.ViewModels;
 
 /// <summary>
-/// 보안 페이지 ViewModel.
+/// 보안 페이지 ViewModel. 외부 통신 공개 + 토글 관리.
 /// </summary>
 public partial class SecurityViewModel : ObservableObject
 {
     private readonly ISettingsStore _settings;
+    private readonly UpdateCheckService _updateCheck;
 
     [ObservableProperty] private string _storageLocation = "";
     [ObservableProperty] private string _storageSize = "";
 
+    // External communication toggle
+    [ObservableProperty] private bool _isExternalCommunicationEnabled;
+    [ObservableProperty] private bool _isPingExpanded;
+    [ObservableProperty] private bool _showTurnOffConfirmation;
+    private bool _suppressToggleHandler;
+
     /// <summary>SecurityViewModel 생성자.</summary>
-    public SecurityViewModel(ISettingsStore settings)
+    public SecurityViewModel(ISettingsStore settings, UpdateCheckService updateCheck)
     {
         _settings = settings;
+        _updateCheck = updateCheck;
         StorageLocation = settings.GetDataFolder();
         RefreshStorageSize();
+        IsExternalCommunicationEnabled = _updateCheck.IsCheckEnabled;
+    }
+
+    partial void OnIsExternalCommunicationEnabledChanged(bool value)
+    {
+        if (_suppressToggleHandler) return;
+
+        if (!value)
+        {
+            // User toggled OFF → revert and show confirmation first
+            _suppressToggleHandler = true;
+            IsExternalCommunicationEnabled = true;
+            _suppressToggleHandler = false;
+            ShowTurnOffConfirmation = true;
+        }
+        else
+        {
+            // User toggled ON → apply immediately
+            _updateCheck.SetCheckEnabled(true);
+        }
+    }
+
+    /// <summary>Confirm turning off external communication.</summary>
+    [RelayCommand]
+    private void ConfirmTurnOff()
+    {
+        _suppressToggleHandler = true;
+        _updateCheck.SetCheckEnabled(false);
+        IsExternalCommunicationEnabled = false;
+        _suppressToggleHandler = false;
+        ShowTurnOffConfirmation = false;
+    }
+
+    /// <summary>Cancel the turn-off confirmation.</summary>
+    [RelayCommand]
+    private void CancelTurnOff()
+    {
+        ShowTurnOffConfirmation = false;
+    }
+
+    /// <summary>Toggle ping detail expansion.</summary>
+    [RelayCommand]
+    private void TogglePingExpanded()
+    {
+        IsPingExpanded = !IsPingExpanded;
     }
 
     /// <summary>데이터 폴더 열기.</summary>

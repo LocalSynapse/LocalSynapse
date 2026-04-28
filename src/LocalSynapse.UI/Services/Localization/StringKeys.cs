@@ -158,6 +158,29 @@ public static class StringKeys
         public const string HowItWorksBullet5 = "Security.HowItWorks.Bullet5";
         public const string PingTitle = "Security.PingTitle";
         public const string PingDescription = "Security.PingDescription";
+
+        public static class Sends
+        {
+            public const string Title = "Security.Sends.Title";
+            public const string Subtitle = "Security.Sends.Subtitle";
+            public const string Receives = "Security.Sends.Receives";
+            public const string SendsLabel = "Security.Sends.Sends";
+            public const string Frequency = "Security.Sends.Frequency";
+            public const string Toggle = "Security.Sends.Toggle";
+            public const string ExpandTitle = "Security.Sends.ExpandTitle";
+            public const string ExpandBody = "Security.Sends.ExpandBody";
+            public const string ConfirmTitle = "Security.Sends.ConfirmTitle";
+            public const string ConfirmBody = "Security.Sends.ConfirmBody";
+            public const string ConfirmAction = "Security.Sends.ConfirmAction";
+            public const string ConfirmCancel = "Security.Sends.ConfirmCancel";
+        }
+    }
+
+    public static class FirstLaunch
+    {
+        public const string InfoBody = "FirstLaunch.Info.Body";
+        public const string Dismiss = "FirstLaunch.Info.Dismiss";
+        public const string Navigate = "FirstLaunch.Info.Navigate";
     }
 
     public static class Settings

@@ -94,7 +94,9 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<ILocalizationService>(),
             sp.GetRequiredService<UpdateCheckService>()));
-        services.AddTransient<SecurityViewModel>();
+        services.AddSingleton<SecurityViewModel>(sp => new SecurityViewModel(
+            sp.GetRequiredService<ISettingsStore>(),
+            sp.GetRequiredService<UpdateCheckService>()));
         services.AddTransient<WelcomeViewModel>(sp => new WelcomeViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<IPipelineOrchestrator>()));

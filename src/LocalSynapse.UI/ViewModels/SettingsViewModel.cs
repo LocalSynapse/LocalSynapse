@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.UI.Services;
 using LocalSynapse.UI.Services.Localization;
@@ -50,8 +51,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _updateDownloadUrl = "";
     [ObservableProperty] private bool _showUpdateButtons;
 
-    // Update toggle
-    [ObservableProperty] private bool _isUpdateCheckEnabled = true;
+    // (Update toggle moved to Security tab in M2-F)
 
     // First run notice
     [ObservableProperty] private bool _showFirstRunNotice;
@@ -71,7 +71,6 @@ public partial class SettingsViewModel : ObservableObject
         DataFolder = settings.GetDataFolder();
         _loc.LanguageChanged += OnLanguageChanged;
 
-        IsUpdateCheckEnabled = _updateCheck.IsCheckEnabled;
         ShowFirstRunNotice = _updateCheck.IsFirstRun;
 
         LoadVersionInfo();
@@ -191,28 +190,21 @@ public partial class SettingsViewModel : ObservableObject
         StatusForegroundBrush = new(Avalonia.Media.Color.Parse("#065F46"));
     }
 
-    /// <summary>업데이트 체크 토글.</summary>
-    partial void OnIsUpdateCheckEnabledChanged(bool value)
-    {
-        _updateCheck.SetCheckEnabled(value);
-    }
-
-    /// <summary>첫 실행 알림 OK — 체크 활성화.</summary>
+    /// <summary>First-launch info card — dismiss.</summary>
     [RelayCommand]
-    private void AcceptFirstRun()
+    private void GotIt()
     {
         _updateCheck.AcceptFirstRun();
         ShowFirstRunNotice = false;
-        IsUpdateCheckEnabled = true;
     }
 
-    /// <summary>첫 실행 알림 Disable — 체크 비활성화.</summary>
+    /// <summary>First-launch info card — navigate to Security tab.</summary>
     [RelayCommand]
-    private void DisableFromFirstRun()
+    private void ManageInSecurity()
     {
-        _updateCheck.DisableFromFirstRun();
+        _updateCheck.AcceptFirstRun();
         ShowFirstRunNotice = false;
-        IsUpdateCheckEnabled = false;
+        WeakReferenceMessenger.Default.Send(new NavigateMessage(PageType.Security));
     }
 
 }
