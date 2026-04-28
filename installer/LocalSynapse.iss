@@ -116,7 +116,7 @@ chinese.DeleteDataPrompt=是否同时删除所有 LocalSynapse 数据（搜索�
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:TaskDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-Name: "startupicon"; Description: "{cm:TaskStartup}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "startupicon"; Description: "{cm:TaskStartup}"; GroupDescription: "{cm:AdditionalIcons}"
 
 ; ══════════════════════════════════════
 ; Files
