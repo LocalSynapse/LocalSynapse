@@ -176,13 +176,6 @@ public static class StringKeys
         }
     }
 
-    public static class FirstLaunch
-    {
-        public const string InfoBody = "FirstLaunch.Info.Body";
-        public const string Dismiss = "FirstLaunch.Info.Dismiss";
-        public const string Navigate = "FirstLaunch.Info.Navigate";
-    }
-
     public static class Settings
     {
         public const string Header = "Settings.Header";
@@ -234,10 +227,7 @@ public static class StringKeys
         public const string WhatsNew = "UpdateCheck.WhatsNew";
         public const string Dismiss = "UpdateCheck.Dismiss";
         public const string Toggle = "UpdateCheck.Toggle";
-        public const string FirstRunNotice = "UpdateCheck.FirstRunNotice";
-        public const string FirstRunBody = "UpdateCheck.FirstRunBody";
-        public const string FirstRunOk = "UpdateCheck.FirstRunOk";
-        public const string FirstRunDisable = "UpdateCheck.FirstRunDisable";
+        // FirstRunNotice/Body/Ok/Disable removed (WO-SEC0)
         public const string WhatsNewTitle = "UpdateCheck.WhatsNewTitle";
         public const string UpToDate = "UpdateCheck.UpToDate";
         public const string UpdateAvailable = "UpdateCheck.UpdateAvailable";

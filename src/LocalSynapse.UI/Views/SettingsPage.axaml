@@ -22,30 +22,7 @@
                            Foreground="{StaticResource TextSecondaryBrush}" />
             </StackPanel>
 
-            <!-- First Launch Info Card -->
-            <Border Classes="Card" Margin="0"
-                    Background="{StaticResource AccentLightBrush}"
-                    IsVisible="{Binding ShowFirstRunNotice}">
-                <StackPanel Spacing="8">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <PathIcon Width="16" Height="16"
-                                  Foreground="{StaticResource AccentBrush}"
-                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                        <TextBlock Text="{i18n:Tr Key=FirstLaunch.Info.Body}"
-                                   FontSize="{StaticResource FontSizeXs}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextWrapping="Wrap" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="{i18n:Tr Key=FirstLaunch.Info.Dismiss}"
-                                Classes="BtnPrimary"
-                                Command="{Binding GotItCommand}" />
-                        <Button Content="{i18n:Tr Key=FirstLaunch.Info.Navigate}"
-                                Classes="BtnSecondary"
-                                Command="{Binding ManageInSecurityCommand}" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
+            <!-- First-run banner removed (WO-SEC0) — external communication defaults ON -->
 
             <!-- Language -->
             <Border Classes="Card" Margin="0">

@@ -191,10 +191,7 @@ internal static class LocalizationRegistry
             [StringKeys.UpdateCheck.WhatsNew] = new() { ["en"] = "What's new", ["ko"] = "새로운 기능", ["fr"] = "Nouveautés", ["de"] = "Neuigkeiten", ["zh"] = "新功能" },
             [StringKeys.UpdateCheck.Dismiss] = new() { ["en"] = "Dismiss", ["ko"] = "닫기", ["fr"] = "Ignorer", ["de"] = "Schließen", ["zh"] = "关闭" },
             [StringKeys.UpdateCheck.Toggle] = new() { ["en"] = "Check for updates", ["ko"] = "업데이트 확인", ["fr"] = "Vérifier les mises à jour", ["de"] = "Nach Updates suchen", ["zh"] = "检查更新" },
-            [StringKeys.UpdateCheck.FirstRunNotice] = new() { ["en"] = "LocalSynapse checks for updates once a day.", ["ko"] = "LocalSynapse가 하루에 한 번 업데이트를 확인합니다.", ["fr"] = "LocalSynapse vérifie les mises à jour une fois par jour.", ["de"] = "LocalSynapse prüft einmal täglich auf Updates.", ["zh"] = "LocalSynapse每天检查一次更新。" },
-            [StringKeys.UpdateCheck.FirstRunBody] = new() { ["en"] = "Your documents are never sent.", ["ko"] = "문서 데이터는 전송되지 않습니다.", ["fr"] = "Vos documents ne sont jamais envoyés.", ["de"] = "Ihre Dokumente werden niemals gesendet.", ["zh"] = "您的文档永远不会被发送。" },
-            [StringKeys.UpdateCheck.FirstRunOk] = new() { ["en"] = "OK", ["ko"] = "확인", ["fr"] = "OK", ["de"] = "OK", ["zh"] = "确定" },
-            [StringKeys.UpdateCheck.FirstRunDisable] = new() { ["en"] = "Disable", ["ko"] = "비활성화", ["fr"] = "Désactiver", ["de"] = "Deaktivieren", ["zh"] = "禁用" },
+            // FirstRunNotice/Body/Ok/Disable removed (WO-SEC0)
             [StringKeys.UpdateCheck.WhatsNewTitle] = new() { ["en"] = "What's new in v{0}", ["ko"] = "v{0}의 새로운 기능", ["fr"] = "Nouveautés de la v{0}", ["de"] = "Neues in v{0}", ["zh"] = "v{0}的新功能" },
             [StringKeys.UpdateCheck.UpToDate] = new() { ["en"] = "You're up to date", ["ko"] = "최신 버전입니다", ["fr"] = "Vous êtes à jour", ["de"] = "Sie sind auf dem neuesten Stand", ["zh"] = "已是最新版本" },
             [StringKeys.UpdateCheck.UpdateAvailable] = new() { ["en"] = "Update available", ["ko"] = "업데이트가 있습니다", ["fr"] = "Mise à jour disponible", ["de"] = "Update verfügbar", ["zh"] = "有可用更新" },
@@ -225,10 +222,6 @@ internal static class LocalizationRegistry
             [StringKeys.Security.Sends.ConfirmAction] = new() { ["en"] = "Turn off", ["ko"] = "끄기", ["fr"] = "Désactiver", ["de"] = "Deaktivieren", ["zh"] = "关闭" },
             [StringKeys.Security.Sends.ConfirmCancel] = new() { ["en"] = "Cancel", ["ko"] = "취소", ["fr"] = "Annuler", ["de"] = "Abbrechen", ["zh"] = "取消" },
 
-            // ── First Launch Info ──
-            [StringKeys.FirstLaunch.InfoBody] = new() { ["en"] = "LocalSynapse checks for updates daily to keep you secure. Your documents never leave your device. You can manage external communication anytime in Security.", ["ko"] = "LocalSynapse는 보안을 위해 매일 한 번 업데이트를 확인합니다. 사용자의 문서는 절대 외부로 전송되지 않습니다. 외부 통신은 언제든지 Security에서 관리할 수 있습니다.", ["fr"] = "LocalSynapse vérifie les mises à jour quotidiennement pour votre sécurité. Vos documents ne quittent jamais votre appareil. Vous pouvez gérer la communication externe à tout moment dans Sécurité.", ["de"] = "LocalSynapse prüft täglich auf Updates für Ihre Sicherheit. Ihre Dokumente verlassen nie Ihr Gerät. Sie können die externe Kommunikation jederzeit unter Sicherheit verwalten.", ["zh"] = "LocalSynapse 每天检查更新以保障您的安全。您的文档永远不会离开您的设备。您可以随时在安全中管理外部通信。" },
-            [StringKeys.FirstLaunch.Dismiss] = new() { ["en"] = "Got it", ["ko"] = "확인", ["fr"] = "Compris", ["de"] = "Verstanden", ["zh"] = "知道了" },
-            [StringKeys.FirstLaunch.Navigate] = new() { ["en"] = "Manage in Security", ["ko"] = "Security에서 관리", ["fr"] = "Gérer dans Sécurité", ["de"] = "In Sicherheit verwalten", ["zh"] = "在安全中管理" },
         };
     }
 }

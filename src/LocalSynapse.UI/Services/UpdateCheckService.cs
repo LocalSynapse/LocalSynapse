@@ -111,11 +111,11 @@ public sealed class UpdateCheckService
         HasUpdateAvailable = false;
     }
 
-    /// <summary>1일 1회 업데이트 체크 + 통계 ping. 첫 실행 시 skip.</summary>
+    /// <summary>1일 1회 업데이트 체크 + 통계 ping.</summary>
     public async Task<UpdateInfo?> CheckAsync(CancellationToken ct = default)
     {
-        if (IsFirstRun) return null;
-
+        // WO-SEC0: first-run gate removed — runs from first launch.
+        // If update-check.json doesn't exist yet, create it with defaults (CheckEnabled=true).
         var state = LoadState();
         if (!state.CheckEnabled) return null;
 

@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.UI.Services;
 using LocalSynapse.UI.Services.Localization;
@@ -53,8 +52,7 @@ public partial class SettingsViewModel : ObservableObject
 
     // (Update toggle moved to Security tab in M2-F)
 
-    // First run notice
-    [ObservableProperty] private bool _showFirstRunNotice;
+    // First run notice removed (WO-SEC0)
 
     /// <summary>SettingsViewModel 생성자.</summary>
     public SettingsViewModel(
@@ -71,7 +69,7 @@ public partial class SettingsViewModel : ObservableObject
         DataFolder = settings.GetDataFolder();
         _loc.LanguageChanged += OnLanguageChanged;
 
-        ShowFirstRunNotice = _updateCheck.IsFirstRun;
+
 
         LoadVersionInfo();
     }
@@ -190,21 +188,6 @@ public partial class SettingsViewModel : ObservableObject
         StatusForegroundBrush = new(Avalonia.Media.Color.Parse("#065F46"));
     }
 
-    /// <summary>First-launch info card — dismiss.</summary>
-    [RelayCommand]
-    private void GotIt()
-    {
-        _updateCheck.AcceptFirstRun();
-        ShowFirstRunNotice = false;
-    }
-
-    /// <summary>First-launch info card — navigate to Security tab.</summary>
-    [RelayCommand]
-    private void ManageInSecurity()
-    {
-        _updateCheck.AcceptFirstRun();
-        ShowFirstRunNotice = false;
-        WeakReferenceMessenger.Default.Send(new NavigateMessage(PageType.Security));
-    }
+    // GotIt / ManageInSecurity commands removed (WO-SEC0)
 
 }
