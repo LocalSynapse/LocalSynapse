@@ -105,9 +105,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SettingsViewModel>(sp => new SettingsViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<ILocalizationService>(),
-            sp.GetRequiredService<UpdateCheckService>(),
-            sp.GetRequiredService<IPipelineOrchestrator>(),
-            sp.GetRequiredService<GpuDetectionService>()));
+            sp.GetRequiredService<UpdateCheckService>()));
         services.AddSingleton<SecurityViewModel>(sp => new SecurityViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<UpdateCheckService>()));

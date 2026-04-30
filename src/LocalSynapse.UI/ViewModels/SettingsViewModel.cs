@@ -3,7 +3,6 @@ using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
-using LocalSynapse.Pipeline.Interfaces;
 using LocalSynapse.UI.Services;
 using LocalSynapse.UI.Services.Localization;
 
@@ -25,18 +24,6 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _isFrenchSelected;
     [ObservableProperty] private bool _isGermanSelected;
     [ObservableProperty] private bool _isChineseSelected;
-
-    // Performance mode
-    private readonly IPipelineOrchestrator _orchestrator;
-    private readonly Pipeline.Embedding.GpuDetectionService _gpuDetection;
-    [ObservableProperty] private bool _isStealthSelected;
-    [ObservableProperty] private bool _isCruiseSelected;
-    [ObservableProperty] private bool _isOverdriveSelected;
-    [ObservableProperty] private bool _isMadMaxSelected;
-    [ObservableProperty] private bool _isMadMaxEnabled;
-    [ObservableProperty] private string _madMaxSubText = "";
-    [ObservableProperty] private string _performanceModeTech = "";
-    [ObservableProperty] private string _performanceModeDesc = "";
 
     // About — version
     [ObservableProperty] private string _appVersion = GetAssemblyVersion();
@@ -71,20 +58,14 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(
         ISettingsStore settings,
         ILocalizationService loc,
-        UpdateCheckService updateCheck,
-        IPipelineOrchestrator orchestrator,
-        Pipeline.Embedding.GpuDetectionService gpuDetection)
+        UpdateCheckService updateCheck)
     {
         _settings = settings;
         _loc = loc;
         _updateCheck = updateCheck;
-        _orchestrator = orchestrator;
-        _gpuDetection = gpuDetection;
 
         Language = _loc.Current;
         UpdateSelectionFlags();
-        UpdatePerformanceModeFlags();
-        UpdateMadMaxState();
         DataFolder = settings.GetDataFolder();
         _loc.LanguageChanged += OnLanguageChanged;
 
@@ -172,62 +153,6 @@ public partial class SettingsViewModel : ObservableObject
     {
         Language = _loc.Current;
         UpdateSelectionFlags();
-        UpdatePerformanceModeText();
-    }
-
-    // ── Performance Mode ──
-
-    /// <summary>성능 모드 변경 커맨드.</summary>
-    [RelayCommand]
-    private void ChangePerformanceMode(string mode)
-    {
-        if (mode == "MadMax" && !IsMadMaxEnabled) return;
-        _settings.SetPerformanceMode(mode);
-        _orchestrator.RequestImmediateCycle();
-        UpdatePerformanceModeFlags();
-    }
-
-    private void UpdatePerformanceModeFlags()
-    {
-        var mode = _settings.GetPerformanceMode();
-        IsStealthSelected = mode == "Stealth";
-        IsCruiseSelected = mode == "Cruise";
-        IsOverdriveSelected = mode == "Overdrive";
-        IsMadMaxSelected = mode == "MadMax";
-        UpdatePerformanceModeText();
-    }
-
-    private void UpdatePerformanceModeText()
-    {
-        var mode = _settings.GetPerformanceMode();
-        (PerformanceModeTech, PerformanceModeDesc) = mode switch
-        {
-            "Stealth" => (_loc[StringKeys.Settings.Performance.StealthTech],
-                          _loc[StringKeys.Settings.Performance.StealthDesc]),
-            "Overdrive" => (_loc[StringKeys.Settings.Performance.OverdriveTech],
-                            _loc[StringKeys.Settings.Performance.OverdriveDesc]),
-            "MadMax" => (_loc[StringKeys.Settings.Performance.MadMaxTech],
-                         _loc[StringKeys.Settings.Performance.MadMaxDesc]),
-            _ => (_loc[StringKeys.Settings.Performance.CruiseTech],
-                  _loc[StringKeys.Settings.Performance.CruiseDesc]),
-        };
-    }
-
-    private void UpdateMadMaxState()
-    {
-        var result = _gpuDetection.CachedResult;
-        IsMadMaxEnabled = result?.BestProvider != null;
-        MadMaxSubText = result?.BestProvider != null
-            ? _loc.Format(StringKeys.Settings.Performance.MadMaxDetected, result.GpuName ?? "", result.BestProvider)
-            : _loc[StringKeys.Settings.Performance.MadMaxUnavailable];
-
-        // Auto-downgrade: if MadMax is stored but GPU is now unavailable, fall back to Overdrive
-        if (_settings.GetPerformanceMode() == "MadMax" && !IsMadMaxEnabled)
-        {
-            _settings.SetPerformanceMode("Overdrive");
-            System.Diagnostics.Debug.WriteLine("[SettingsVM] MadMax stored but GPU unavailable — auto-downgraded to Overdrive");
-            UpdatePerformanceModeFlags();
-        }
     }
 
     // ── Update Check ──

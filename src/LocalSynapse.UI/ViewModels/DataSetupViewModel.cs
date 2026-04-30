@@ -5,7 +5,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
+using LocalSynapse.Pipeline.Embedding;
 using LocalSynapse.Pipeline.Interfaces;
+using LocalSynapse.UI.Services.Localization;
 
 namespace LocalSynapse.UI.ViewModels;
 
@@ -21,6 +23,8 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     private readonly IModelInstaller _modelInstaller;
     private readonly IFileRepository _fileRepo;
     private readonly ISettingsStore _settingsStore;
+    private readonly GpuDetectionService _gpuDetection;
+    private readonly ILocalizationService _loc;
 
     [ObservableProperty] private PipelineStamps _stamps = new();
     [ObservableProperty] private PipelinePhase _currentPhase;
@@ -47,6 +51,16 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _isExtractPending;
     [ObservableProperty] private bool _isEmbedPending;
 
+    // Performance mode
+    [ObservableProperty] private bool _isStealthSelected;
+    [ObservableProperty] private bool _isCruiseSelected;
+    [ObservableProperty] private bool _isOverdriveSelected;
+    [ObservableProperty] private bool _isMadMaxSelected;
+    [ObservableProperty] private bool _isMadMaxEnabled;
+    [ObservableProperty] private string _madMaxSubText = "";
+    [ObservableProperty] private string _performanceModeTech = "";
+    [ObservableProperty] private string _performanceModeDesc = "";
+
     // Scan folders
     [ObservableProperty] private ObservableCollection<string> _scanFolders = new();
     [ObservableProperty] private bool _isUsingDefaults = true;
@@ -58,13 +72,17 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         IPipelineStampRepository stampRepo,
         IModelInstaller modelInstaller,
         IFileRepository fileRepo,
-        ISettingsStore settingsStore)
+        ISettingsStore settingsStore,
+        GpuDetectionService gpuDetection,
+        ILocalizationService loc)
     {
         _orchestrator = orchestrator;
         _stampRepo = stampRepo;
         _modelInstaller = modelInstaller;
         _fileRepo = fileRepo;
         _settingsStore = settingsStore;
+        _gpuDetection = gpuDetection;
+        _loc = loc;
 
         // Subscribe to pipeline events (these fire on background threads)
         _orchestrator.ProgressChanged += OnProgressChanged;
@@ -78,6 +96,10 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
 
         // Load current state
         RefreshState();
+
+        // Performance mode
+        UpdatePerformanceModeFlags();
+        UpdateMadMaxState();
 
         _refreshTimer = new System.Threading.Timer(_ =>
         {
@@ -326,6 +348,61 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         _settingsStore.SetScanRoots(roots);
         IsUsingDefaults = roots == null;
         _orchestrator.RequestImmediateCycle();
+    }
+
+    // ── Performance Mode ──
+
+    /// <summary>성능 모드 변경 커맨드.</summary>
+    [RelayCommand]
+    private void ChangePerformanceMode(string mode)
+    {
+        if (mode == "MadMax" && !IsMadMaxEnabled) return;
+        _settingsStore.SetPerformanceMode(mode);
+        _orchestrator.RequestImmediateCycle();
+        UpdatePerformanceModeFlags();
+    }
+
+    private void UpdatePerformanceModeFlags()
+    {
+        var mode = _settingsStore.GetPerformanceMode();
+        IsStealthSelected = mode == "Stealth";
+        IsCruiseSelected = mode == "Cruise";
+        IsOverdriveSelected = mode == "Overdrive";
+        IsMadMaxSelected = mode == "MadMax";
+        UpdatePerformanceModeText();
+    }
+
+    private void UpdatePerformanceModeText()
+    {
+        var mode = _settingsStore.GetPerformanceMode();
+        (PerformanceModeTech, PerformanceModeDesc) = mode switch
+        {
+            "Stealth" => (_loc[StringKeys.Settings.Performance.StealthTech],
+                          _loc[StringKeys.Settings.Performance.StealthDesc]),
+            "Overdrive" => (_loc[StringKeys.Settings.Performance.OverdriveTech],
+                            _loc[StringKeys.Settings.Performance.OverdriveDesc]),
+            "MadMax" => (_loc[StringKeys.Settings.Performance.MadMaxTech],
+                         _loc[StringKeys.Settings.Performance.MadMaxDesc]),
+            _ => (_loc[StringKeys.Settings.Performance.CruiseTech],
+                  _loc[StringKeys.Settings.Performance.CruiseDesc]),
+        };
+    }
+
+    private void UpdateMadMaxState()
+    {
+        var result = _gpuDetection.CachedResult;
+        IsMadMaxEnabled = result?.BestProvider != null;
+        MadMaxSubText = result?.BestProvider != null
+            ? _loc.Format(StringKeys.Settings.Performance.MadMaxDetected, result.GpuName ?? "", result.BestProvider)
+            : _loc[StringKeys.Settings.Performance.MadMaxUnavailable];
+
+        // Auto-downgrade: if MadMax is stored but GPU is now unavailable, fall back to Overdrive
+        if (_settingsStore.GetPerformanceMode() == "MadMax" && !IsMadMaxEnabled)
+        {
+            _settingsStore.SetPerformanceMode("Overdrive");
+            Debug.WriteLine("[DataSetupVM] MadMax stored but GPU unavailable — auto-downgraded to Overdrive");
+            UpdatePerformanceModeFlags();
+        }
     }
 
     public void Dispose()
