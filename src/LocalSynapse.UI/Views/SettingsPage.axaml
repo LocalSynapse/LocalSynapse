@@ -83,6 +83,59 @@
                 </StackPanel>
             </Border>
 
+            <!-- Performance Mode -->
+            <Border Classes="Card" Margin="0">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 1.45-.39 2.81-1.06 3.98l1.73 1C21.52 15.13 22 13.12 22 11c0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V3.03c-4.06.5-7.18 3.91-7.18 7.97 0 4.42 3.58 8 8 8 1.94 0 3.72-.69 5.1-1.85l-1.42-1.43A5.946 5.946 0 0 1 12 19zm1-9V7l-4 4 4 4v-3c1.65 0 3 1.35 3 3s-1.35 3-3 3v2c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
+                        <TextBlock Text="{i18n:Tr Key=Settings.Performance.Title}"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+                    <TextBlock Text="{i18n:Tr Key=Settings.Performance.Subtitle}"
+                               FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap" />
+                    <WrapPanel Orientation="Horizontal">
+                        <Button Content="{i18n:Tr Key=Settings.Performance.Stealth.Label}"
+                                Classes.BtnPrimary="{Binding IsStealthSelected}"
+                                Classes.BtnSecondary="{Binding !IsStealthSelected}"
+                                Command="{Binding ChangePerformanceModeCommand}" CommandParameter="Stealth"
+                                Margin="0,0,8,4" />
+                        <Button Content="{i18n:Tr Key=Settings.Performance.Cruise.Label}"
+                                Classes.BtnPrimary="{Binding IsCruiseSelected}"
+                                Classes.BtnSecondary="{Binding !IsCruiseSelected}"
+                                Command="{Binding ChangePerformanceModeCommand}" CommandParameter="Cruise"
+                                Margin="0,0,8,4" />
+                        <Button Content="{i18n:Tr Key=Settings.Performance.Overdrive.Label}"
+                                Classes.BtnPrimary="{Binding IsOverdriveSelected}"
+                                Classes.BtnSecondary="{Binding !IsOverdriveSelected}"
+                                Command="{Binding ChangePerformanceModeCommand}" CommandParameter="Overdrive"
+                                Margin="0,0,8,4" />
+                        <Button Content="{i18n:Tr Key=Settings.Performance.MadMax.Label}"
+                                Classes="BtnSecondary"
+                                IsEnabled="False"
+                                Margin="0,0,8,4" />
+                    </WrapPanel>
+                    <Border Classes="StatCard">
+                        <TextBlock Text="{Binding PerformanceModeTech}"
+                                   FontSize="{StaticResource FontSizeXs}"
+                                   FontFamily="{StaticResource FontMono}"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                    </Border>
+                    <TextBlock Text="{Binding PerformanceModeDesc}"
+                               FontSize="12"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               TextWrapping="Wrap" />
+                    <TextBlock Text="{i18n:Tr Key=Settings.Performance.MadMax.Coming}"
+                               FontSize="11"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontStyle="Italic" />
+                </StackPanel>
+            </Border>
+
             <!-- About (version status + What's new + update buttons + data + toggle) -->
             <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">

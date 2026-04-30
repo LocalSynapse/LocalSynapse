@@ -24,6 +24,8 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     private readonly IChunkRepository _chunkRepo;
     private readonly IEmbeddingRepository _embeddingRepo;
     private readonly IPipelineStampRepository _stampRepo;
+    private readonly ISettingsStore _settingsStore;
+    private string _activePerformanceMode;
 
     private volatile bool _isPaused;
     private readonly ManualResetEventSlim _immediateRunSignal = new(false);
@@ -59,7 +61,8 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         IFileRepository fileRepo,
         IChunkRepository chunkRepo,
         IEmbeddingRepository embeddingRepo,
-        IPipelineStampRepository stampRepo)
+        IPipelineStampRepository stampRepo,
+        ISettingsStore settingsStore)
     {
         _fileScanner = fileScanner;
         _contentExtractor = contentExtractor;
@@ -70,6 +73,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         _chunkRepo = chunkRepo;
         _embeddingRepo = embeddingRepo;
         _stampRepo = stampRepo;
+        _settingsStore = settingsStore;
+        _activePerformanceMode = settingsStore.GetPerformanceMode();
+        ApplyProcessPriority(_activePerformanceMode);
     }
 
     /// <summary>Run one full cycle: scan → index → embed.</summary>
@@ -103,6 +109,19 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             SpeedDiagLog.Log("PHASE_INDEX", "time_ms", indexSw.ElapsedMilliseconds);
             if (_isPaused || ct.IsCancellationRequested) return;
 
+            // Performance mode — apply if changed
+            var requestedMode = _settingsStore.GetPerformanceMode();
+            if (requestedMode != _activePerformanceMode)
+            {
+                ApplyProcessPriority(requestedMode);
+                if (_embeddingService.IsReady)
+                {
+                    Debug.WriteLine($"[Orch] Performance mode changed: {_activePerformanceMode} → {requestedMode}");
+                    await _embeddingService.ReloadSessionWithModeAsync(requestedMode, ct);
+                }
+                _activePerformanceMode = requestedMode;
+            }
+
             // Phase 3: Embed (slow — only if model ready)
             // Auto-initialize embedding model if installed but not loaded
             if (!SkipEmbeddingPhase && !_embeddingService.IsReady)
@@ -119,6 +138,8 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     try
                     {
                         await _embeddingService.InitializeAsync("bge-m3", ct);
+                        if (_activePerformanceMode != "Cruise")
+                            await _embeddingService.ReloadSessionWithModeAsync(_activePerformanceMode, ct);
                         SpeedDiagLog.Log("EMB_AUTO_INIT_OK",
                             "is_ready", _embeddingService.IsReady);
                     }
@@ -538,6 +559,23 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         var input = $"{fileId}:{chunkIndex}";
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(hash).ToLowerInvariant()[..16];
+    }
+
+    private void ApplyProcessPriority(string mode)
+    {
+        try
+        {
+            var priority = mode == "Stealth"
+                ? System.Diagnostics.ProcessPriorityClass.BelowNormal
+                : System.Diagnostics.ProcessPriorityClass.Normal;
+            System.Diagnostics.Process.GetCurrentProcess().PriorityClass = priority;
+            Debug.WriteLine($"[Orch] Process priority set to {priority} for mode {mode}");
+        }
+        catch (Exception ex)
+        {
+            // macOS: raising priority from BelowNormal to Normal may fail without root
+            Debug.WriteLine($"[Orch] Failed to set process priority: {ex.Message}");
+        }
     }
 }
 

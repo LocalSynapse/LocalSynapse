@@ -66,4 +66,6 @@ internal sealed class TempSettingsStore : ISettingsStore
     public string GetDatabasePath() => Path.Combine(_tempDir, "test.db");
     public string[]? GetScanRoots() => null;
     public void SetScanRoots(string[]? roots) { }
+    public string GetPerformanceMode() => "Cruise";
+    public void SetPerformanceMode(string mode) { }
 }

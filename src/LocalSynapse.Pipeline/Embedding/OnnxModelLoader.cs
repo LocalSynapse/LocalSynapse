@@ -12,6 +12,7 @@ public sealed class OnnxModelLoader : IDisposable
     private InferenceSession? _session;
     private string? _currentModelId;
     private int _embeddingDimension;
+    private string? _currentModelPath;
     private readonly SemaphoreSlim _sessionLock = new(1, 1);
 
     private static readonly Dictionary<string, int> ModelDimensions = new()
@@ -55,7 +56,7 @@ public sealed class OnnxModelLoader : IDisposable
     }
 
     /// <summary>ONNX 모델을 로드한다.</summary>
-    public Task LoadAsync(string modelId, string modelDir, CancellationToken ct = default)
+    public Task LoadAsync(string modelId, string modelDir, string mode = "Cruise", CancellationToken ct = default)
     {
         return Task.Run(async () =>
         {
@@ -76,13 +77,12 @@ public sealed class OnnxModelLoader : IDisposable
                     GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
                 };
 
-                var cpuCount = Environment.ProcessorCount;
-                options.InterOpNumThreads = Math.Max(1, cpuCount * 3 / 4);
-                options.IntraOpNumThreads = Math.Max(1, cpuCount / 2);
+                ApplyPerformanceMode(options, mode);
 
                 Debug.WriteLine($"[OnnxModelLoader] Loading model: {modelPath}");
                 _session = new InferenceSession(modelPath, options);
                 _currentModelId = modelId;
+                _currentModelPath = modelPath;
                 _embeddingDimension = ModelDimensions.GetValueOrDefault(modelId, 1024);
 
                 Debug.WriteLine($"[OnnxModelLoader] Model loaded: {modelId}, dim={_embeddingDimension}");
@@ -105,6 +105,7 @@ public sealed class OnnxModelLoader : IDisposable
             _session?.Dispose();
             _session = null;
             _currentModelId = null;
+            _currentModelPath = null;
             _embeddingDimension = 0;
         }
         finally
@@ -118,6 +119,54 @@ public sealed class OnnxModelLoader : IDisposable
     {
         Unload();
         _sessionLock.Dispose();
+    }
+
+    /// <summary>현재 모델의 ONNX 세션을 새 성능 모드로 재생성한다. 토크나이저는 유지된다.</summary>
+    public async Task ReloadSessionWithModeAsync(string mode, CancellationToken ct = default)
+    {
+        await _sessionLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (_session is null || _currentModelPath is null)
+                throw new InvalidOperationException("No model loaded — cannot reload session");
+
+            _session.Dispose();
+
+            var options = new SessionOptions
+            {
+                GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
+            };
+            ApplyPerformanceMode(options, mode);
+
+            Debug.WriteLine($"[OnnxModelLoader] Reloading session with mode: {mode}");
+            _session = new InferenceSession(_currentModelPath, options);
+            Debug.WriteLine($"[OnnxModelLoader] Session reloaded: mode={mode}");
+        }
+        finally
+        {
+            _sessionLock.Release();
+        }
+    }
+
+    private static void ApplyPerformanceMode(SessionOptions options, string mode)
+    {
+        var cpuCount = Environment.ProcessorCount;
+        switch (mode)
+        {
+            case "Stealth":
+                options.IntraOpNumThreads = 1;
+                options.InterOpNumThreads = 1;
+                break;
+            case "Overdrive":
+                options.IntraOpNumThreads = cpuCount;
+                options.InterOpNumThreads = Math.Max(1, cpuCount / 2);
+                break;
+            default: // "Cruise" and any unknown value
+                options.IntraOpNumThreads = Math.Max(1, cpuCount / 2);
+                options.InterOpNumThreads = 1;
+                break;
+        }
+        Debug.WriteLine($"[OnnxModelLoader] Performance mode: {mode}, IntraOp={options.IntraOpNumThreads}, InterOp={options.InterOpNumThreads}");
     }
 
     private static string? FindModelPath(string modelDir)

@@ -19,6 +19,8 @@ internal sealed class FakeSettingsStore : ISettingsStore
     public string GetDatabasePath() => "/tmp/ls-test/ls.db";
     public string[]? GetScanRoots() => null;
     public void SetScanRoots(string[]? roots) { }
+    public string GetPerformanceMode() => "Cruise";
+    public void SetPerformanceMode(string mode) { }
 }
 
 public class LocalizationServiceTests

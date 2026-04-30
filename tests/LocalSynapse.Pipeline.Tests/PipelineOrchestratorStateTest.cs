@@ -19,10 +19,12 @@ public class PipelineOrchestratorStateTest
             new StubContentExtractor(),
             new StubTextChunker(),
             new StubEmbeddingService(),
+            new StubModelInstaller(),
             new StubFileRepository(),
             new StubChunkRepository(),
             new StubEmbeddingRepository(),
-            new StubPipelineStampRepository());
+            new StubPipelineStampRepository(),
+            new TempSettingsStore());
     }
 
     [Fact]
@@ -97,6 +99,16 @@ public class PipelineOrchestratorStateTest
         public Task<float[][]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
             => Task.FromResult(Array.Empty<float[]>());
         public void Unload() { }
+        public Task ReloadSessionWithModeAsync(string mode, CancellationToken ct = default) => Task.CompletedTask;
+    }
+
+    private sealed class StubModelInstaller : IModelInstaller
+    {
+        public bool IsModelInstalled(string modelId) => false;
+        public string GetModelPath(string modelId) => "";
+        public IReadOnlyList<ModelInfo> GetAvailableModels() => [];
+        public Task DownloadModelAsync(string modelId, IProgress<DownloadProgress>? progress = null, CancellationToken ct = default)
+            => Task.CompletedTask;
     }
 
     private sealed class StubFileRepository : IFileRepository
@@ -121,6 +133,7 @@ public class PipelineOrchestratorStateTest
         public Task<bool> ExistsByPathAsync(string filePath) => Task.FromResult(false);
         public Dictionary<string, long> GetAllFileMtimes() => new();
         public HashSet<string> GetCloudSkippedPaths() => new();
+        public IReadOnlyList<FileMetadata> ListFilesUnderFolder(string? folder, string? extension, int limit) => [];
     }
 
     private sealed class StubChunkRepository : IChunkRepository
@@ -144,6 +157,9 @@ public class PipelineOrchestratorStateTest
             => Task.FromResult(new List<EmbeddingWithChunk>());
         public Task DeleteAllEmbeddingsAsync(string modelId, CancellationToken ct = default)
             => Task.CompletedTask;
+        public async IAsyncEnumerable<EmbeddingRecord> EnumerateAllEmbeddingsAsync(
+            string modelId, int batchSize = 500, [EnumeratorCancellation] CancellationToken ct = default)
+        { await Task.CompletedTask; yield break; }
     }
 
     private sealed class StubPipelineStampRepository : IPipelineStampRepository

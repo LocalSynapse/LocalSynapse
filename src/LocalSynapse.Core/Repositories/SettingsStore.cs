@@ -92,6 +92,17 @@ public sealed class SettingsStore : ISettingsStore
         WriteSettingsAtomic(_settings);
     }
 
+    /// <summary>인덱싱 성능 모드를 반환한다 (기본값: "Cruise").</summary>
+    public string GetPerformanceMode()
+        => _settings.IndexingPerformanceMode ?? "Cruise";
+
+    /// <summary>인덱싱 성능 모드를 저장한다.</summary>
+    public void SetPerformanceMode(string mode)
+    {
+        _settings.IndexingPerformanceMode = mode;
+        WriteSettingsAtomic(_settings);
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     //  Private helpers
     // ═══════════════════════════════════════════════════════════════════
@@ -193,4 +204,5 @@ internal sealed class SettingsFile
     public int Version { get; set; } = 1;
     public string? Language { get; set; }
     public string[]? ScanRoots { get; set; }
+    public string? IndexingPerformanceMode { get; set; }
 }

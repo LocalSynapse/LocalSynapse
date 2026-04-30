@@ -190,6 +190,27 @@ public static class StringKeys
         public const string LinksWebsite = "Settings.Links.Website";
         public const string LinksGitHub = "Settings.Links.GitHub";
         public const string LanguageSearchHint = "Settings.Language.SearchHint";
+
+        public static class Performance
+        {
+            public const string Title = "Settings.Performance.Title";
+            public const string Subtitle = "Settings.Performance.Subtitle";
+            public const string StealthLabel = "Settings.Performance.Stealth.Label";
+            public const string StealthTech = "Settings.Performance.Stealth.Tech";
+            public const string StealthDesc = "Settings.Performance.Stealth.Desc";
+            public const string CruiseLabel = "Settings.Performance.Cruise.Label";
+            public const string CruiseTech = "Settings.Performance.Cruise.Tech";
+            public const string CruiseDesc = "Settings.Performance.Cruise.Desc";
+            public const string OverdriveLabel = "Settings.Performance.Overdrive.Label";
+            public const string OverdriveTech = "Settings.Performance.Overdrive.Tech";
+            public const string OverdriveDesc = "Settings.Performance.Overdrive.Desc";
+            public const string MadMaxLabel = "Settings.Performance.MadMax.Label";
+            public const string MadMaxTech = "Settings.Performance.MadMax.Tech";
+            public const string MadMaxDesc = "Settings.Performance.MadMax.Desc";
+            public const string MadMaxDetected = "Settings.Performance.MadMax.Detected";
+            public const string MadMaxUnavailable = "Settings.Performance.MadMax.Unavailable";
+            public const string MadMaxComing = "Settings.Performance.MadMax.Coming";
+        }
     }
 
     public static class Mcp

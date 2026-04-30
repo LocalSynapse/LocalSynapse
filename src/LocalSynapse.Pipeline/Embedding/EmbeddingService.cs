@@ -46,7 +46,7 @@ public sealed class EmbeddingService : IEmbeddingService
         var tokMs = tokSw.ElapsedMilliseconds;
 
         var modSw = Stopwatch.StartNew();
-        await _modelLoader.LoadAsync(modelId, modelDir, ct);
+        await _modelLoader.LoadAsync(modelId, modelDir, "Cruise", ct);
         var modMs = modSw.ElapsedMilliseconds;
 
         SpeedDiagLog.Log("EMB_INIT",
@@ -100,6 +100,12 @@ public sealed class EmbeddingService : IEmbeddingService
             embeddings[i] = await GenerateEmbeddingAsync(texts[i], ct);
         }
         return embeddings;
+    }
+
+    /// <summary>ONNX 세션을 새 성능 모드로 재생성한다. 토크나이저는 유지된다.</summary>
+    public async Task ReloadSessionWithModeAsync(string mode, CancellationToken ct = default)
+    {
+        await _modelLoader.ReloadSessionWithModeAsync(mode, ct);
     }
 
     /// <summary>모델을 해제한다.</summary>

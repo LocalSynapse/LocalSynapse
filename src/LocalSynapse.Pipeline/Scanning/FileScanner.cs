@@ -48,6 +48,8 @@ public sealed class FileScanner : IFileScanner
         public string GetDatabasePath() => "";
         public string[]? GetScanRoots() => null;
         public void SetScanRoots(string[]? roots) { }
+        public string GetPerformanceMode() => "Cruise";
+        public void SetPerformanceMode(string mode) { }
     }
 
     /// <summary>Scan all fixed drives and upsert file metadata to DB.</summary>
