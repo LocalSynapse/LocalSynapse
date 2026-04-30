@@ -131,6 +131,7 @@ public sealed class OnnxModelLoader : IDisposable
                 throw new InvalidOperationException("No model loaded — cannot reload session");
 
             _session.Dispose();
+            _session = null;
 
             var options = new SessionOptions
             {
