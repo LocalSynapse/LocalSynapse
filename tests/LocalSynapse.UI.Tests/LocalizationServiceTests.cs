@@ -21,6 +21,8 @@ internal sealed class FakeSettingsStore : ISettingsStore
     public void SetScanRoots(string[]? roots) { }
     public string GetPerformanceMode() => "Cruise";
     public void SetPerformanceMode(string mode) { }
+    public (string?, string?) GetGpuDetectionCache() => (null, null);
+    public void SetGpuDetectionCache(string? bestProvider, string? gpuName) { }
 }
 
 public class LocalizationServiceTests

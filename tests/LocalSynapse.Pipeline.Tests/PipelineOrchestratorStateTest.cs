@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
+using LocalSynapse.Pipeline.Embedding;
 using LocalSynapse.Pipeline.Interfaces;
 using LocalSynapse.Pipeline.Orchestration;
 using Xunit;
@@ -24,7 +25,8 @@ public class PipelineOrchestratorStateTest
             new StubChunkRepository(),
             new StubEmbeddingRepository(),
             new StubPipelineStampRepository(),
-            new TempSettingsStore());
+            new TempSettingsStore(),
+            new GpuDetectionService());
     }
 
     [Fact]
@@ -99,7 +101,7 @@ public class PipelineOrchestratorStateTest
         public Task<float[][]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
             => Task.FromResult(Array.Empty<float[]>());
         public void Unload() { }
-        public Task ReloadSessionWithModeAsync(string mode, CancellationToken ct = default) => Task.CompletedTask;
+        public Task ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default) => Task.CompletedTask;
     }
 
     private sealed class StubModelInstaller : IModelInstaller

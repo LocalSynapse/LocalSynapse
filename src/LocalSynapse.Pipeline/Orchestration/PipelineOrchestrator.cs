@@ -25,6 +25,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     private readonly IEmbeddingRepository _embeddingRepo;
     private readonly IPipelineStampRepository _stampRepo;
     private readonly ISettingsStore _settingsStore;
+    private readonly Embedding.GpuDetectionService _gpuDetection;
     private string _activePerformanceMode;
 
     private volatile bool _isPaused;
@@ -62,7 +63,8 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         IChunkRepository chunkRepo,
         IEmbeddingRepository embeddingRepo,
         IPipelineStampRepository stampRepo,
-        ISettingsStore settingsStore)
+        ISettingsStore settingsStore,
+        Embedding.GpuDetectionService gpuDetection)
     {
         _fileScanner = fileScanner;
         _contentExtractor = contentExtractor;
@@ -74,6 +76,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         _embeddingRepo = embeddingRepo;
         _stampRepo = stampRepo;
         _settingsStore = settingsStore;
+        _gpuDetection = gpuDetection;
         _activePerformanceMode = settingsStore.GetPerformanceMode();
         ApplyProcessPriority(_activePerformanceMode);
     }
@@ -109,6 +112,15 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             SpeedDiagLog.Log("PHASE_INDEX", "time_ms", indexSw.ElapsedMilliseconds);
             if (_isPaused || ct.IsCancellationRequested) return;
 
+            // GPU detection — run once on first cycle (deferred from constructor to avoid UI thread block)
+            if (_gpuDetection.CachedResult is null)
+            {
+                await Task.Run(() => _gpuDetection.Detect(), ct);
+                var detected = _gpuDetection.CachedResult;
+                _settingsStore.SetGpuDetectionCache(detected?.BestProvider, detected?.GpuName);
+                Debug.WriteLine($"[Orch] GPU detection: provider={detected?.BestProvider}, gpu={detected?.GpuName}");
+            }
+
             // Performance mode — apply if changed
             var requestedMode = _settingsStore.GetPerformanceMode();
             if (requestedMode != _activePerformanceMode)
@@ -116,8 +128,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                 ApplyProcessPriority(requestedMode);
                 if (_embeddingService.IsReady)
                 {
+                    var gpuProvider = requestedMode == "MadMax" ? _gpuDetection.CachedResult?.BestProvider : null;
                     Debug.WriteLine($"[Orch] Performance mode changed: {_activePerformanceMode} → {requestedMode}");
-                    await _embeddingService.ReloadSessionWithModeAsync(requestedMode, ct);
+                    await _embeddingService.ReloadSessionWithModeAsync(requestedMode, gpuProvider, ct);
                 }
                 _activePerformanceMode = requestedMode;
             }
@@ -139,7 +152,10 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     {
                         await _embeddingService.InitializeAsync("bge-m3", ct);
                         if (_activePerformanceMode != "Cruise")
-                            await _embeddingService.ReloadSessionWithModeAsync(_activePerformanceMode, ct);
+                        {
+                            var gpuProv = _activePerformanceMode == "MadMax" ? _gpuDetection.CachedResult?.BestProvider : null;
+                            await _embeddingService.ReloadSessionWithModeAsync(_activePerformanceMode, gpuProv, ct);
+                        }
                         SpeedDiagLog.Log("EMB_AUTO_INIT_OK",
                             "is_ready", _embeddingService.IsReady);
                     }

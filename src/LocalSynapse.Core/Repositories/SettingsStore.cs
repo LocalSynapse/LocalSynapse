@@ -103,6 +103,25 @@ public sealed class SettingsStore : ISettingsStore
         WriteSettingsAtomic(_settings);
     }
 
+    /// <summary>캐시된 GPU 감지 결과를 반환한다.</summary>
+    public (string? bestProvider, string? gpuName) GetGpuDetectionCache()
+    {
+        var cache = _settings.GpuDetection;
+        return (cache?.BestProvider, cache?.GpuName);
+    }
+
+    /// <summary>GPU 감지 결과를 캐시에 저장한다.</summary>
+    public void SetGpuDetectionCache(string? bestProvider, string? gpuName)
+    {
+        _settings.GpuDetection = new GpuDetectionCache
+        {
+            BestProvider = bestProvider,
+            GpuName = gpuName,
+            LastChecked = DateTime.UtcNow.ToString("o"),
+        };
+        WriteSettingsAtomic(_settings);
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     //  Private helpers
     // ═══════════════════════════════════════════════════════════════════
@@ -205,4 +224,13 @@ internal sealed class SettingsFile
     public string? Language { get; set; }
     public string[]? ScanRoots { get; set; }
     public string? IndexingPerformanceMode { get; set; }
+    public GpuDetectionCache? GpuDetection { get; set; }
+}
+
+/// <summary>GPU 감지 결과 캐시 (settings.json 내 저장).</summary>
+internal sealed class GpuDetectionCache
+{
+    public string? BestProvider { get; set; }
+    public string? GpuName { get; set; }
+    public string? LastChecked { get; set; }
 }

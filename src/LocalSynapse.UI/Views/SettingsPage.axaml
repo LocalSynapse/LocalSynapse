@@ -115,8 +115,10 @@
                                 Command="{Binding ChangePerformanceModeCommand}" CommandParameter="Overdrive"
                                 Margin="0,0,8,4" />
                         <Button Content="{i18n:Tr Key=Settings.Performance.MadMax.Label}"
-                                Classes="BtnSecondary"
-                                IsEnabled="False"
+                                Classes.BtnPrimary="{Binding IsMadMaxSelected}"
+                                Classes.BtnSecondary="{Binding !IsMadMaxSelected}"
+                                IsEnabled="{Binding IsMadMaxEnabled}"
+                                Command="{Binding ChangePerformanceModeCommand}" CommandParameter="MadMax"
                                 Margin="0,0,8,4" />
                     </WrapPanel>
                     <Border Classes="StatCard">
@@ -129,7 +131,7 @@
                                FontSize="12"
                                Foreground="{StaticResource TextMutedBrush}"
                                TextWrapping="Wrap" />
-                    <TextBlock Text="{i18n:Tr Key=Settings.Performance.MadMax.Coming}"
+                    <TextBlock Text="{Binding MadMaxSubText}"
                                FontSize="11"
                                Foreground="{StaticResource TextMutedBrush}"
                                FontStyle="Italic" />

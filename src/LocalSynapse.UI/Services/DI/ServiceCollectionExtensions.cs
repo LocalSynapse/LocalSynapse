@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<EmbeddingService>();
         services.AddSingleton<IEmbeddingService>(sp => sp.GetRequiredService<EmbeddingService>());
         services.AddSingleton<IModelInstaller, BgeM3Installer>();
+        services.AddSingleton<GpuDetectionService>();
         services.AddSingleton<IPipelineOrchestrator>(sp => new PipelineOrchestrator(
             sp.GetRequiredService<IFileScanner>(),
             sp.GetRequiredService<IContentExtractor>(),
@@ -54,7 +55,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IChunkRepository>(),
             sp.GetRequiredService<IEmbeddingRepository>(),
             sp.GetRequiredService<IPipelineStampRepository>(),
-            sp.GetRequiredService<ISettingsStore>()));
+            sp.GetRequiredService<ISettingsStore>(),
+            sp.GetRequiredService<GpuDetectionService>()));
 
         // ── Search ──
         services.AddSingleton<Bm25SearchService>(sp => new Bm25SearchService(
@@ -104,7 +106,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<ILocalizationService>(),
             sp.GetRequiredService<UpdateCheckService>(),
-            sp.GetRequiredService<IPipelineOrchestrator>()));
+            sp.GetRequiredService<IPipelineOrchestrator>(),
+            sp.GetRequiredService<GpuDetectionService>()));
         services.AddSingleton<SecurityViewModel>(sp => new SecurityViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<UpdateCheckService>()));

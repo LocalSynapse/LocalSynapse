@@ -9,6 +9,6 @@ public interface IEmbeddingService
     Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken ct = default);
     Task<float[][]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default);
     /// <summary>Reloads the ONNX session with new performance mode options. Tokenizer is preserved.</summary>
-    Task ReloadSessionWithModeAsync(string mode, CancellationToken ct = default);
+    Task ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default);
     void Unload();
 }

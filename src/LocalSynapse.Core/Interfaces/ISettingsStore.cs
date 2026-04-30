@@ -18,6 +18,12 @@ public interface ISettingsStore
     /// <summary>Returns the selected indexing performance mode. Default: "Cruise".</summary>
     string GetPerformanceMode();
 
-    /// <summary>Sets the indexing performance mode. Valid: "Stealth", "Cruise", "Overdrive".</summary>
+    /// <summary>Sets the indexing performance mode. Valid: "Stealth", "Cruise", "Overdrive", "MadMax".</summary>
     void SetPerformanceMode(string mode);
+
+    /// <summary>Returns cached GPU detection result.</summary>
+    (string? bestProvider, string? gpuName) GetGpuDetectionCache();
+
+    /// <summary>Caches GPU detection result.</summary>
+    void SetGpuDetectionCache(string? bestProvider, string? gpuName);
 }

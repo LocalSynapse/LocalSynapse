@@ -56,7 +56,7 @@ public sealed class OnnxModelLoader : IDisposable
     }
 
     /// <summary>ONNX 모델을 로드한다.</summary>
-    public Task LoadAsync(string modelId, string modelDir, string mode = "Cruise", CancellationToken ct = default)
+    public Task LoadAsync(string modelId, string modelDir, string mode = "Cruise", string? gpuProvider = null, CancellationToken ct = default)
     {
         return Task.Run(async () =>
         {
@@ -77,7 +77,7 @@ public sealed class OnnxModelLoader : IDisposable
                     GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
                 };
 
-                ApplyPerformanceMode(options, mode);
+                ApplyPerformanceMode(options, mode, gpuProvider);
 
                 Debug.WriteLine($"[OnnxModelLoader] Loading model: {modelPath}");
                 _session = new InferenceSession(modelPath, options);
@@ -122,7 +122,7 @@ public sealed class OnnxModelLoader : IDisposable
     }
 
     /// <summary>현재 모델의 ONNX 세션을 새 성능 모드로 재생성한다. 토크나이저는 유지된다.</summary>
-    public async Task ReloadSessionWithModeAsync(string mode, CancellationToken ct = default)
+    public async Task ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default)
     {
         await _sessionLock.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -137,7 +137,7 @@ public sealed class OnnxModelLoader : IDisposable
             {
                 GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
             };
-            ApplyPerformanceMode(options, mode);
+            ApplyPerformanceMode(options, mode, gpuProvider);
 
             Debug.WriteLine($"[OnnxModelLoader] Reloading session with mode: {mode}");
             _session = new InferenceSession(_currentModelPath, options);
@@ -149,7 +149,7 @@ public sealed class OnnxModelLoader : IDisposable
         }
     }
 
-    private static void ApplyPerformanceMode(SessionOptions options, string mode)
+    private static void ApplyPerformanceMode(SessionOptions options, string mode, string? gpuProvider = null)
     {
         var cpuCount = Environment.ProcessorCount;
         switch (mode)
@@ -157,6 +157,45 @@ public sealed class OnnxModelLoader : IDisposable
             case "Stealth":
                 options.IntraOpNumThreads = 1;
                 options.InterOpNumThreads = 1;
+                break;
+            case "MadMax":
+                options.IntraOpNumThreads = cpuCount;
+                options.InterOpNumThreads = Math.Max(1, cpuCount / 2);
+                if (gpuProvider != null)
+                {
+                    try
+                    {
+                        var epName = gpuProvider switch
+                        {
+                            "CoreML" => "CoreMLExecutionProvider",
+                            "DirectML" => "DmlExecutionProvider",
+                            "CUDA" => "CUDAExecutionProvider",
+                            _ => null,
+                        };
+                        if (epName != null)
+                        {
+                            options.AppendExecutionProvider(epName);
+                            Debug.WriteLine($"[OnnxModelLoader] Attached EP: {epName}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[OnnxModelLoader] EP attach failed: {ex.Message}");
+                        // CUDA → DirectML fallback (spec §9 Phase 2 acceptance criterion)
+                        if (gpuProvider == "CUDA")
+                        {
+                            try
+                            {
+                                options.AppendExecutionProvider("DmlExecutionProvider");
+                                Debug.WriteLine("[OnnxModelLoader] CUDA failed, fell back to DirectML");
+                            }
+                            catch (Exception ex2)
+                            {
+                                Debug.WriteLine($"[OnnxModelLoader] DirectML fallback also failed, using CPU: {ex2.Message}");
+                            }
+                        }
+                    }
+                }
                 break;
             case "Overdrive":
                 options.IntraOpNumThreads = cpuCount;
@@ -167,7 +206,7 @@ public sealed class OnnxModelLoader : IDisposable
                 options.InterOpNumThreads = 1;
                 break;
         }
-        Debug.WriteLine($"[OnnxModelLoader] Performance mode: {mode}, IntraOp={options.IntraOpNumThreads}, InterOp={options.InterOpNumThreads}");
+        Debug.WriteLine($"[OnnxModelLoader] Performance mode: {mode}, IntraOp={options.IntraOpNumThreads}, InterOp={options.InterOpNumThreads}, EP={gpuProvider ?? "CPU"}");
     }
 
     private static string? FindModelPath(string modelDir)
