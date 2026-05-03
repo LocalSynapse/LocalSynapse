@@ -21,6 +21,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasUpdateAvailable;
 
+    [ObservableProperty]
+    private bool _showUpdateBanner;
+
+    [ObservableProperty]
+    private bool _isWelcomeCompleted;
+
     private readonly IServiceProvider _services;
     private readonly UpdateCheckService _updateCheck;
 
@@ -40,6 +46,7 @@ public partial class MainViewModel : ObservableObject
         // First-run detection: no scan has ever completed
         var stamps = stampRepo.GetCurrent();
         var isFirstRun = !stamps.ScanComplete && stamps.TotalFiles == 0;
+        IsWelcomeCompleted = !isFirstRun;
         NavigateTo(isFirstRun ? PageType.Welcome : PageType.Search);
 
         // fire-and-forget 업데이트 체크 (첫 실행이면 skip — C3 해결)
@@ -53,6 +60,8 @@ public partial class MainViewModel : ObservableObject
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         HasUpdateAvailable = true;
+                        if (IsWelcomeCompleted)
+                            ShowUpdateBanner = true;
                     });
                 }
             }
@@ -69,8 +78,10 @@ public partial class MainViewModel : ObservableObject
     {
         CurrentPage = page;
         OnPropertyChanged(nameof(ShowNavRail));
-        // Sync dot state from service (reflects dismiss)
+        if (page != PageType.Welcome)
+            IsWelcomeCompleted = true;
         HasUpdateAvailable = _updateCheck.HasUpdateAvailable;
+        ShowUpdateBanner = HasUpdateAvailable && IsWelcomeCompleted;
         CurrentPageViewModel = page switch
         {
             PageType.Search => _services.GetService(typeof(SearchViewModel)),
@@ -81,6 +92,35 @@ public partial class MainViewModel : ObservableObject
             PageType.Welcome => _services.GetService(typeof(WelcomeViewModel)),
             _ => null
         };
+    }
+
+    /// <summary>배너 닫기. DismissedVersion 저장.</summary>
+    [RelayCommand]
+    private void DismissBanner()
+    {
+        ShowUpdateBanner = false;
+        HasUpdateAvailable = false;
+        var version = _updateCheck.LatestVersion;
+        if (!string.IsNullOrEmpty(version))
+            _updateCheck.DismissVersion(version);
+    }
+
+    /// <summary>릴리스 노트를 기본 브라우저에서 열기.</summary>
+    [RelayCommand]
+    private void ViewReleaseNotes()
+    {
+        var url = _updateCheck.ReleaseNotesUrl;
+        if (!string.IsNullOrEmpty(url))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainVM] Open release notes error: {ex.Message}");
+            }
+        }
     }
 }
 

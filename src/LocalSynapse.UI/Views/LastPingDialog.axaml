@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i18n="using:LocalSynapse.UI.Markup"
+        x:Class="LocalSynapse.UI.Views.LastPingDialog"
+        Title="Last Sent Payload"
+        Width="520" Height="420"
+        MinWidth="400" MinHeight="300"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BgPrimaryBrush}"
+        FontFamily="{StaticResource FontDefault}">
+    <DockPanel>
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="20,16,20,0">
+            <TextBlock Text="{i18n:Tr Key=Security.Sends.LastSentTitle}"
+                       FontSize="{StaticResource FontSizeL}"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" />
+            <TextBlock x:Name="TimestampText"
+                       FontSize="{StaticResource FontSizeXs}"
+                       Foreground="{StaticResource TextSecondaryBrush}" />
+        </StackPanel>
+
+        <!-- Footer buttons -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8"
+                    Margin="20,0,20,16" HorizontalAlignment="Right">
+            <Button x:Name="CopyButton"
+                    Content="{i18n:Tr Key=Security.Sends.CopyToClipboard}"
+                    Classes="BtnSecondary" FontSize="12"
+                    Click="OnCopyClick" />
+            <Button Content="{i18n:Tr Key=Security.Sends.Close}"
+                    Classes="BtnPrimary" FontSize="12"
+                    Click="OnCloseClick" />
+        </StackPanel>
+
+        <!-- JSON body -->
+        <TextBox Margin="20,12"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 FontFamily="Consolas, Courier New, monospace"
+                 FontSize="{StaticResource FontSizeXs}"
+                 TextWrapping="Wrap"
+                 x:Name="PayloadTextBox" />
+    </DockPanel>
+</Window>

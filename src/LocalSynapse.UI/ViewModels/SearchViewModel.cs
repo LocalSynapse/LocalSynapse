@@ -126,6 +126,7 @@ public partial class SearchViewModel : ObservableObject
     private readonly IFileRepository _fileRepo;
     private readonly IChunkRepository _chunkRepo;
     private readonly SearchClickService _clickService;
+    private readonly TelemetryCounterService _telemetry;
     private readonly IDocumentFamilyService _familyService;
     private readonly ILocalizationService _loc;
     private readonly IModelInstaller _modelInstaller;
@@ -307,8 +308,10 @@ public partial class SearchViewModel : ObservableObject
         SearchClickService clickService,
         IDocumentFamilyService familyService,
         ILocalizationService loc,
-        IModelInstaller modelInstaller)
+        IModelInstaller modelInstaller,
+        TelemetryCounterService telemetry)
     {
+        _telemetry = telemetry;
         _hybridSearch = hybridSearch;
         _bm25Search = bm25Search;
         _bm25Concrete = bm25Concrete;
@@ -489,6 +492,12 @@ public partial class SearchViewModel : ObservableObject
             sw.Stop();
             SearchTime = $"{sw.Elapsed.TotalSeconds:F1}s";
 
+            // Telemetry counter hook
+            _telemetry.RecordSearch(
+                response.Mode.ToString(),
+                (int)sw.ElapsedMilliseconds,
+                response.Items.Count);
+
             LocalSynapse.Core.Diagnostics.SpeedDiagLog.Log("SEARCH_UI",
                 "query", _activeSearchQuery,
                 "hybrid_ms", hybridMs,
@@ -539,7 +548,11 @@ public partial class SearchViewModel : ObservableObject
         {
             var position = FindFilePosition(file);
             if (position >= 0 && !string.IsNullOrWhiteSpace(_activeSearchQuery))
+            {
                 _clickService.RecordClick(_activeSearchQuery, file.Path, position);
+                if (position == 0)
+                    _telemetry.RecordTopResultClick();
+            }
             PlatformHelper.OpenFile(file.Path);
         }
     }

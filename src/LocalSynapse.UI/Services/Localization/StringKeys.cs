@@ -156,9 +156,6 @@ public static class StringKeys
         public const string HowItWorksBullet3 = "Security.HowItWorks.Bullet3";
         public const string HowItWorksBullet4 = "Security.HowItWorks.Bullet4";
         public const string HowItWorksBullet5 = "Security.HowItWorks.Bullet5";
-        public const string PingTitle = "Security.PingTitle";
-        public const string PingDescription = "Security.PingDescription";
-
         public static class Sends
         {
             public const string Title = "Security.Sends.Title";
@@ -173,7 +170,21 @@ public static class StringKeys
             public const string ConfirmBody = "Security.Sends.ConfirmBody";
             public const string ConfirmAction = "Security.Sends.ConfirmAction";
             public const string ConfirmCancel = "Security.Sends.ConfirmCancel";
+            public const string ViewLastSent = "Security.Sends.ViewLastSent";
+            public const string LastSentTitle = "Security.Sends.LastSentTitle";
+            public const string LastSentTimestamp = "Security.Sends.LastSentTimestamp";
+            public const string LastSentNone = "Security.Sends.LastSentNone";
+            public const string CopyToClipboard = "Security.Sends.CopyToClipboard";
+            public const string Copied = "Security.Sends.Copied";
+            public const string Close = "Security.Sends.Close";
         }
+    }
+
+    public static class Banner
+    {
+        public const string UpdateAvailable = "Banner.UpdateAvailable";
+        public const string ViewReleaseNotes = "Banner.ViewReleaseNotes";
+        public const string Dismiss = "Banner.Dismiss";
     }
 
     public static class Settings

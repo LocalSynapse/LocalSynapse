@@ -40,6 +40,12 @@
     <Compile Include="..\..\src\LocalSynapse.UI\Services\Localization\LocalizationRegistry.cs">
       <Link>Localization\LocalizationRegistry.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\LocalSynapse.UI\Services\TelemetryCounterService.cs">
+      <Link>Services\TelemetryCounterService.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\LocalSynapse.UI\Services\TelemetrySnapshot.cs">
+      <Link>Services\TelemetrySnapshot.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

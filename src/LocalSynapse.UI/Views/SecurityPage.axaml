@@ -237,6 +237,12 @@
                                FontSize="{StaticResource FontSizeXs}"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                TextWrapping="Wrap" Margin="0,0,0,4" />
+
+                    <Button IsVisible="{Binding IsPingExpanded}"
+                            Content="{i18n:Tr Key=Security.Sends.ViewLastSent}"
+                            Classes="BtnSecondary" FontSize="12"
+                            Command="{Binding ViewLastSentCommand}"
+                            Margin="0,0,0,4" />
                 </StackPanel>
             </Border>
 

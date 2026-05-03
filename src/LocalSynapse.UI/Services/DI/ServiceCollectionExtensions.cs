@@ -77,6 +77,9 @@ public static class ServiceCollectionExtensions
         // ── Localization ──
         services.AddSingleton<ILocalizationService, LocalizationService>();
 
+        // ── Telemetry Counters ──
+        services.AddSingleton<TelemetryCounterService>();
+
         // ── Update Check ──
         services.AddSingleton<UpdateCheckService>();
 
@@ -99,7 +102,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<SearchClickService>(),
             sp.GetRequiredService<IDocumentFamilyService>(),
             sp.GetRequiredService<ILocalizationService>(),
-            sp.GetRequiredService<IModelInstaller>()));
+            sp.GetRequiredService<IModelInstaller>(),
+            sp.GetRequiredService<TelemetryCounterService>()));
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
         services.AddSingleton<SettingsViewModel>(sp => new SettingsViewModel(

@@ -1,7 +1,9 @@
+using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.UI.Services;
+using LocalSynapse.UI.Views;
 
 namespace LocalSynapse.UI.ViewModels;
 
@@ -74,6 +76,20 @@ public partial class SecurityViewModel : ObservableObject
     private void TogglePingExpanded()
     {
         IsPingExpanded = !IsPingExpanded;
+    }
+
+    /// <summary>마지막 전송 데이터 다이얼로그 표시.</summary>
+    [RelayCommand]
+    private async Task ViewLastSentAsync()
+    {
+        var (payload, sentAt) = _updateCheck.GetLastPayload();
+        var dialog = new LastPingDialog(payload, sentAt);
+        if (Avalonia.Application.Current?.ApplicationLifetime
+            is IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow is { } owner)
+        {
+            await dialog.ShowDialog(owner);
+        }
     }
 
     /// <summary>데이터 폴더 열기.</summary>

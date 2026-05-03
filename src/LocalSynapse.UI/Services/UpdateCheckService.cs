@@ -21,6 +21,7 @@ public sealed class UpdateCheckService
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
 
     private readonly string _checkFilePath;
+    private readonly TelemetryCounterService _telemetry;
     private bool _isFirstRunCached;
     private bool _isFirstRunChecked;
 
@@ -43,12 +44,16 @@ public sealed class UpdateCheckService
         public string? DismissedVersion { get; set; }
         public bool CheckEnabled { get; set; } = true;
         public string? Iid { get; set; }
+        public string? LastPayload { get; set; }
+        public string? LastPayloadAt { get; set; }
+        public string? ReleaseNotesUrl { get; set; }
     }
 
     /// <summary>UpdateCheckService 생성자.</summary>
-    public UpdateCheckService(ISettingsStore settingsStore)
+    public UpdateCheckService(ISettingsStore settingsStore, TelemetryCounterService telemetry)
     {
         _checkFilePath = Path.Combine(settingsStore.GetDataFolder(), "update-check.json");
+        _telemetry = telemetry;
     }
 
     /// <summary>첫 실행 여부 (캐시됨, 디스크 hit 최소화).</summary>
@@ -73,6 +78,19 @@ public sealed class UpdateCheckService
 
     /// <summary>업데이트 체크 활성화 여부.</summary>
     public bool IsCheckEnabled => LoadState().CheckEnabled;
+
+    /// <summary>최신 버전 문자열.</summary>
+    public string? LatestVersion => LastResult?.LatestVersion;
+
+    /// <summary>릴리스 노트 URL.</summary>
+    public string? ReleaseNotesUrl => LoadState().ReleaseNotesUrl;
+
+    /// <summary>마지막 전송 payload와 timestamp를 반환한다.</summary>
+    public (string? Payload, string? SentAt) GetLastPayload()
+    {
+        var state = LoadState();
+        return (state.LastPayload, state.LastPayloadAt);
+    }
 
     /// <summary>업데이트 체크 활성화/비활성화.</summary>
     public void SetCheckEnabled(bool enabled)
@@ -139,6 +157,11 @@ public sealed class UpdateCheckService
             result = await CheckGitHubReleaseAsync(state, ct);
             LastResult = result;
             HasUpdateAvailable = result != null;
+            if (result != null)
+            {
+                state.ReleaseNotesUrl = result.ReleaseNotesUrl;
+                SaveState(state);
+            }
         }
         catch (Exception ex)
         {
@@ -147,10 +170,18 @@ public sealed class UpdateCheckService
         HasChecked = true;
 
         // Task 2: Statistics ping (fire-and-forget, CancellationToken 전달)
+        var snapshot = _telemetry.Snapshot();
         _ = Task.Run(async () =>
         {
-            try { await SendPingAsync(iid, ct); }
-            catch (Exception ex) { Debug.WriteLine($"[UpdateCheck] Ping error: {ex.Message}"); }
+            try
+            {
+                await SendPingAsync(iid, snapshot, ct);
+                _telemetry.ResetCounters(snapshot);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[UpdateCheck] Ping failed, counters retained: {ex.Message}");
+            }
         }, ct);
 
         return result;
@@ -255,18 +286,36 @@ public sealed class UpdateCheckService
         return notes;
     }
 
-    private async Task SendPingAsync(string iid, CancellationToken ct = default)
+    private async Task SendPingAsync(string iid, TelemetrySnapshot? stats, CancellationToken ct = default)
     {
         using var http = new HttpClient { Timeout = HttpTimeout };
-        var payload = JsonSerializer.Serialize(new
+        var payloadObj = new Dictionary<string, object?>
         {
-            iid,
-            v = GetCurrentVersion(),
-            os = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier,
-            locale = System.Globalization.CultureInfo.CurrentUICulture.Name
-        });
+            ["iid"] = iid,
+            ["v"] = GetCurrentVersion(),
+            ["os"] = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier,
+            ["locale"] = System.Globalization.CultureInfo.CurrentUICulture.Name,
+        };
+        if (stats != null)
+        {
+            payloadObj["search_count"] = stats.SearchCount;
+            payloadObj["empty_result_count"] = stats.EmptyResultCount;
+            payloadObj["avg_response_ms"] = stats.AvgResponseMs;
+            payloadObj["modality_bm25"] = stats.ModalityBm25;
+            payloadObj["modality_dense"] = stats.ModalityDense;
+            payloadObj["modality_hybrid"] = stats.ModalityHybrid;
+            payloadObj["top_result_click_count"] = stats.TopResultClickCount;
+            payloadObj["indexed_doc_count_bucket"] = stats.IndexedDocCountBucket;
+        }
+        var payload = JsonSerializer.Serialize(payloadObj, new JsonSerializerOptions { WriteIndented = false });
         using var content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
         await http.PostAsync(PingUrl, content, ct);
+
+        // Persist for [View last sent] transparency
+        var state = LoadState();
+        state.LastPayload = payload;
+        state.LastPayloadAt = DateTime.UtcNow.ToString("o");
+        SaveState(state);
     }
 
     private static string GetCurrentVersion()
@@ -295,7 +344,21 @@ public sealed class UpdateCheckService
         try
         {
             var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_checkFilePath, json);
+            var tempPath = _checkFilePath + ".tmp";
+            var backupPath = _checkFilePath + ".bak";
+
+            File.WriteAllText(tempPath, json);
+
+            if (File.Exists(_checkFilePath))
+            {
+                File.Replace(tempPath, _checkFilePath, backupPath);
+                try { File.Delete(backupPath); }
+                catch (Exception delEx) { Debug.WriteLine($"[UpdateCheck] Backup cleanup: {delEx.Message}"); }
+            }
+            else
+            {
+                File.Move(tempPath, _checkFilePath);
+            }
         }
         catch (Exception ex)
         {
