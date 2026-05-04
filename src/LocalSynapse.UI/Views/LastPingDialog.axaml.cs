@@ -1,6 +1,6 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using LocalSynapse.UI.Services.Localization;
 
@@ -34,8 +34,9 @@ public partial class LastPingDialog : Window
                 var parsed = JsonSerializer.Deserialize<JsonElement>(payload);
                 PayloadTextBox.Text = JsonSerializer.Serialize(parsed, new JsonSerializerOptions { WriteIndented = true });
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"[LastPingDialog] JSON parse error: {ex.Message}");
                 PayloadTextBox.Text = payload;
             }
 
