@@ -1,0 +1,173 @@
+name: Upgrade Smoke Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      # Direct installer surface
+      - 'installer/**'
+      - 'installer/test/**'
+      # Projects whose output binaries land in the installer payload
+      - 'src/LocalSynapse.UI/**'
+      - 'src/LocalSynapse.Mcp.Stdio/**'
+      # Self-contained build pulls these as references — Core/Search/Mcp/Pipeline
+      # changes alter the installed DLL set and can affect lock behavior.
+      - 'src/LocalSynapse.Core/**'
+      - 'src/LocalSynapse.Search/**'
+      - 'src/LocalSynapse.Mcp/**'
+      - 'src/LocalSynapse.Pipeline/**'
+      # Build-graph / SDK / version metadata
+      - 'Directory.Build.props'
+      - 'global.json'
+      # The workflow itself
+      - '.github/workflows/upgrade-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  upgrade-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Verify Inno Setup is available on runner
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            Write-Output "Inno Setup not pre-installed; installing via choco..."
+            choco install innosetup --no-progress -y
+            if (-not (Test-Path $iscc)) { throw "Inno Setup install failed; ISCC.exe not found at $iscc" }
+          }
+          Write-Output "ISCC.exe verified at: $iscc"
+
+      - name: Download v(N-1) release installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          # --exclude-drafts: skip in-progress release drafts so the smoke test
+          # always runs against a published release with uploaded assets.
+          # Without this, a draft release opened during release prep would
+          # cause `gh release download` to silently fail (no assets yet).
+          $prev = (gh release list --repo "${{ github.repository }}" --limit 1 --exclude-drafts --json tagName | ConvertFrom-Json)[0].tagName
+          if (-not $prev) { throw "No published release found to use as v(N-1) baseline" }
+          Write-Output "Previous published release: $prev"
+          New-Item -ItemType Directory -Force tmp/smoke
+          gh release download $prev --repo "${{ github.repository }}" --pattern "*Windows-Setup.exe" --dir tmp/smoke
+          $downloaded = Get-ChildItem tmp/smoke/*Windows-Setup.exe -ErrorAction SilentlyContinue
+          if (-not $downloaded) { throw "No Windows-Setup.exe found after download from $prev" }
+          Get-ChildItem tmp/smoke
+
+      - name: Install v(N-1) silently (per-user)
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem tmp/smoke/*Windows-Setup.exe | Select-Object -First 1
+          $log = "tmp/smoke/install-prev.log"
+          $proc = Start-Process $exe.FullName -ArgumentList @('/VERYSILENT','/CURRENTUSER','/SUPPRESSMSGBOXES',"/LOG=$log",'/TASKS=') -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            Get-Content $log
+            throw "v(N-1) install failed: exit $($proc.ExitCode)"
+          }
+
+      - name: Spawn MCP child (lock files)
+        shell: pwsh
+        run: |
+          Start-Process pwsh -ArgumentList @('-NoProfile','-File','installer/test/spawn-mcp.ps1') -PassThru | ForEach-Object { $_.Id | Out-File tmp/smoke/spawner.pid }
+          Start-Sleep -Seconds 5
+          $mcp = Get-Process localsynapse-mcp -ErrorAction SilentlyContinue
+          if (-not $mcp) { throw "MCP spawn failed — cannot test locked-file scenario" }
+          Write-Output "MCP child PID: $($mcp.Id)"
+
+      - name: Build PR's installer
+        shell: pwsh
+        run: |
+          # WarningsNotAsErrors=NU1902 suppresses only the known CVE-2026-41511
+          # (OpenMcdf 2.3.1 moderate local DoS) so the strict TreatWarningsAsErrors
+          # policy is preserved for future audit advisories. OpenMcdf upgrade is
+          # tracked as a separate work-order targeted before v2.10.0 ships.
+          dotnet publish src/LocalSynapse.UI/LocalSynapse.UI.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=99.99.99 -p:WarningsNotAsErrors=NU1902 -o publish/win-x64
+          dotnet publish src/LocalSynapse.Mcp.Stdio/LocalSynapse.Mcp.Stdio.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=99.99.99 -p:WarningsNotAsErrors=NU1902 -o publish/win-x64
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=99.99.99 installer/LocalSynapse.iss
+
+      - name: Upgrade install (the test)
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem publish/installer/*Windows-Setup.exe | Select-Object -First 1
+          $log = "tmp/smoke/upgrade.log"
+          $proc = Start-Process $exe.FullName -ArgumentList @('/VERYSILENT','/CURRENTUSER','/SUPPRESSMSGBOXES','/NORESTART',"/LOG=$log",'/TASKS=') -Wait -PassThru
+          Get-Content $log -Tail 40
+          if ($proc.ExitCode -ne 0) { throw "UPGRADE FAILED: exit $($proc.ExitCode) — PrepareToInstall hook may have been removed or broken" }
+
+      - name: Verify upgrade outcome
+        shell: pwsh
+        run: |
+          $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like '*LocalSynapse*' } | Select-Object -First 1
+          if (-not $entry) { throw "No HKCU uninstall entry found post-upgrade" }
+          if ($entry.DisplayVersion -ne '99.99.99') { throw "DisplayVersion=$($entry.DisplayVersion), expected 99.99.99 — upgrade did not advance registry" }
+          $expectedPath = "$env:LOCALAPPDATA\Programs\LocalSynapse"
+          if ($entry.InstallLocation.TrimEnd('\') -ne $expectedPath) {
+            throw "InstallLocation=$($entry.InstallLocation), expected $expectedPath — /CURRENTUSER may no longer be honored"
+          }
+          $mcp = Get-Process localsynapse-mcp -ErrorAction SilentlyContinue
+          if ($mcp) { throw "MCP still running PID $($mcp.Id) — taskkill /F did not fire" }
+          Write-Output "Upgrade smoke PASS: registry=$($entry.DisplayVersion), MCP=killed, path=$($entry.InstallLocation)"
+
+      - name: Cleanup (direct — skip installer's uninstaller)
+        if: always()
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          # Skip unins000.exe entirely. Inno Setup's /SUPPRESSMSGBOXES does NOT
+          # suppress Pascal Script MsgBox() calls (only Inno's own auto-prompts);
+          # our [Code] CurUninstallStepChanged calls MsgBox to ask about the
+          # data folder, which hangs in headless CI. Direct cleanup is faster,
+          # deterministic, and sufficient: the smoke test validates the upgrade
+          # path, not the uninstall path. Uninstall flow is exercised in manual
+          # release verification.
+          Get-Process localsynapse-mcp,LocalSynapse -ErrorAction SilentlyContinue |
+            Stop-Process -Force
+          Start-Sleep -Seconds 2
+          $installDir = "$env:LOCALAPPDATA\Programs\LocalSynapse"
+          if (Test-Path $installDir) {
+            Remove-Item -Recurse -Force $installDir -ErrorAction SilentlyContinue
+          }
+          # Remove uninstall registry entry so a re-run on a non-fresh runner
+          # sees no stale state. AppId is hard-coded in the .iss.
+          $regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{B7A1E3D2-4F5C-4E8B-9A6D-1C2E3F4A5B6C}_is1"
+          if (Test-Path $regPath) {
+            Remove-Item -Path $regPath -Recurse -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Verify cleanup
+        if: always()
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          # Non-blocking sanity check. windows-latest is normally fresh per-job,
+          # but a cleanup flake can pollute a re-run on the same runner.
+          # Surfaces a warning so the next run's author can investigate.
+          $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like '*LocalSynapse*' }
+          if ($entry) { Write-Warning "Cleanup incomplete — HKCU uninstall entry remains: $($entry.DisplayName) $($entry.DisplayVersion)" }
+          $dir = "$env:LOCALAPPDATA\Programs\LocalSynapse"
+          if (Test-Path $dir) {
+            $count = (Get-ChildItem $dir -Recurse -ErrorAction SilentlyContinue).Count
+            if ($count -gt 0) { Write-Warning "Install dir not empty after cleanup — $count items remain at $dir" }
+          }
+
+      - name: Upload smoke logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upgrade-smoke-logs
+          path: tmp/smoke/*.log
