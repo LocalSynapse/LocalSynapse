@@ -37,8 +37,16 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 MinVersion=10.0
-CloseApplications=yes
+; 'force' makes the installer proceed past Restart Manager session-mismatch
+; failures rather than surfacing the abort dialog. The MCP child process
+; (localsynapse-mcp.exe) does not respond to RM's graceful-shutdown protocol;
+; this directive paired with the PrepareToInstall taskkill below is the
+; complete defense.
+CloseApplications=force
 RestartApplications=no
+; Always-on installer log written to %TEMP%\Setup Log YYYY-MM-DD #N.txt.
+; Enables future support requests to attach a log without re-running with /LOG=.
+SetupLogging=yes
 
 ; ══════════════════════════════════════
 ; Languages
@@ -122,7 +130,15 @@ Name: "startupicon"; Description: "{cm:TaskStartup}"; GroupDescription: "{cm:Add
 ; Files
 ; ══════════════════════════════════════
 [Files]
-Source: "..\publish\win-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; 'restartreplace' is an ADMIN-ONLY safety net. The flag uses
+; MoveFileEx(MOVEFILE_DELAY_UNTIL_REBOOT) which requires admin privileges to
+; actually move the file at next boot — it is a no-op for per-user installs.
+; PrepareToInstall's taskkill remains the PRIMARY defense for both per-user
+; and per-machine installs. This flag is added because:
+;  (1) admin-elevated installs get a real safety net if any file remains
+;      locked despite taskkill (e.g., AV scanning, race window).
+;  (2) The flag is harmless when admin is absent; no behavior regression.
+Source: "..\publish\win-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs restartreplace
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -141,6 +157,72 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 [Code]
 var
   FeaturePage: TWizardPage;
+
+// Detect a prior all-users install in HKLM, warn the user before this
+// per-user run creates a side-by-side duplicate.
+//
+// Background: with PrivilegesRequired=lowest + PrivilegesRequiredOverridesAllowed=dialog,
+// Inno Setup's runtime elevation choice determines whether the install lands in
+// Program Files (all-users, HKLM) or %LocalAppData%\Programs (per-user, HKCU).
+// AppId match across the two scopes is detected, but the previous uninstaller
+// cannot run across an elevation boundary in the same setup invocation —
+// the result is two side-by-side installations with shared shortcuts.
+// We cannot auto-elevate here (would force PrivilegesRequired=admin and
+// break unprivileged installs entirely), so we warn and proceed.
+function InitializeSetup(): Boolean;
+var
+  HasHklmInstall: Boolean;
+  HklmUninstall: String;
+begin
+  // HKLM is globally readable; no elevation needed for this query.
+  HasHklmInstall := RegQueryStringValue(HKLM,
+    'Software\Microsoft\Windows\CurrentVersion\Uninstall\{B7A1E3D2-4F5C-4E8B-9A6D-1C2E3F4A5B6C}_is1',
+    'UninstallString', HklmUninstall);
+  if HasHklmInstall and not IsAdminInstallMode() then
+  begin
+    // WizardSilent() returns True under both /SILENT and /VERYSILENT.
+    // Silent mode = log + proceed; do not abort, do not surface MsgBox
+    // (CI / scripted callers depend on no UI).
+    if WizardSilent() then
+    begin
+      Log('WARNING: HKLM previous install detected (UninstallString=' + HklmUninstall +
+          '). Current run is non-elevated; this will create a side-by-side per-user install ' +
+          'rather than upgrading. To upgrade in place, manually uninstall the all-users copy first.');
+    end
+    else
+    begin
+      MsgBox('A previous LocalSynapse install was detected in Program Files (all users).' + #13#10 + #13#10 +
+             'Continuing without administrator permission will create a separate per-user installation alongside the existing one.' + #13#10 + #13#10 +
+             'Recommended: cancel this installer, uninstall the existing copy from Windows Settings → Apps, then re-run this installer.',
+             mbInformation, MB_OK);
+    end;
+  end;
+  Result := True;  // True = proceed with installation
+end;
+
+// localsynapse-mcp.exe is spawned as a stdio child by Claude Desktop /
+// Claude Code (registered in claude_desktop_config.json). When upgrading,
+// Restart Manager detects this child process but cannot gracefully shut
+// it down — the MCP server is a console process with no signal handlers,
+// so it ignores RM's WM_QUERYENDSESSION / CTRL_SHUTDOWN_EVENT requests.
+// RM waits 30s, times out, and the install aborts under /SUPPRESSMSGBOXES.
+//
+// taskkill /F bypasses the graceful shutdown protocol entirely. A future
+// change to LocalSynapse.Mcp.Stdio adding signal handlers will make this
+// taskkill redundant (but harmless to keep as defense in depth).
+//
+// !! DO NOT REMOVE without first confirming the MCP server has been
+// !! updated to handle CTRL_SHUTDOWN_EVENT cleanly.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{cmd}'), '/C taskkill /F /IM localsynapse-mcp.exe',
+       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(ExpandConstant('{cmd}'), '/C taskkill /F /IM LocalSynapse.exe',
+       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Result := '';
+end;
 
 procedure CreateFeaturePage;
 var
