@@ -146,6 +146,6 @@ public partial class WelcomeViewModel : ObservableObject
         }
 
         _orchestrator.RequestImmediateCycle();
-        WeakReferenceMessenger.Default.Send(new NavigateMessage(PageType.DataSetup));
+        WeakReferenceMessenger.Default.Send(new NavigateMessage(PageType.Search));
     }
 }
