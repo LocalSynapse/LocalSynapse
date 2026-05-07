@@ -182,15 +182,15 @@ public class UpdateInstallerServiceTest : IDisposable
     {
         var dir = Path.Combine(_tempDir, "Updates");
         Directory.CreateDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, "LocalSynapse-v0.0.1-Windows-Setup.exe"), "stale");
+        File.WriteAllText(Path.Combine(dir, "LocalSynapse-v99.99.99-Windows-Setup.exe"), "stale");
         File.WriteAllText(Path.Combine(dir, "unrelated-file.txt"), "stale");
 
         var svc = new UpdateInstallerService(_settings, () => new HttpClient());
         svc.SweepStaleArtifacts();
 
         // The current Assembly version may match v2.10.0 (production) or 0.0.0 (test runner) — either way,
-        // the v0.0.1 file should not match unless test runner happens to be at v0.0.1, which is implausible.
-        Assert.False(File.Exists(Path.Combine(dir, "LocalSynapse-v0.0.1-Windows-Setup.exe")));
+        // the v99.99.99 file should not match unless test runner happens to be at v99.99.99, which is implausible.
+        Assert.False(File.Exists(Path.Combine(dir, "LocalSynapse-v99.99.99-Windows-Setup.exe")));
         Assert.False(File.Exists(Path.Combine(dir, "unrelated-file.txt")));
     }
 

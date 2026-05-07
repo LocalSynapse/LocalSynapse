@@ -215,6 +215,14 @@ public partial class MainViewModel : ObservableObject
                 InstallButtonEnabled = false;
             });
 
+            // W1 fix: brief observable delay so the "Verifying…" frame actually renders
+            // before "Launching…" overwrites the caption. Without this, two back-to-back
+            // Dispatcher.Posts coalesce and only the second is ever painted (spec §4.1
+            // state table requires both to be distinct user-visible states).
+            // Token plumbed for app-shutdown cancellation per spec §4.5; the user button
+            // is disabled during this phase so user-initiated cancel cannot fire here.
+            await Task.Delay(400, _installCts.Token).ConfigureAwait(true);
+
             // Launching state
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
