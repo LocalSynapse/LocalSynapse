@@ -193,6 +193,14 @@ jobs:
           path: artifacts/macos-x64
       - name: List all artifacts
         run: find artifacts -type f | sort
+      - name: Combine macOS SHA256SUMS files
+        run: |
+          mkdir -p artifacts/macos-combined
+          cat artifacts/macos-arm64/SHA256SUMS-macOS.txt \
+              artifacts/macos-x64/SHA256SUMS-macOS.txt \
+              > artifacts/macos-combined/SHA256SUMS-macOS.txt
+          echo "Combined SHA256SUMS-macOS.txt:"
+          cat artifacts/macos-combined/SHA256SUMS-macOS.txt
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -200,7 +208,7 @@ jobs:
             artifacts/windows/LocalSynapse-v${{ steps.version.outputs.VERSION }}-Windows-Setup.exe
             artifacts/windows/SHA256SUMS.txt
             artifacts/macos-arm64/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-AppleSilicon.dmg
-            artifacts/macos-arm64/SHA256SUMS-macOS.txt
+            artifacts/macos-combined/SHA256SUMS-macOS.txt
             artifacts/macos-x64/LocalSynapse-v${{ steps.version.outputs.VERSION }}-macOS-Intel.dmg
           generate_release_notes: true
           append_body: true
