@@ -82,11 +82,15 @@ public static class ServiceCollectionExtensions
 
         // ── Update Check ──
         services.AddSingleton<UpdateCheckService>();
+        services.AddSingleton<UpdateInstallerService>();
 
         // ── ViewModels ──
         // MainViewModel: Singleton (one navigation state for app lifetime)
         services.AddSingleton<MainViewModel>(sp => new MainViewModel(
-            sp, sp.GetRequiredService<UpdateCheckService>(),
+            sp,
+            sp.GetRequiredService<UpdateCheckService>(),
+            sp.GetRequiredService<UpdateInstallerService>(),
+            sp.GetRequiredService<ILocalizationService>(),
             sp.GetRequiredService<IPipelineStampRepository>()));
         // DataSetupViewModel: Singleton (observes pipeline, must survive tab switches)
         services.AddSingleton<DataSetupViewModel>();

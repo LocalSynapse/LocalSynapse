@@ -228,7 +228,7 @@ internal static class LocalizationRegistry
             // ── Security: What LocalSynapse sends ──
             [StringKeys.Security.Sends.Title] = new() { ["en"] = "What LocalSynapse sends", ["ko"] = "LocalSynapse가 외부와 주고받는 정보", ["fr"] = "Ce que LocalSynapse envoie", ["de"] = "Was LocalSynapse sendet", ["zh"] = "LocalSynapse 发送的内容" },
             [StringKeys.Security.Sends.Subtitle] = new() { ["en"] = "Full transparency about external communication.", ["ko"] = "외부 통신을 모두 공개합니다.", ["fr"] = "Transparence totale sur la communication externe.", ["de"] = "Volle Transparenz über externe Kommunikation.", ["zh"] = "外部通信完全透明。" },
-            [StringKeys.Security.Sends.Receives] = new() { ["en"] = "Receives: GitHub release info", ["ko"] = "받음: GitHub 릴리즈 정보", ["fr"] = "Reçoit : infos de version GitHub", ["de"] = "Empfängt: GitHub-Release-Info", ["zh"] = "接收：GitHub 发布信息" },
+            [StringKeys.Security.Sends.Receives] = new() { ["en"] = "Receives: GitHub release info & app updates, language model when you choose to install one", ["ko"] = "받음: GitHub 릴리스 정보 및 앱 업데이트, 사용자가 설치를 선택한 경우의 언어 모델", ["fr"] = "Reçoit : infos de version GitHub et mises à jour de l'application, modèle de langue lorsque vous choisissez de l'installer", ["de"] = "Empfängt: GitHub-Release-Infos und App-Updates, Sprachmodell bei Installation auf Wunsch", ["zh"] = "接收：GitHub 发布信息与应用更新；用户选择安装时的语言模型" },
             [StringKeys.Security.Sends.SendsLabel] = new() { ["en"] = "Sends: Anonymous app metadata and usage stats", ["ko"] = "전송: 익명 앱 메타데이터 및 사용 통계", ["fr"] = "Envoie : métadonnées anonymes et statistiques d'utilisation", ["de"] = "Sendet: Anonyme App-Metadaten und Nutzungsstatistiken", ["zh"] = "发送：匿名应用元数据和使用统计" },
             [StringKeys.Security.Sends.Frequency] = new() { ["en"] = "once per day", ["ko"] = "하루 1회", ["fr"] = "une fois par jour", ["de"] = "einmal pro Tag", ["zh"] = "每天一次" },
             [StringKeys.Security.Sends.Toggle] = new() { ["en"] = "External communication", ["ko"] = "외부 통신", ["fr"] = "Communication externe", ["de"] = "Externe Kommunikation", ["zh"] = "外部通信" },
@@ -250,6 +250,18 @@ internal static class LocalizationRegistry
             [StringKeys.Banner.UpdateAvailable] = new() { ["en"] = "A new version of LocalSynapse is available.", ["ko"] = "LocalSynapse 새 버전을 사용할 수 있습니다.", ["fr"] = "Une nouvelle version de LocalSynapse est disponible.", ["de"] = "Eine neue Version von LocalSynapse ist verfügbar.", ["zh"] = "LocalSynapse 有新版本可用。" },
             [StringKeys.Banner.ViewReleaseNotes] = new() { ["en"] = "View release notes", ["ko"] = "릴리스 노트 보기", ["fr"] = "Voir les notes de version", ["de"] = "Versionshinweise anzeigen", ["zh"] = "查看发布说明" },
             [StringKeys.Banner.Dismiss] = new() { ["en"] = "Dismiss", ["ko"] = "닫기", ["fr"] = "Fermer", ["de"] = "Schließen", ["zh"] = "关闭" },
+
+            // IU-1a Install update flow
+            [StringKeys.Banner.InstallUpdate] = new() { ["en"] = "Install update", ["ko"] = "업데이트 설치", ["fr"] = "Installer la mise à jour", ["de"] = "Update installieren", ["zh"] = "安装更新" },
+            [StringKeys.Banner.InstallProgress] = new() { ["en"] = "Cancel · {0}%", ["ko"] = "취소 · {0}%", ["fr"] = "Annuler · {0}%", ["de"] = "Abbrechen · {0}%", ["zh"] = "取消 · {0}%" },
+            [StringKeys.Banner.InstallVerifying] = new() { ["en"] = "Verifying…", ["ko"] = "확인 중…", ["fr"] = "Vérification…", ["de"] = "Überprüfung…", ["zh"] = "正在验证…" },
+            [StringKeys.Banner.InstallLaunching] = new() { ["en"] = "Launching installer…", ["ko"] = "설치 시작 중…", ["fr"] = "Lancement du programme d'installation…", ["de"] = "Installer wird gestartet…", ["zh"] = "正在启动安装程序…" },
+            [StringKeys.Banner.InstallRetry] = new() { ["en"] = "Retry", ["ko"] = "다시 시도", ["fr"] = "Réessayer", ["de"] = "Wiederholen", ["zh"] = "重试" },
+            [StringKeys.Banner.InstallOpenDownload] = new() { ["en"] = "Open download page", ["ko"] = "다운로드 페이지 열기", ["fr"] = "Ouvrir la page de téléchargement", ["de"] = "Download-Seite öffnen", ["zh"] = "打开下载页面" },
+            [StringKeys.Banner.InstallError.Generic] = new() { ["en"] = "Download failed. {0}", ["ko"] = "다운로드 실패. {0}", ["fr"] = "Échec du téléchargement. {0}", ["de"] = "Download fehlgeschlagen. {0}", ["zh"] = "下载失败。{0}" },
+            [StringKeys.Banner.InstallError.Network] = new() { ["en"] = "Couldn't reach the download server. Check your connection.", ["ko"] = "다운로드 서버에 연결할 수 없습니다. 연결을 확인하세요.", ["fr"] = "Impossible d'accéder au serveur de téléchargement. Vérifiez votre connexion.", ["de"] = "Download-Server nicht erreichbar. Prüfen Sie Ihre Verbindung.", ["zh"] = "无法连接下载服务器。请检查您的连接。" },
+            [StringKeys.Banner.InstallError.Checksum] = new() { ["en"] = "Downloaded file is corrupted. Please retry.", ["ko"] = "다운로드한 파일이 손상되었습니다. 다시 시도하세요.", ["fr"] = "Le fichier téléchargé est corrompu. Veuillez réessayer.", ["de"] = "Heruntergeladene Datei ist beschädigt. Bitte erneut versuchen.", ["zh"] = "下载的文件已损坏。请重试。" },
+            [StringKeys.Banner.InstallError.Disk] = new() { ["en"] = "Not enough disk space (~100 MB needed).", ["ko"] = "디스크 공간 부족 (~100 MB 필요).", ["fr"] = "Espace disque insuffisant (~100 Mo requis).", ["de"] = "Nicht genug Speicherplatz (~100 MB benötigt).", ["zh"] = "磁盘空间不足（需要约 100 MB）。" },
 
         };
     }

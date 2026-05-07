@@ -46,6 +46,21 @@
     <Compile Include="..\..\src\LocalSynapse.UI\Services\TelemetrySnapshot.cs">
       <Link>Services\TelemetrySnapshot.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\LocalSynapse.UI\Services\UpdateCheckService.cs">
+      <Link>Services\UpdateCheckService.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\LocalSynapse.UI\Services\UpdateInstallerService.cs">
+      <Link>Services\UpdateInstallerService.cs</Link>
+    </Compile>
+    <!-- Pipeline.Interfaces/IModelInstaller.cs holds DownloadProgress (the one Pipeline type
+         UpdateInstallerService depends on). Use Compile/Link instead of <ProjectReference> to
+         avoid pulling in Pipeline's heavy native deps (Microsoft.ML.OnnxRuntime.DirectML,
+         PdfPig, OpenXml, OpenMcdf) which would break the test runner — same isolation
+         premise that made the existing Localization/Telemetry sources use Compile/Link
+         instead of referencing LocalSynapse.UI.csproj. -->
+    <Compile Include="..\..\src\LocalSynapse.Pipeline\Interfaces\IModelInstaller.cs">
+      <Link>Pipeline\IModelInstaller.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

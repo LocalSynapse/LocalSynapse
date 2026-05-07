@@ -5,6 +5,7 @@ using Avalonia.Markup.Xaml;
 using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Pipeline.Interfaces;
+using LocalSynapse.UI.Services;
 using LocalSynapse.UI.Services.DI;
 using LocalSynapse.UI.ViewModels;
 using LocalSynapse.UI.Views;
@@ -45,6 +46,18 @@ public partial class App : Application
             migration.RunMigrations();
             SpeedDiagLog.Log("MIGRATIONS", "time_ms", swMig.ElapsedMilliseconds);
             Debug.WriteLine("[App] Migrations complete");
+
+            // 2.5. Sweep stale Updates/ artifacts (post-DI; see SPEC-IU-1 §4.3.1).
+            // Wrapped: a sweep failure must NOT block app launch.
+            try
+            {
+                var installer = _serviceProvider.GetRequiredService<UpdateInstallerService>();
+                installer.SweepStaleArtifacts();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Updates] Sweep failed: {ex.Message}");
+            }
 
             // 3. Create main window with DI
             var mainVm = _serviceProvider.GetRequiredService<MainViewModel>();

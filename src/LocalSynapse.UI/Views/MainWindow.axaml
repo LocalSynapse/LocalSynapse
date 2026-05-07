@@ -201,26 +201,46 @@
                 Padding="20,10"
                 BorderBrush="{StaticResource BorderDefaultBrush}"
                 BorderThickness="0,0,0,1">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
-                            VerticalAlignment="Center">
-                    <Button Content="{i18n:Tr Key=Banner.ViewReleaseNotes}"
-                            Classes="BtnSecondary" FontSize="12"
-                            Command="{Binding ViewReleaseNotesCommand}" />
-                    <Button Content="{i18n:Tr Key=Banner.Dismiss}"
-                            Classes="BtnSecondary" FontSize="12"
-                            Command="{Binding DismissBannerCommand}" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <PathIcon Width="18" Height="18"
-                              Foreground="{StaticResource AccentBrush}"
-                              Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-                    <TextBlock Text="{i18n:Tr Key=Banner.UpdateAvailable}"
-                               FontSize="{StaticResource FontSizeS}"
-                               Foreground="{StaticResource AccentBrush}"
-                               VerticalAlignment="Center" />
-                </StackPanel>
-            </DockPanel>
+            <StackPanel>
+                <DockPanel>
+                    <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                               VerticalAlignment="Center">
+                        <Button Content="{Binding InstallButtonCaption}"
+                                Classes.BtnPrimary="{Binding InstallButtonIsPrimary}"
+                                Classes.BtnSecondary="{Binding !InstallButtonIsPrimary}"
+                                FontSize="12"
+                                Margin="4,0"
+                                IsVisible="{Binding ShowInstallButton}"
+                                IsEnabled="{Binding InstallButtonEnabled}"
+                                Command="{Binding InstallUpdateCommand}" />
+                        <Button Content="{i18n:Tr Key=Banner.ViewReleaseNotes}"
+                                Classes="BtnSecondary" FontSize="12"
+                                Margin="4,0"
+                                IsEnabled="{Binding !IsInstalling}"
+                                Command="{Binding ViewReleaseNotesCommand}" />
+                        <Button Content="{i18n:Tr Key=Banner.Dismiss}"
+                                Classes="BtnSecondary" FontSize="12"
+                                Margin="4,0"
+                                IsEnabled="{Binding !IsInstalling}"
+                                Command="{Binding DismissBannerCommand}" />
+                    </WrapPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource AccentBrush}"
+                                  Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                        <TextBlock Text="{i18n:Tr Key=Banner.UpdateAvailable}"
+                                   FontSize="{StaticResource FontSizeS}"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </DockPanel>
+                <TextBlock Text="{Binding InstallSubText}"
+                           IsVisible="{Binding InstallSubTextVisible}"
+                           Margin="28,4,0,0"
+                           FontSize="{StaticResource FontSizeXs}"
+                           Foreground="{StaticResource DangerBrush}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
         </Border>
 
         <!-- Page Content -->

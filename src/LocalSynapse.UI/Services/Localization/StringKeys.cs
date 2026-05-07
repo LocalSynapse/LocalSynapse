@@ -185,6 +185,22 @@ public static class StringKeys
         public const string UpdateAvailable = "Banner.UpdateAvailable";
         public const string ViewReleaseNotes = "Banner.ViewReleaseNotes";
         public const string Dismiss = "Banner.Dismiss";
+
+        // IU-1a Install update flow
+        public const string InstallUpdate = "Banner.InstallUpdate";
+        public const string InstallProgress = "Banner.InstallProgress";
+        public const string InstallVerifying = "Banner.InstallVerifying";
+        public const string InstallLaunching = "Banner.InstallLaunching";
+        public const string InstallRetry = "Banner.InstallRetry";
+        public const string InstallOpenDownload = "Banner.InstallOpenDownload";
+
+        public static class InstallError
+        {
+            public const string Generic = "Banner.InstallError.Generic";
+            public const string Network = "Banner.InstallError.Network";
+            public const string Checksum = "Banner.InstallError.Checksum";
+            public const string Disk = "Banner.InstallError.Disk";
+        }
     }
 
     public static class Settings

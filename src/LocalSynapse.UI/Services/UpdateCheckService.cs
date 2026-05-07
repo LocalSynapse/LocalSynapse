@@ -16,7 +16,7 @@ public sealed class UpdateCheckService
 {
     private const string GitHubApiUrl = "https://api.github.com/repos/LocalSynapse/LocalSynapse/releases/latest";
     private const string PingUrl = "https://localsynapse.com/api/ping";
-    private const string DownloadPageUrl = "https://localsynapse.com/download";
+    public const string DownloadPageUrl = "https://localsynapse.com/download";
     private static readonly TimeSpan HttpTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(24);
 
@@ -33,6 +33,15 @@ public sealed class UpdateCheckService
         string DownloadUrl,
         string Summary,
         List<string> ReleaseNotes);
+
+    /// <summary>Asset URLs/sizes parsed from the GitHub release. Nested inside UpdateCheckService
+    /// (alongside UpdateInfo and CheckState) for namespace cohesion. UpdateInfo stays the
+    /// lightweight "is there a newer version?" record; asset metadata is only needed at install
+    /// click time (SPEC-IU-1 §4.3 / §8).</summary>
+    public sealed record ReleaseAssets(
+        string WindowsAssetUrl,
+        long WindowsAssetSize,
+        string Sha256SumsUrl);
 
     /// <summary>체크 완료 여부.</summary>
     public bool HasChecked { get; private set; }
@@ -75,6 +84,9 @@ public sealed class UpdateCheckService
 
     /// <summary>마지막 체크 결과 캐시.</summary>
     public UpdateInfo? LastResult { get; private set; }
+
+    /// <summary>Last parsed Windows asset URLs (null if asset/SUMS missing in latest release).</summary>
+    public ReleaseAssets? LatestAssets { get; private set; }
 
     /// <summary>업데이트 체크 활성화 여부.</summary>
     public bool IsCheckEnabled => LoadState().CheckEnabled;
@@ -215,7 +227,52 @@ public sealed class UpdateCheckService
         var summary = ExtractSummary(name, tagName, body);
         var releaseNotes = ParseReleaseNotes(body);
 
+        // IU-1a: parse Windows installer asset + SHA256SUMS.txt asset.
+        // If either is missing, LatestAssets stays null and the Install button does not appear (SPEC-IU-1 §4.2).
+        LatestAssets = ParseWindowsAssets(root, tagName);
+
         return new UpdateInfo(versionStr, GetCurrentVersion(), htmlUrl, DownloadPageUrl, summary, releaseNotes);
+    }
+
+    /// <summary>Parse Windows installer + SHA256SUMS.txt URLs from GitHub release assets[].
+    /// Returns null if either asset is missing (SPEC-IU-1 §4.2 gate).</summary>
+    private static ReleaseAssets? ParseWindowsAssets(JsonElement root, string tagName)
+    {
+        if (!root.TryGetProperty("assets", out var assetsProp)
+            || assetsProp.ValueKind != JsonValueKind.Array)
+            return null;
+
+        var expectedInstaller = $"LocalSynapse-{tagName}-Windows-Setup.exe";
+        const string expectedSums = "SHA256SUMS.txt";
+
+        string? installerUrl = null;
+        long installerSize = 0;
+        string? sumsUrl = null;
+
+        foreach (var asset in assetsProp.EnumerateArray())
+        {
+            if (!asset.TryGetProperty("name", out var nameEl)) continue;
+            var assetName = nameEl.GetString();
+            if (string.IsNullOrEmpty(assetName)) continue;
+
+            if (string.Equals(assetName, expectedInstaller, StringComparison.Ordinal))
+            {
+                if (asset.TryGetProperty("browser_download_url", out var urlEl))
+                    installerUrl = urlEl.GetString();
+                if (asset.TryGetProperty("size", out var sizeEl) && sizeEl.TryGetInt64(out var size))
+                    installerSize = size;
+            }
+            else if (string.Equals(assetName, expectedSums, StringComparison.Ordinal))
+            {
+                if (asset.TryGetProperty("browser_download_url", out var urlEl))
+                    sumsUrl = urlEl.GetString();
+            }
+        }
+
+        if (string.IsNullOrEmpty(installerUrl) || string.IsNullOrEmpty(sumsUrl))
+            return null;
+
+        return new ReleaseAssets(installerUrl, installerSize, sumsUrl);
     }
 
     /// <summary>Release name 우선, bullet fallback.</summary>

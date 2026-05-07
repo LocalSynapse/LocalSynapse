@@ -10,10 +10,11 @@ namespace LocalSynapse.UI.Tests;
 internal sealed class FakeSettingsStore : ISettingsStore
 {
     public string Language { get; set; } = "en";
+    public string DataFolder { get; set; } = "/tmp/ls-test";
 
     public string GetLanguage() => Language;
     public void SetLanguage(string cultureName) => Language = cultureName;
-    public string GetDataFolder() => "/tmp/ls-test";
+    public string GetDataFolder() => DataFolder;
     public string GetLogFolder() => "/tmp/ls-test/logs";
     public string GetModelFolder() => "/tmp/ls-test/models";
     public string GetDatabasePath() => "/tmp/ls-test/ls.db";
