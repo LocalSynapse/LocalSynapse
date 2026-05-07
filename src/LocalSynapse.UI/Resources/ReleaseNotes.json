@@ -1,33 +1,33 @@
 {
-  "version": "2.8.0",
+  "version": "2.11.0",
   "notes_en": [
-    "MCP server now runs standalone — no GUI needed",
-    "Rebuilt on official MCP C# SDK (ModelContextProtocol v1.2.0)",
-    "Search safety: input validation, response size limits",
-    "Available on Windows and macOS (Intel + Apple Silicon)"
+    "Install updates with one click — new button on the update banner",
+    "Downloads the installer, verifies its SHA256, and launches the wizard",
+    "Cancel button morphs in during the download phase",
+    "macOS support is on the roadmap"
   ],
   "notes_ko": [
-    "MCP 서버 독립 실행 — GUI 없이 동작",
-    "공식 MCP C# SDK (ModelContextProtocol v1.2.0) 기반 재구축",
-    "검색 안전성: 입력 검증, 응답 크기 제한",
-    "Windows 및 macOS (Intel + Apple Silicon) 지원"
+    "한 번 클릭으로 업데이트 설치 — 알림 배너에 새 버튼 추가",
+    "설치 파일 다운로드, SHA256 검증, 마법사 실행을 자동 처리",
+    "다운로드 중에는 버튼이 취소 모드로 전환",
+    "macOS 지원은 로드맵에 있습니다"
   ],
   "notes_fr": [
-    "Le serveur MCP fonctionne désormais de manière autonome",
-    "Reconstruit sur le SDK MCP C# officiel (v1.2.0)",
-    "Sécurité de recherche : validation des entrées, limites de taille",
-    "Disponible sur Windows et macOS (Intel + Apple Silicon)"
+    "Installez les mises à jour en un clic — nouveau bouton sur la bannière",
+    "Télécharge l'installateur, vérifie son SHA256 et lance l'assistant",
+    "Le bouton se transforme en Annuler pendant le téléchargement",
+    "Support macOS prévu prochainement"
   ],
   "notes_de": [
-    "MCP-Server läuft jetzt eigenständig — keine GUI erforderlich",
-    "Auf offiziellem MCP C# SDK (v1.2.0) neu aufgebaut",
-    "Suchsicherheit: Eingabevalidierung, Antwortgrößenlimits",
-    "Verfügbar für Windows und macOS (Intel + Apple Silicon)"
+    "Updates mit einem Klick installieren — neue Schaltfläche im Hinweisbanner",
+    "Lädt das Installationsprogramm, prüft den SHA256-Hash und startet den Assistenten",
+    "Während des Downloads wird die Schaltfläche zur Abbrechen-Schaltfläche",
+    "macOS-Unterstützung folgt"
   ],
   "notes_zh": [
-    "MCP 服务器现在可以独立运行 — 无需 GUI",
-    "基于官方 MCP C# SDK (v1.2.0) 重建",
-    "搜索安全性：输入验证、响应大小限制",
-    "支持 Windows 和 macOS（Intel + Apple Silicon）"
+    "一键安装更新 — 更新提示横幅新增按钮",
+    "自动下载安装程序、验证 SHA256 并启动安装向导",
+    "下载过程中按钮变为取消模式",
+    "macOS 支持即将推出"
   ]
 }
