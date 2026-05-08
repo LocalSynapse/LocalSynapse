@@ -35,6 +35,9 @@ public sealed class OnnxModelLoader : IDisposable
     /// <summary>ONNX 세션을 반환한다.</summary>
     public InferenceSession? GetSession() => _session;
 
+    /// <summary>현재 로드된 모델의 파일 경로를 반환한다. 미로드 시 null. EmbeddingService 진단용.</summary>
+    internal string? GetCurrentModelPath() => _currentModelPath;
+
     /// <summary>Check if model has a named input (e.g., token_type_ids). No lock needed — InputMetadata is immutable after load.</summary>
     public bool HasInput(string name) => _session?.InputMetadata.ContainsKey(name) ?? false;
 
@@ -55,10 +58,11 @@ public sealed class OnnxModelLoader : IDisposable
         }
     }
 
-    /// <summary>ONNX 모델을 로드한다.</summary>
-    public Task LoadAsync(string modelId, string modelDir, string mode = "Cruise", string? gpuProvider = null, CancellationToken ct = default)
+    /// <summary>ONNX 모델을 로드한다. 반환 튜플로 EP attach 결과를 외부에 노출한다.</summary>
+    public Task<(bool success, string attachedEp, string? errorDetail)>
+        LoadAsync(string modelId, string modelDir, string mode = "Cruise", string? gpuProvider = null, CancellationToken ct = default)
     {
-        return Task.Run(async () =>
+        return Task.Run<(bool, string, string?)>(async () =>
         {
             ct.ThrowIfCancellationRequested();
 
@@ -77,7 +81,7 @@ public sealed class OnnxModelLoader : IDisposable
                     GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
                 };
 
-                ApplyPerformanceMode(options, mode, gpuProvider);
+                var (success, attachedEp, errorDetail) = ApplyPerformanceMode(options, mode, gpuProvider);
 
                 Debug.WriteLine($"[OnnxModelLoader] Loading model: {modelPath}");
                 _session = new InferenceSession(modelPath, options);
@@ -88,6 +92,8 @@ public sealed class OnnxModelLoader : IDisposable
                 Debug.WriteLine($"[OnnxModelLoader] Model loaded: {modelId}, dim={_embeddingDimension}");
                 Debug.WriteLine($"[OnnxModelLoader] Inputs: {string.Join(", ", _session.InputMetadata.Keys)}");
                 Debug.WriteLine($"[OnnxModelLoader] Outputs: {string.Join(", ", _session.OutputMetadata.Keys)}");
+
+                return (success, attachedEp, errorDetail);
             }
             finally
             {
@@ -122,7 +128,8 @@ public sealed class OnnxModelLoader : IDisposable
     }
 
     /// <summary>현재 모델의 ONNX 세션을 새 성능 모드로 재생성한다. 토크나이저는 유지된다.</summary>
-    public async Task ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default)
+    public async Task<(bool success, string attachedEp, string? errorDetail)>
+        ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default)
     {
         await _sessionLock.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -137,11 +144,13 @@ public sealed class OnnxModelLoader : IDisposable
             {
                 GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
             };
-            ApplyPerformanceMode(options, mode, gpuProvider);
+            var (success, attachedEp, errorDetail) = ApplyPerformanceMode(options, mode, gpuProvider);
 
             Debug.WriteLine($"[OnnxModelLoader] Reloading session with mode: {mode}");
             _session = new InferenceSession(_currentModelPath, options);
             Debug.WriteLine($"[OnnxModelLoader] Session reloaded: mode={mode}");
+
+            return (success, attachedEp, errorDetail);
         }
         finally
         {
@@ -149,7 +158,12 @@ public sealed class OnnxModelLoader : IDisposable
         }
     }
 
-    private static void ApplyPerformanceMode(SessionOptions options, string mode, string? gpuProvider = null)
+    /// <summary>
+    /// Performance mode를 SessionOptions에 적용한다.
+    /// 반환: success(요청 EP 그대로 attach), attachedEp(실제 활성, non-null), errorDetail("&lt;EP&gt;: &lt;msg&gt;" 또는 null).
+    /// </summary>
+    private static (bool success, string attachedEp, string? errorDetail)
+        ApplyPerformanceMode(SessionOptions options, string mode, string? gpuProvider = null)
     {
         var cpuCount = Environment.ProcessorCount;
         switch (mode)
@@ -157,56 +171,68 @@ public sealed class OnnxModelLoader : IDisposable
             case "Stealth":
                 options.IntraOpNumThreads = 1;
                 options.InterOpNumThreads = 1;
-                break;
+                return (true, "CPU", null);
+
             case "MadMax":
                 options.IntraOpNumThreads = cpuCount;
                 options.InterOpNumThreads = Math.Max(1, cpuCount / 2);
-                if (gpuProvider != null)
+                if (gpuProvider == null)
                 {
-                    try
-                    {
-                        var epName = gpuProvider switch
-                        {
-                            "CoreML" => "CoreMLExecutionProvider",
-                            "DirectML" => "DmlExecutionProvider",
-                            "CUDA" => "CUDAExecutionProvider",
-                            _ => null,
-                        };
-                        if (epName != null)
-                        {
-                            options.AppendExecutionProvider(epName);
-                            Debug.WriteLine($"[OnnxModelLoader] Attached EP: {epName}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"[OnnxModelLoader] EP attach failed: {ex.Message}");
-                        // CUDA → DirectML fallback (spec §9 Phase 2 acceptance criterion)
-                        if (gpuProvider == "CUDA")
-                        {
-                            try
-                            {
-                                options.AppendExecutionProvider("DmlExecutionProvider");
-                                Debug.WriteLine("[OnnxModelLoader] CUDA failed, fell back to DirectML");
-                            }
-                            catch (Exception ex2)
-                            {
-                                Debug.WriteLine($"[OnnxModelLoader] DirectML fallback also failed, using CPU: {ex2.Message}");
-                            }
-                        }
-                    }
+                    Debug.WriteLine("[OnnxModelLoader] MadMax requested but no GPU provider available, using CPU");
+                    return (false, "CPU", "GPU: No GPU provider available");
                 }
-                break;
+                var epName = gpuProvider switch
+                {
+                    "CoreML" => "CoreMLExecutionProvider",
+                    "DirectML" => "DmlExecutionProvider",
+                    "CUDA" => "CUDAExecutionProvider",
+                    _ => null,
+                };
+                if (epName == null)
+                {
+                    Debug.WriteLine($"[OnnxModelLoader] Unknown GPU provider: {gpuProvider}, using CPU");
+                    return (false, "CPU", $"{gpuProvider}: Unknown provider");
+                }
+                try
+                {
+                    options.AppendExecutionProvider(epName);
+                    Debug.WriteLine($"[OnnxModelLoader] Attached EP: {epName}");
+                    return (true, gpuProvider, null);
+                }
+                catch (Exception ex)
+                {
+                    var prefixLen = gpuProvider.Length + 2;
+                    var msgRaw = ex.Message;
+                    var msg = msgRaw.Length > 200 - prefixLen ? msgRaw[..(200 - prefixLen)] : msgRaw;
+                    var detail = $"{gpuProvider}: {msg}";
+                    Debug.WriteLine($"[OnnxModelLoader] EP attach failed: {ex.Message}");
+                    if (gpuProvider == "CUDA")
+                    {
+                        try
+                        {
+                            options.AppendExecutionProvider("DmlExecutionProvider");
+                            Debug.WriteLine("[OnnxModelLoader] CUDA failed, fell back to DirectML");
+                            return (false, "DirectML", detail);
+                        }
+                        catch (Exception ex2)
+                        {
+                            Debug.WriteLine($"[OnnxModelLoader] DirectML fallback also failed: {ex2.Message}");
+                            return (false, "CPU", detail);
+                        }
+                    }
+                    return (false, "CPU", detail);
+                }
+
             case "Overdrive":
                 options.IntraOpNumThreads = cpuCount;
                 options.InterOpNumThreads = Math.Max(1, cpuCount / 2);
-                break;
+                return (true, "CPU", null);
+
             default: // "Cruise" and any unknown value
                 options.IntraOpNumThreads = Math.Max(1, cpuCount / 2);
                 options.InterOpNumThreads = 1;
-                break;
+                return (true, "CPU", null);
         }
-        Debug.WriteLine($"[OnnxModelLoader] Performance mode: {mode}, IntraOp={options.IntraOpNumThreads}, InterOp={options.InterOpNumThreads}, EP={gpuProvider ?? "CPU"}");
     }
 
     private static string? FindModelPath(string modelDir)

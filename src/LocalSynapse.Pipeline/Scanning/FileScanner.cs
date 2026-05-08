@@ -52,6 +52,8 @@ public sealed class FileScanner : IFileScanner
         public void SetPerformanceMode(string mode) { }
         public (string?, string?) GetGpuDetectionCache() => (null, null);
         public void SetGpuDetectionCache(string? bestProvider, string? gpuName) { }
+        public (string? status, string? activeEp, string? detail) GetEpRuntimeStatus() => (null, null, null);
+        public void SetEpRuntimeStatus(string? status, string? activeEp, string? detail) { }
     }
 
     /// <summary>Scan all fixed drives and upsert file metadata to DB.</summary>

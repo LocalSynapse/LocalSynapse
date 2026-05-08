@@ -92,4 +92,85 @@ public class SettingsStoreTests
         // 새 settings.json 생성됨 확인
         Assert.True(File.Exists(jsonPath));
     }
+
+    // ── v2.10.1 EpRuntimeStatus tests (T1~T4) ──
+
+    [Fact]
+    public void SetEpRuntimeStatus_persists_to_disk_and_reloads()
+    {
+        // T1
+        using var temp = new TempDbFixture();
+        var store1 = new SettingsStore(temp.DataFolder);
+        store1.SetEpRuntimeStatus("ok", "DirectML", null);
+
+        var store2 = new SettingsStore(temp.DataFolder);
+        var (status, activeEp, detail) = store2.GetEpRuntimeStatus();
+
+        Assert.Equal("ok", status);
+        Assert.Equal("DirectML", activeEp);
+        Assert.Null(detail);
+    }
+
+    [Fact]
+    public void SetEpRuntimeStatus_with_same_value_skips_write()
+    {
+        // T2 — verify mtime unchanged on no-op
+        using var temp = new TempDbFixture();
+        var store = new SettingsStore(temp.DataFolder);
+        store.SetEpRuntimeStatus("ok", "DirectML", null);
+
+        var settingsPath = Path.Combine(temp.DataFolder, "settings.json");
+        var mtimeBefore = File.GetLastWriteTimeUtc(settingsPath);
+
+        System.Threading.Thread.Sleep(50);
+
+        store.SetEpRuntimeStatus("ok", "DirectML", null);  // same values
+
+        var mtimeAfter = File.GetLastWriteTimeUtc(settingsPath);
+        Assert.Equal(mtimeBefore, mtimeAfter);
+    }
+
+    [Fact]
+    public void GetEpRuntimeStatus_returns_null_tuple_when_unset()
+    {
+        // T3
+        using var temp = new TempDbFixture();
+        var store = new SettingsStore(temp.DataFolder);
+        var (status, activeEp, detail) = store.GetEpRuntimeStatus();
+
+        Assert.Null(status);
+        Assert.Null(activeEp);
+        Assert.Null(detail);
+    }
+
+    [Fact]
+    public void SettingsFile_with_v2_10_0_schema_loads_without_EpRuntime()
+    {
+        // T4 — forward-compat (v2.10.0 settings.json without EpRuntime field)
+        using var temp = new TempDbFixture();
+        var settingsPath = Path.Combine(temp.DataFolder, "settings.json");
+        var v210Json = """
+        {
+            "Version": 1,
+            "Language": "en",
+            "IndexingPerformanceMode": "MadMax",
+            "GpuDetection": {
+                "BestProvider": "DirectML",
+                "GpuName": "DirectX 12 GPU",
+                "LastChecked": "2026-05-01T00:00:00.000Z"
+            }
+        }
+        """;
+        File.WriteAllText(settingsPath, v210Json);
+
+        var store = new SettingsStore(temp.DataFolder);
+
+        Assert.Equal("en", store.GetLanguage());
+        Assert.Equal("MadMax", store.GetPerformanceMode());
+
+        var (status, activeEp, detail) = store.GetEpRuntimeStatus();
+        Assert.Null(status);
+        Assert.Null(activeEp);
+        Assert.Null(detail);
+    }
 }

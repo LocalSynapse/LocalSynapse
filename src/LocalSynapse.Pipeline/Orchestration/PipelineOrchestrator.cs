@@ -115,10 +115,9 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
             // GPU detection — run once on first cycle (deferred from constructor to avoid UI thread block)
             if (_gpuDetection.CachedResult is null)
             {
-                await Task.Run(() => _gpuDetection.Detect(), ct);
-                var detected = _gpuDetection.CachedResult;
-                _settingsStore.SetGpuDetectionCache(detected?.BestProvider, detected?.GpuName);
-                Debug.WriteLine($"[Orch] GPU detection: provider={detected?.BestProvider}, gpu={detected?.GpuName}");
+                var detected = await _gpuDetection.Detect(ct);
+                _settingsStore.SetGpuDetectionCache(detected.BestProvider, detected.GpuName);
+                Debug.WriteLine($"[Orch] GPU detection: provider={detected.BestProvider}, gpu={detected.GpuName}");
             }
 
             // Performance mode — apply if changed
@@ -130,7 +129,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                 {
                     var gpuProvider = requestedMode == "MadMax" ? _gpuDetection.CachedResult?.BestProvider : null;
                     Debug.WriteLine($"[Orch] Performance mode changed: {_activePerformanceMode} → {requestedMode}");
-                    await _embeddingService.ReloadSessionWithModeAsync(requestedMode, gpuProvider, ct);
+                    _ = await _embeddingService.ReloadSessionWithModeAsync(requestedMode, gpuProvider, ct);
                 }
                 _activePerformanceMode = requestedMode;
             }
@@ -151,11 +150,6 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     try
                     {
                         await _embeddingService.InitializeAsync("bge-m3", ct);
-                        if (_activePerformanceMode != "Cruise")
-                        {
-                            var gpuProv = _activePerformanceMode == "MadMax" ? _gpuDetection.CachedResult?.BestProvider : null;
-                            await _embeddingService.ReloadSessionWithModeAsync(_activePerformanceMode, gpuProv, ct);
-                        }
                         SpeedDiagLog.Log("EMB_AUTO_INIT_OK",
                             "is_ready", _embeddingService.IsReady);
                     }

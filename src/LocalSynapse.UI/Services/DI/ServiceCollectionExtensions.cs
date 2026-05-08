@@ -41,7 +41,9 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<ISettingsStore>()));
         services.AddSingleton<IContentExtractor, ContentExtractor>();
         services.AddSingleton<ITextChunker, TextChunker>();
-        services.AddSingleton<EmbeddingService>();
+        services.AddSingleton<EmbeddingService>(sp => new EmbeddingService(
+            sp.GetRequiredService<ISettingsStore>(),
+            sp.GetRequiredService<GpuDetectionService>()));
         services.AddSingleton<IEmbeddingService>(sp => sp.GetRequiredService<EmbeddingService>());
         services.AddSingleton<IModelInstaller, BgeM3Installer>();
         services.AddSingleton<GpuDetectionService>();

@@ -101,7 +101,9 @@ public class PipelineOrchestratorStateTest
         public Task<float[][]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
             => Task.FromResult(Array.Empty<float[]>());
         public void Unload() { }
-        public Task ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default) => Task.CompletedTask;
+        public Task<(bool success, string attachedEp, string? errorDetail)>
+            ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default)
+            => Task.FromResult<(bool, string, string?)>((true, "CPU", null));
     }
 
     private sealed class StubModelInstaller : IModelInstaller

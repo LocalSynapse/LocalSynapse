@@ -8,7 +8,8 @@ public interface IEmbeddingService
     Task InitializeAsync(string modelId, CancellationToken ct = default);
     Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken ct = default);
     Task<float[][]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default);
-    /// <summary>Reloads the ONNX session with new performance mode options. Tokenizer is preserved.</summary>
-    Task ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default);
+    /// <summary>Reloads the ONNX session with new performance mode options. Tokenizer is preserved. Returns EP attach result.</summary>
+    Task<(bool success, string attachedEp, string? errorDetail)>
+        ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default);
     void Unload();
 }

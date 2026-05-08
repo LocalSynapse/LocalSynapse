@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using LocalSynapse.Core.Diagnostics;
 using Microsoft.ML.OnnxRuntime;
 
 namespace LocalSynapse.Pipeline.Embedding;
@@ -8,19 +9,43 @@ namespace LocalSynapse.Pipeline.Embedding;
 /// </summary>
 public sealed class GpuDetectionService
 {
+    private readonly SemaphoreSlim _detectLock = new(1, 1);
     private GpuDetectionResult? _cached;
 
-    /// <summary>캐시된 감지 결과. DetectAsync 호출 전에는 null.</summary>
+    /// <summary>캐시된 감지 결과. Detect 호출 전에는 null.</summary>
     public GpuDetectionResult? CachedResult => _cached;
 
     /// <summary>Mad Max가 사용 가능한지 여부.</summary>
     public bool IsMadMaxAvailable => _cached?.BestProvider != null;
 
-    /// <summary>사용 가능한 EP를 감지한다. 결과는 캐시된다. Thread-safe (benign race on double-detect).</summary>
-    public GpuDetectionResult Detect()
+    /// <summary>사용 가능한 EP를 감지한다. 결과는 캐시되며 동시 호출 시 한 번만 실행된다.</summary>
+    public async Task<GpuDetectionResult> Detect(CancellationToken ct = default)
     {
-        if (_cached != null) return _cached;
+        if (_cached is not null) return _cached;
 
+        await _detectLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (_cached is not null) return _cached;
+            var result = DetectInternal();
+            _cached = result;
+
+            SpeedDiagLog.Log("EP_DETECT",
+                "available_providers", string.Join(",", result.AvailableProviders),
+                "best_provider", result.BestProvider ?? "",
+                "gpu_name", result.GpuName ?? "",
+                "detection_method", "session_options_append");
+
+            return result;
+        }
+        finally
+        {
+            _detectLock.Release();
+        }
+    }
+
+    private static GpuDetectionResult DetectInternal()
+    {
         var result = new GpuDetectionResult();
 
         try
@@ -29,7 +54,6 @@ public sealed class GpuDetectionService
             result = result with { AvailableProviders = available };
             Debug.WriteLine($"[GpuDetection] Available providers: {string.Join(", ", available)}");
 
-            // Try providers in priority order: CoreML (macOS) > DirectML (Windows) > CUDA (Windows)
             if (TryProvider("CoreMLExecutionProvider", available))
             {
                 result = result with { BestProvider = "CoreML", GpuName = "Apple Silicon" };
@@ -55,7 +79,6 @@ public sealed class GpuDetectionService
             Debug.WriteLine($"[GpuDetection] Detection failed: {ex.Message}");
         }
 
-        _cached = result;
         return result;
     }
 
@@ -63,7 +86,6 @@ public sealed class GpuDetectionService
     {
         if (!available.Contains(providerName)) return false;
 
-        // Runtime validation: some providers are compile-time-listed but fail at session creation
         try
         {
             using var options = new SessionOptions();

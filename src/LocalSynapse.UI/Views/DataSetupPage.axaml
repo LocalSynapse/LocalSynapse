@@ -115,6 +115,17 @@
                                FontSize="11"
                                Foreground="{StaticResource TextMutedBrush}"
                                FontStyle="Italic" />
+
+                    <TextBlock x:Name="ActiveEpText"
+                               Text="{Binding ActiveEpDisplayText}"
+                               ToolTip.Tip="{Binding ActiveEpTooltipText}"
+                               IsVisible="{Binding HasActiveEpStatus}"
+                               FontSize="12"
+                               FontWeight="Normal"
+                               Foreground="{Binding ActiveEpForeground}"
+                               Margin="0,4,0,0"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
             </Border>
 

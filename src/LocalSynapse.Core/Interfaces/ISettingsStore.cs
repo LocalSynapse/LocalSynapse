@@ -26,4 +26,10 @@ public interface ISettingsStore
 
     /// <summary>Caches GPU detection result.</summary>
     void SetGpuDetectionCache(string? bestProvider, string? gpuName);
+
+    /// <summary>Returns the last known EP runtime status. (null, null, null) if never set.</summary>
+    (string? status, string? activeEp, string? detail) GetEpRuntimeStatus();
+
+    /// <summary>Records EP runtime status. No-op (no disk write) if all three values match the current state.</summary>
+    void SetEpRuntimeStatus(string? status, string? activeEp, string? detail);
 }

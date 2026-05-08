@@ -14,6 +14,7 @@ namespace LocalSynapse.Pipeline.Embedding;
 public sealed class EmbeddingService : IEmbeddingService
 {
     private readonly ISettingsStore _settings;
+    private readonly GpuDetectionService _gpuDetection;
     private readonly BertTokenizer _tokenizer = new();
     private readonly OnnxModelLoader _modelLoader = new();
 
@@ -27,12 +28,13 @@ public sealed class EmbeddingService : IEmbeddingService
     public int VectorDimension => _modelLoader.EmbeddingDimension;
 
     /// <summary>EmbeddingService 생성자.</summary>
-    public EmbeddingService(ISettingsStore settings)
+    public EmbeddingService(ISettingsStore settings, GpuDetectionService gpuDetection)
     {
         _settings = settings;
+        _gpuDetection = gpuDetection;
     }
 
-    /// <summary>토크나이저와 ONNX 모델을 초기화한다.</summary>
+    /// <summary>토크나이저와 ONNX 모델을 사용자 설정 모드로 직접 로드한다.</summary>
     public async Task InitializeAsync(string modelId, CancellationToken ct = default)
     {
         var modelDir = Path.Combine(_settings.GetModelFolder(), modelId);
@@ -40,14 +42,83 @@ public sealed class EmbeddingService : IEmbeddingService
         if (!Directory.Exists(modelDir))
             throw new DirectoryNotFoundException($"Model directory not found: {modelDir}");
 
-        var sw = Stopwatch.StartNew();
-        var tokSw = Stopwatch.StartNew();
-        await _tokenizer.LoadAsync(modelDir, ct);
-        var tokMs = tokSw.ElapsedMilliseconds;
+        // Defense-in-depth: GPU detection 완료 보장 (정상 path는 cache hit으로 즉시 반환).
+        if (_gpuDetection.CachedResult is null)
+            await _gpuDetection.Detect(ct).ConfigureAwait(false);
 
-        var modSw = Stopwatch.StartNew();
-        await _modelLoader.LoadAsync(modelId, modelDir, "Cruise", null, ct);
-        var modMs = modSw.ElapsedMilliseconds;
+        var mode = _settings.GetPerformanceMode();
+        var gpuProvider = mode == "MadMax" ? _gpuDetection.CachedResult?.BestProvider : null;
+
+        var sw = Stopwatch.StartNew();
+        long tokMs;
+
+        // tokenizer 실패도 EP 가시성에 포함 (spec M1 100% 충족)
+        try
+        {
+            var tokSw = Stopwatch.StartNew();
+            await _tokenizer.LoadAsync(modelDir, ct);
+            tokMs = tokSw.ElapsedMilliseconds;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            var msgRaw = ex.Message;
+            var msg = msgRaw.Length > 193 ? msgRaw[..193] : msgRaw;
+            var detail = $"MODEL: {msg}";
+            _settings.SetEpRuntimeStatus("failed", "CPU", detail);
+            SpeedDiagLog.Log("EP_ATTACH_RESULT",
+                "requested_mode", mode,
+                "requested_provider", gpuProvider ?? "",
+                "status", "failed",
+                "active_ep", "CPU",
+                "detail", detail,
+                "model_id", modelId,
+                "model_basename", "");
+            throw;
+        }
+
+        long modMs;
+        bool success;
+        string attachedEp;
+        string? errorDetail;
+        try
+        {
+            var modSw = Stopwatch.StartNew();
+            (success, attachedEp, errorDetail) =
+                await _modelLoader.LoadAsync(modelId, modelDir, mode, gpuProvider, ct);
+            modMs = modSw.ElapsedMilliseconds;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            var prefix = gpuProvider ?? "MODEL";
+            var prefixLen = prefix.Length + 2;
+            var msgRaw = ex.Message;
+            var msg = msgRaw.Length > 200 - prefixLen ? msgRaw[..(200 - prefixLen)] : msgRaw;
+            var detail = $"{prefix}: {msg}";
+            _settings.SetEpRuntimeStatus("failed", "CPU", detail);
+            SpeedDiagLog.Log("EP_ATTACH_RESULT",
+                "requested_mode", mode,
+                "requested_provider", gpuProvider ?? "",
+                "status", "failed",
+                "active_ep", "CPU",
+                "detail", detail,
+                "model_id", modelId,
+                "model_basename", "");
+            throw;
+        }
+
+        var status = success
+            ? "ok"
+            : (attachedEp == "CPU" ? "failed" : "ok_with_fallback");
+        _settings.SetEpRuntimeStatus(status, attachedEp, errorDetail);
+
+        SpeedDiagLog.Log("EP_ATTACH_RESULT",
+            "requested_mode", mode,
+            "requested_provider", gpuProvider ?? "",
+            "status", status,
+            "active_ep", attachedEp,
+            "detail", errorDetail ?? "",
+            "model_id", modelId,
+            "model_basename", Path.GetFileName(_modelLoader.GetCurrentModelPath() ?? ""));
 
         SpeedDiagLog.Log("EMB_INIT",
             "model", modelId,
@@ -55,7 +126,7 @@ public sealed class EmbeddingService : IEmbeddingService
             "model_load_ms", modMs,
             "total_ms", sw.ElapsedMilliseconds,
             "dim", VectorDimension);
-        Debug.WriteLine($"[EmbeddingService] Initialized: {modelId}, dim={VectorDimension}");
+        Debug.WriteLine($"[EmbeddingService] Initialized: {modelId}, dim={VectorDimension}, mode={mode}, ep={attachedEp}");
     }
 
     /// <summary>단일 텍스트의 임베딩을 생성한다.</summary>
@@ -78,7 +149,6 @@ public sealed class EmbeddingService : IEmbeddingService
             NamedOnnxValue.CreateFromTensor("attention_mask", maskTensor),
         };
 
-        // Add token_type_ids if model expects it (no lock needed — InputMetadata is immutable after load)
         if (_modelLoader.HasInput("token_type_ids"))
         {
             var typeIds = new long[seqLen];
@@ -102,10 +172,49 @@ public sealed class EmbeddingService : IEmbeddingService
         return embeddings;
     }
 
-    /// <summary>ONNX 세션을 새 성능 모드로 재생성한다. 토크나이저는 유지된다.</summary>
-    public async Task ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default)
+    /// <summary>ONNX 세션을 새 성능 모드로 재생성한다. 토크나이저는 유지된다. EP 상태도 갱신한다.</summary>
+    public async Task<(bool success, string attachedEp, string? errorDetail)>
+        ReloadSessionWithModeAsync(string mode, string? gpuProvider = null, CancellationToken ct = default)
     {
-        await _modelLoader.ReloadSessionWithModeAsync(mode, gpuProvider, ct);
+        bool success;
+        string attachedEp;
+        string? errorDetail;
+        try
+        {
+            (success, attachedEp, errorDetail) = await _modelLoader.ReloadSessionWithModeAsync(mode, gpuProvider, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            var prefix = gpuProvider ?? "MODEL";
+            var prefixLen = prefix.Length + 2;
+            var msgRaw = ex.Message;
+            var msg = msgRaw.Length > 200 - prefixLen ? msgRaw[..(200 - prefixLen)] : msgRaw;
+            var detail = $"{prefix}: {msg}";
+            _settings.SetEpRuntimeStatus("failed", "CPU", detail);
+            SpeedDiagLog.Log("EP_ATTACH_RESULT",
+                "requested_mode", mode,
+                "requested_provider", gpuProvider ?? "",
+                "status", "failed",
+                "active_ep", "CPU",
+                "detail", detail,
+                "model_id", _modelLoader.CurrentModelId ?? "",
+                "model_basename", "");
+            throw;
+        }
+
+        var status = success ? "ok" : (attachedEp == "CPU" ? "failed" : "ok_with_fallback");
+        _settings.SetEpRuntimeStatus(status, attachedEp, errorDetail);
+
+        SpeedDiagLog.Log("EP_ATTACH_RESULT",
+            "requested_mode", mode,
+            "requested_provider", gpuProvider ?? "",
+            "status", status,
+            "active_ep", attachedEp,
+            "detail", errorDetail ?? "",
+            "model_id", _modelLoader.CurrentModelId ?? "",
+            "model_basename", Path.GetFileName(_modelLoader.GetCurrentModelPath() ?? ""));
+
+        return (success, attachedEp, errorDetail);
     }
 
     /// <summary>모델을 해제한다.</summary>
@@ -118,7 +227,6 @@ public sealed class EmbeddingService : IEmbeddingService
     private float[] ExtractEmbedding(IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results,
         long[] attentionMask)
     {
-        // Find output: prefer "sentence_embedding" > "embedding" > "last_hidden_state" > first
         DisposableNamedOnnxValue? output = null;
         foreach (var name in new[] { "sentence_embedding", "embedding", "pooler_output", "last_hidden_state" })
         {
@@ -132,7 +240,6 @@ public sealed class EmbeddingService : IEmbeddingService
 
         if (dims.Length == 3)
         {
-            // [batch, seq_len, hidden_size] → mean pooling
             var seqLen = dims[1];
             var hiddenSize = dims[2];
             return MeanPool(tensor, seqLen, hiddenSize, attentionMask);
@@ -140,7 +247,6 @@ public sealed class EmbeddingService : IEmbeddingService
 
         if (dims.Length == 2)
         {
-            // [batch, hidden_size] → extract first row
             var hiddenSize = dims[1];
             var embedding = new float[hiddenSize];
             for (int i = 0; i < hiddenSize; i++)

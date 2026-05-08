@@ -21,6 +21,7 @@ public sealed class SettingsStore : ISettingsStore
     private readonly string _dbPath;
     private readonly string _settingsPath;
     private SettingsFile _settings;
+    private readonly object _settingsLock = new();
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -120,6 +121,39 @@ public sealed class SettingsStore : ISettingsStore
             LastChecked = DateTime.UtcNow.ToString("o"),
         };
         WriteSettingsAtomic(_settings);
+    }
+
+    /// <summary>EP 런타임 상태를 반환한다. Thread-safe.</summary>
+    public (string? status, string? activeEp, string? detail) GetEpRuntimeStatus()
+    {
+        lock (_settingsLock)
+        {
+            var ep = _settings.EpRuntime;
+            return (ep?.Status, ep?.ActiveEp, ep?.Detail);
+        }
+    }
+
+    /// <summary>EP 런타임 상태를 저장한다. 동일 값이면 디스크 write를 건너뛴다. Thread-safe.</summary>
+    public void SetEpRuntimeStatus(string? status, string? activeEp, string? detail)
+    {
+        lock (_settingsLock)
+        {
+            var current = _settings.EpRuntime;
+            if (current?.Status == status &&
+                current?.ActiveEp == activeEp &&
+                current?.Detail == detail)
+            {
+                return;
+            }
+            _settings.EpRuntime = new EpRuntimeStatus
+            {
+                Status = status,
+                ActiveEp = activeEp,
+                Detail = detail,
+                LastChecked = DateTime.UtcNow.ToString("o"),
+            };
+            WriteSettingsAtomic(_settings);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -225,6 +259,7 @@ internal sealed class SettingsFile
     public string[]? ScanRoots { get; set; }
     public string? IndexingPerformanceMode { get; set; }
     public GpuDetectionCache? GpuDetection { get; set; }
+    public EpRuntimeStatus? EpRuntime { get; set; }
 }
 
 /// <summary>GPU 감지 결과 캐시 (settings.json 내 저장).</summary>
@@ -232,5 +267,14 @@ internal sealed class GpuDetectionCache
 {
     public string? BestProvider { get; set; }
     public string? GpuName { get; set; }
+    public string? LastChecked { get; set; }
+}
+
+/// <summary>EP runtime status (settings.json 내 저장). RequestedMode와 분리된 ActiveEp 표기.</summary>
+internal sealed class EpRuntimeStatus
+{
+    public string? Status { get; set; }
+    public string? ActiveEp { get; set; }
+    public string? Detail { get; set; }
     public string? LastChecked { get; set; }
 }

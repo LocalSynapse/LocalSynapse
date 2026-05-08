@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Avalonia;
+using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -60,6 +62,10 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _madMaxSubText = "";
     [ObservableProperty] private string _performanceModeTech = "";
     [ObservableProperty] private string _performanceModeDesc = "";
+    [ObservableProperty] private string _activeEpDisplayText = "";
+    [ObservableProperty] private string? _activeEpTooltipText;
+    [ObservableProperty] private bool _hasActiveEpStatus;
+    [ObservableProperty] private IBrush _activeEpForeground = Brushes.Gray;
 
     // Scan folders
     [ObservableProperty] private ObservableCollection<string> _scanFolders = new();
@@ -100,10 +106,16 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         // Performance mode
         UpdatePerformanceModeFlags();
         UpdateMadMaxState();
+        UpdateActiveEpDisplay();
 
         _refreshTimer = new System.Threading.Timer(_ =>
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(RefreshState);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                RefreshState();
+                UpdateMadMaxState();
+                UpdateActiveEpDisplay();
+            });
         }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
     }
 
@@ -395,14 +407,47 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         MadMaxSubText = result?.BestProvider != null
             ? _loc.Format(StringKeys.Settings.Performance.MadMaxDetected, result.GpuName ?? "", result.BestProvider)
             : _loc[StringKeys.Settings.Performance.MadMaxUnavailable];
+    }
 
-        // Auto-downgrade: if MadMax is stored but GPU is now unavailable, fall back to Overdrive
-        if (_settingsStore.GetPerformanceMode() == "MadMax" && !IsMadMaxEnabled)
+    private void UpdateActiveEpDisplay()
+    {
+        var (status, activeEp, detail) = _settingsStore.GetEpRuntimeStatus();
+        if (status is null)
         {
-            _settingsStore.SetPerformanceMode("Overdrive");
-            Debug.WriteLine("[DataSetupVM] MadMax stored but GPU unavailable — auto-downgraded to Overdrive");
-            UpdatePerformanceModeFlags();
+            HasActiveEpStatus = false;
+            return;
         }
+        HasActiveEpStatus = true;
+
+        string ExtractFailedEp()
+        {
+            var colonIdx = detail?.IndexOf(':') ?? -1;
+            if (colonIdx > 0 && colonIdx <= 12)
+                return detail![..colonIdx];
+            return "GPU";
+        }
+
+        var prefix = _loc[StringKeys.Settings.Performance.ActiveEpPrefix];
+        var suffix = (status, activeEp) switch
+        {
+            ("ok", "CPU") => "CPU",
+            ("ok", _) => $"{activeEp} ✓",
+            ("ok_with_fallback", _) => $"{activeEp} ✓",
+            ("failed", _) => $"CPU ({_loc.Format(StringKeys.Settings.Performance.ActiveEpAttachFailed, ExtractFailedEp())})",
+            _ => activeEp ?? "(unknown)"
+        };
+        ActiveEpDisplayText = prefix + suffix;
+        ActiveEpTooltipText = detail;
+
+        var brushKey = status == "failed" ? "DangerBrush" : "TextMutedBrush";
+        IBrush? brush = null;
+        if (Application.Current?.Resources is { } resources &&
+            resources.TryGetResource(brushKey, null, out var resource) &&
+            resource is IBrush b)
+        {
+            brush = b;
+        }
+        ActiveEpForeground = brush ?? Brushes.Gray;
     }
 
     public void Dispose()

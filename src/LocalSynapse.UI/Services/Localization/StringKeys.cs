@@ -237,6 +237,8 @@ public static class StringKeys
             public const string MadMaxDetected = "Settings.Performance.MadMax.Detected";
             public const string MadMaxUnavailable = "Settings.Performance.MadMax.Unavailable";
             public const string MadMaxComing = "Settings.Performance.MadMax.Coming";
+            public const string ActiveEpPrefix = "Settings.Performance.ActiveEp.Prefix";
+            public const string ActiveEpAttachFailed = "Settings.Performance.ActiveEp.AttachFailed";
         }
     }
 

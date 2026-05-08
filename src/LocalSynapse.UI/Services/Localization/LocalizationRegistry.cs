@@ -167,6 +167,8 @@ internal static class LocalizationRegistry
             [StringKeys.Settings.Performance.MadMaxDetected] = new() { ["en"] = "Detected: {0} ({1})", ["ko"] = "감지됨: {0} ({1})", ["fr"] = "Détecté : {0} ({1})", ["de"] = "Erkannt: {0} ({1})", ["zh"] = "已检测: {0} ({1})" },
             [StringKeys.Settings.Performance.MadMaxUnavailable] = new() { ["en"] = "No compatible GPU detected on this device", ["ko"] = "호환되는 GPU가 감지되지 않았습니다", ["fr"] = "Aucun GPU compatible détecté sur cet appareil", ["de"] = "Keine kompatible GPU auf diesem Gerät erkannt", ["zh"] = "未检测到兼容的GPU" },
             [StringKeys.Settings.Performance.MadMaxComing] = new() { ["en"] = "Available in v2.11.0", ["ko"] = "v2.11.0에 제공 예정", ["fr"] = "Disponible dans v2.11.0", ["de"] = "Verfügbar in v2.11.0", ["zh"] = "将在 v2.11.0 中提供" },
+            [StringKeys.Settings.Performance.ActiveEpPrefix] = new() { ["en"] = "Active accelerator: ", ["ko"] = "현재 가속기: ", ["fr"] = "Accélérateur actif : ", ["de"] = "Aktiver Beschleuniger: ", ["zh"] = "当前加速器：" },
+            [StringKeys.Settings.Performance.ActiveEpAttachFailed] = new() { ["en"] = "{0} attach failed", ["ko"] = "{0} 연결 실패", ["fr"] = "Échec de l'attachement de {0}", ["de"] = "{0}-Anbindung fehlgeschlagen", ["zh"] = "{0} 连接失败" },
 
             [StringKeys.Settings.AboutTitle] = new() { ["en"] = "About", ["ko"] = "정보", ["fr"] = "À propos", ["de"] = "Über", ["zh"] = "关于" },
             [StringKeys.Settings.AboutVersion] = new() { ["en"] = "Version", ["ko"] = "버전", ["fr"] = "Version", ["de"] = "Version", ["zh"] = "版本" },

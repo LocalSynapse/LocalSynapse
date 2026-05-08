@@ -163,4 +163,9 @@ internal sealed class TempSettingsStore : ISettingsStore
     public void SetPerformanceMode(string mode) { }
     public (string?, string?) GetGpuDetectionCache() => (null, null);
     public void SetGpuDetectionCache(string? bestProvider, string? gpuName) { }
+
+    private (string?, string?, string?) _epRuntime = (null, null, null);
+    public (string? status, string? activeEp, string? detail) GetEpRuntimeStatus() => _epRuntime;
+    public void SetEpRuntimeStatus(string? status, string? activeEp, string? detail)
+        => _epRuntime = (status, activeEp, detail);
 }
