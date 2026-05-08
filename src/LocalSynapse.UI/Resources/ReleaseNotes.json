@@ -1,33 +1,33 @@
 {
-  "version": "2.11.0",
+  "version": "2.11.1",
   "notes_en": [
-    "Install updates with one click — new button on the update banner",
-    "Downloads the installer, verifies its SHA256, and launches the wizard",
-    "Cancel button morphs in during the download phase",
-    "macOS support is on the roadmap"
+    "Mad Max GPU mode now shows its true state — see 'Active accelerator' on the Data tab",
+    "DirectML attach failures surface the actual error in tooltip; no more silent CPU fallback",
+    "Your performance mode is preserved across driver hiccups (no automatic downgrade)",
+    "Includes one-click update install from v2.11.0"
   ],
   "notes_ko": [
-    "한 번 클릭으로 업데이트 설치 — 알림 배너에 새 버튼 추가",
-    "설치 파일 다운로드, SHA256 검증, 마법사 실행을 자동 처리",
-    "다운로드 중에는 버튼이 취소 모드로 전환",
-    "macOS 지원은 로드맵에 있습니다"
+    "Mad Max GPU 모드의 실제 상태를 표시 — 데이터 탭에서 '현재 가속기' 확인",
+    "DirectML 연결 실패 시 실제 오류 메시지를 툴팁으로 노출 — 조용한 CPU 폴백 없음",
+    "드라이버 일시 문제 후에도 성능 모드 유지 (자동 다운그레이드 없음)",
+    "v2.11.0의 한 번 클릭 업데이트 설치 포함"
   ],
   "notes_fr": [
-    "Installez les mises à jour en un clic — nouveau bouton sur la bannière",
-    "Télécharge l'installateur, vérifie son SHA256 et lance l'assistant",
-    "Le bouton se transforme en Annuler pendant le téléchargement",
-    "Support macOS prévu prochainement"
+    "Le mode GPU Mad Max affiche maintenant son état réel — voir « Accélérateur actif » dans l'onglet Données",
+    "Les échecs d'attachement DirectML affichent l'erreur exacte en infobulle ; plus de repli silencieux vers le CPU",
+    "Votre mode de performance est conservé après les défaillances de pilote (plus de rétrogradation automatique)",
+    "Inclut l'installation des mises à jour en un clic de v2.11.0"
   ],
   "notes_de": [
-    "Updates mit einem Klick installieren — neue Schaltfläche im Hinweisbanner",
-    "Lädt das Installationsprogramm, prüft den SHA256-Hash und startet den Assistenten",
-    "Während des Downloads wird die Schaltfläche zur Abbrechen-Schaltfläche",
-    "macOS-Unterstützung folgt"
+    "Mad Max GPU-Modus zeigt nun seinen echten Zustand — siehe „Aktiver Beschleuniger“ auf dem Daten-Tab",
+    "DirectML-Anbindungsfehler werden mit der tatsächlichen Fehlermeldung im Tooltip angezeigt; kein stiller CPU-Fallback mehr",
+    "Ihr Leistungsmodus bleibt bei Treiberproblemen erhalten (keine automatische Herabstufung)",
+    "Beinhaltet die Ein-Klick-Update-Installation aus v2.11.0"
   ],
   "notes_zh": [
-    "一键安装更新 — 更新提示横幅新增按钮",
-    "自动下载安装程序、验证 SHA256 并启动安装向导",
-    "下载过程中按钮变为取消模式",
-    "macOS 支持即将推出"
+    "Mad Max GPU 模式现在显示真实状态 — 请在数据选项卡查看“当前加速器”",
+    "DirectML 连接失败时通过工具提示显示实际错误；不再静默回退到 CPU",
+    "驱动程序问题后保留性能模式（不再自动降级）",
+    "包含 v2.11.0 的一键更新安装"
   ]
 }
