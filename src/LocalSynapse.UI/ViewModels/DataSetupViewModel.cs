@@ -441,9 +441,8 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
 
         var brushKey = status == "failed" ? "DangerBrush" : "TextMutedBrush";
         IBrush? brush = null;
-        if (Application.Current?.Resources is { } resources &&
-            resources.TryGetResource(brushKey, null, out var resource) &&
-            resource is IBrush b)
+        if (Application.Current?.TryGetResource(brushKey, Avalonia.Styling.ThemeVariant.Default, out var resource) == true
+            && resource is IBrush b)
         {
             brush = b;
         }
