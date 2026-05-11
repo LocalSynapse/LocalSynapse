@@ -157,6 +157,8 @@ public class PipelineOrchestratorStateTest
         { await Task.CompletedTask; yield break; }
         public Task UpsertEmbeddingAsync(string fileId, int chunkId, string modelId, float[] vector, CancellationToken ct = default)
             => Task.CompletedTask;
+        public Task<int> BulkUpsertEmbeddingsAsync(IReadOnlyList<(string fileId, int chunkId, string modelId, float[] vector)> items, CancellationToken ct = default)
+            => Task.FromResult(items.Count);
         public Task<List<EmbeddingWithChunk>> GetEmbeddingsByFileIdsAsync(string[] fileIds, string modelId, CancellationToken ct = default)
             => Task.FromResult(new List<EmbeddingWithChunk>());
         public Task DeleteAllEmbeddingsAsync(string modelId, CancellationToken ct = default)

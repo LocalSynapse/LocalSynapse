@@ -79,7 +79,59 @@ public sealed class GpuDetectionService
             Debug.WriteLine($"[GpuDetection] Detection failed: {ex.Message}");
         }
 
+        // ── System resource analysis → mode suggestion ──
+        result = ApplyModeSuggestion(result);
+
         return result;
+    }
+
+    private static GpuDetectionResult ApplyModeSuggestion(GpuDetectionResult result)
+    {
+        var cpuCount = Environment.ProcessorCount;
+        var totalMemBytes = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+        var totalMemGb = totalMemBytes / (1024.0 * 1024 * 1024);
+
+        string suggestedMode;
+        string reason;
+
+        if (cpuCount >= 8 && result.BestProvider != null && totalMemGb >= 8)
+        {
+            suggestedMode = "MadMax";
+            reason = $"{cpuCount} cores · {totalMemGb:F0} GB RAM · {result.BestProvider} GPU";
+        }
+        else if (cpuCount >= 8 && totalMemGb >= 8)
+        {
+            suggestedMode = "Overdrive";
+            reason = $"{cpuCount} cores · {totalMemGb:F0} GB RAM";
+        }
+        else if (cpuCount >= 4 && totalMemGb >= 4)
+        {
+            suggestedMode = "Cruise";
+            reason = $"{cpuCount} cores · {totalMemGb:F0} GB RAM";
+        }
+        else
+        {
+            suggestedMode = "Stealth";
+            reason = $"{cpuCount} cores · {totalMemGb:F0} GB RAM";
+        }
+
+        // Memory cap: downgrade if low RAM
+        if (totalMemGb < 4 && suggestedMode != "Stealth")
+        {
+            suggestedMode = "Cruise";
+            reason += " (low memory)";
+        }
+        else if (totalMemGb < 8 && suggestedMode == "MadMax")
+        {
+            suggestedMode = "Overdrive";
+            reason += " (limited by memory)";
+        }
+
+        SpeedDiagLog.Log("EP_SUGGEST",
+            "mode", suggestedMode, "reason", reason,
+            "cpu", cpuCount, "ram_gb", $"{totalMemGb:F1}");
+
+        return result with { SuggestedMode = suggestedMode, SuggestionReason = reason };
     }
 
     private static bool TryProvider(string providerName, string[] available)
@@ -100,12 +152,14 @@ public sealed class GpuDetectionService
     }
 }
 
-/// <summary>GPU 감지 결과. Small record co-located per CLAUDE.md exception.</summary>
+/// <summary>GPU 감지 결과 + 시스템 리소스 기반 모드 추천. Small record co-located per CLAUDE.md exception.</summary>
 public sealed record GpuDetectionResult(
     string[] AvailableProviders,
     string? BestProvider,
-    string? GpuName)
+    string? GpuName,
+    string? SuggestedMode = null,
+    string? SuggestionReason = null)
 {
     /// <summary>기본 생성자 (감지 전 초기 상태).</summary>
-    public GpuDetectionResult() : this([], null, null) { }
+    public GpuDetectionResult() : this([], null, null, null, null) { }
 }

@@ -239,6 +239,8 @@ public static class StringKeys
             public const string MadMaxComing = "Settings.Performance.MadMax.Coming";
             public const string ActiveEpPrefix = "Settings.Performance.ActiveEp.Prefix";
             public const string ActiveEpAttachFailed = "Settings.Performance.ActiveEp.AttachFailed";
+            public const string RecommendedBadge = "Settings.Performance.Recommended.Badge";
+            public const string RecommendedReason = "Settings.Performance.Recommended.Reason";
         }
     }
 

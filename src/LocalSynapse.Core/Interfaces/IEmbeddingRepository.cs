@@ -7,6 +7,11 @@ public interface IEmbeddingRepository
         string modelId, int batchSize, CancellationToken ct = default);
     Task UpsertEmbeddingAsync(string fileId, int chunkId, string modelId, float[] vector,
         CancellationToken ct = default);
+
+    /// <summary>임베딩 목록을 단일 트랜잭션으로 벌크 Upsert한다.</summary>
+    Task<int> BulkUpsertEmbeddingsAsync(
+        IReadOnlyList<(string fileId, int chunkId, string modelId, float[] vector)> items,
+        CancellationToken ct = default);
     Task<List<EmbeddingWithChunk>> GetEmbeddingsByFileIdsAsync(
         string[] fileIds, string modelId, CancellationToken ct = default);
     Task DeleteAllEmbeddingsAsync(string modelId, CancellationToken ct = default);

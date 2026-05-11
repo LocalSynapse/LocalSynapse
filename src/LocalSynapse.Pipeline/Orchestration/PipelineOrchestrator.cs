@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Channels;
 using LocalSynapse.Core.Diagnostics;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
@@ -476,57 +477,117 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
 
     // ─────────────────────────── Phase 3: Embedding ───────────────────────────
 
+    private const int EmbeddingChannelCapacity = 100;
+    private const int EmbeddingBulkWriteBatch = 50;
+
     private async Task RunEmbeddingPhaseAsync(CancellationToken ct)
     {
         CurrentPhase = PipelinePhase.Embedding;
         var modelId = _embeddingService.ActiveModelId ?? "bge-m3";
-        var embeddedCount = 0;
 
         var totalEmbeddable = _chunkRepo.GetTotalCount();
         _stampRepo.UpdateEmbeddableChunks(totalEmbeddable);
 
-        ReportProgress(PipelinePhase.Embedding, 0, total: totalEmbeddable,
+        // 기존 임베딩 수를 기준점으로 사용 (로컬 카운터의 시작값)
+        var baseCount = await _embeddingRepo.GetEmbeddingCountAsync(modelId, ct);
+
+        ReportProgress(PipelinePhase.Embedding, baseCount, total: totalEmbeddable,
             statusText: "Starting embedding...");
-        SpeedDiagLog.Log("EMB_PHASE_START", "total_embeddable", totalEmbeddable, "model", modelId);
+        SpeedDiagLog.Log("EMB_PHASE_START", "total_embeddable", totalEmbeddable,
+            "base_count", baseCount, "model", modelId);
 
-        var errorCount = 0;
-        await foreach (var chunk in _embeddingRepo.EnumerateChunksMissingEmbeddingAsync(modelId, BatchSize, ct))
+        var channel = Channel.CreateBounded<(string fileId, int chunkIndex, string modelId, float[] vector, long inferMs, int textLen)>(
+            new BoundedChannelOptions(EmbeddingChannelCapacity)
+            {
+                FullMode = BoundedChannelFullMode.Wait,
+                SingleWriter = true,
+                SingleReader = true,
+            });
+
+        Exception? producerError = null;
+
+        // ── Producer: inference → channel ──
+        var producerTask = Task.Run(async () =>
         {
-            ct.ThrowIfCancellationRequested();
-            if (_isPaused) return;
-
+            var errorCount = 0;
             try
             {
-                var sw = Stopwatch.StartNew();
-                var vector = await _embeddingService.GenerateEmbeddingAsync(chunk.Text, ct);
-                var inferMs = sw.ElapsedMilliseconds;
-                await _embeddingRepo.UpsertEmbeddingAsync(chunk.FileId, chunk.ChunkIndex, modelId, vector, ct);
-                embeddedCount++;
-
-                if (embeddedCount <= 3 || embeddedCount % 100 == 0)
+                await foreach (var chunk in _embeddingRepo.EnumerateChunksMissingEmbeddingAsync(modelId, BatchSize, ct))
                 {
-                    var currentCount = await _embeddingRepo.GetEmbeddingCountAsync(modelId, ct);
-                    _stampRepo.UpdateEmbeddingProgress(currentCount);
+                    ct.ThrowIfCancellationRequested();
+                    if (_isPaused) break;
 
-                    SpeedDiagLog.Log("EMB_PROGRESS",
-                        "count", currentCount, "total", totalEmbeddable,
-                        "last_infer_ms", inferMs, "text_len", chunk.Text.Length);
-
-                    ReportProgress(PipelinePhase.Embedding, currentCount,
-                        total: totalEmbeddable,
-                        statusText: $"Embedding {currentCount:N0}/{totalEmbeddable:N0} chunks...");
+                    try
+                    {
+                        var sw = Stopwatch.StartNew();
+                        var vector = await _embeddingService.GenerateEmbeddingAsync(chunk.Text, ct);
+                        var inferMs = sw.ElapsedMilliseconds;
+                        await channel.Writer.WriteAsync(
+                            (chunk.FileId, chunk.ChunkIndex, modelId, vector, inferMs, chunk.Text.Length), ct);
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex)
+                    {
+                        errorCount++;
+                        if (errorCount <= 5)
+                            SpeedDiagLog.Log("EMB_CHUNK_ERROR", "chunk", chunk.ChunkId,
+                                "text_len", chunk.Text.Length, "error", ex.Message);
+                        Debug.WriteLine($"[Orch] Embedding error: chunk {chunk.ChunkId} - {ex.Message}");
+                    }
                 }
             }
-            catch (OperationCanceledException) { throw; }
-            catch (Exception ex)
+            catch (OperationCanceledException) { /* propagated via channel complete */ }
+            catch (Exception ex) { producerError = ex; }
+            finally
             {
-                errorCount++;
-                if (errorCount <= 5)
-                    SpeedDiagLog.Log("EMB_CHUNK_ERROR", "chunk", chunk.ChunkId,
-                        "text_len", chunk.Text.Length, "error", ex.Message);
-                Debug.WriteLine($"[Orch] Embedding error: chunk {chunk.ChunkId} - {ex.Message}");
+                channel.Writer.Complete();
+            }
+        }, ct);
+
+        // ── Consumer: channel → bulk DB write ──
+        var writtenCount = 0;
+        var buffer = new List<(string fileId, int chunkId, string modelId, float[] vector)>();
+        long lastInferMs = 0;
+        int lastTextLen = 0;
+
+        await foreach (var item in channel.Reader.ReadAllAsync(ct))
+        {
+            buffer.Add((item.fileId, item.chunkIndex, item.modelId, item.vector));
+            lastInferMs = item.inferMs;
+            lastTextLen = item.textLen;
+
+            if (buffer.Count >= EmbeddingBulkWriteBatch)
+            {
+                await _embeddingRepo.BulkUpsertEmbeddingsAsync(buffer, ct);
+                writtenCount += buffer.Count;
+                buffer.Clear();
+
+                var currentTotal = baseCount + writtenCount;
+                _stampRepo.UpdateEmbeddingProgress(currentTotal);
+
+                SpeedDiagLog.Log("EMB_PROGRESS",
+                    "count", currentTotal, "total", totalEmbeddable,
+                    "last_infer_ms", lastInferMs, "text_len", lastTextLen,
+                    "batch_size", EmbeddingBulkWriteBatch);
+
+                ReportProgress(PipelinePhase.Embedding, currentTotal,
+                    total: totalEmbeddable,
+                    statusText: $"Embedding {currentTotal:N0}/{totalEmbeddable:N0} chunks...");
             }
         }
+
+        // Flush remaining
+        if (buffer.Count > 0)
+        {
+            await _embeddingRepo.BulkUpsertEmbeddingsAsync(buffer, ct);
+            writtenCount += buffer.Count;
+            buffer.Clear();
+        }
+
+        await producerTask; // ensure producer completes (may rethrow)
+
+        if (producerError is not null)
+            Debug.WriteLine($"[Orch] Producer error (non-fatal): {producerError.Message}");
 
         var finalCount = await _embeddingRepo.GetEmbeddingCountAsync(modelId, ct);
         _stampRepo.StampEmbeddingComplete(totalEmbeddable, finalCount);
@@ -534,7 +595,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         ReportProgress(PipelinePhase.Embedding, finalCount, total: totalEmbeddable,
             statusText: $"Embedding complete: {finalCount:N0} chunks");
 
-        Debug.WriteLine($"[Orch] Embedding complete: {embeddedCount} new embeddings");
+        Debug.WriteLine($"[Orch] Embedding complete: {writtenCount} new embeddings (pipeline mode)");
     }
 
     // ─────────────────────────── Helpers ───────────────────────────

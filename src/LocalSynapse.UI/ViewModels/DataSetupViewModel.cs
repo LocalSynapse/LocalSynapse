@@ -66,6 +66,10 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string? _activeEpTooltipText;
     [ObservableProperty] private bool _hasActiveEpStatus;
     [ObservableProperty] private IBrush _activeEpForeground = Brushes.Gray;
+    [ObservableProperty] private string _recommendedMode = "";
+    [ObservableProperty] private string _recommendedBadgeText = "";
+    [ObservableProperty] private string _recommendedReasonText = "";
+    [ObservableProperty] private bool _hasRecommendation;
 
     // Scan folders
     [ObservableProperty] private ObservableCollection<string> _scanFolders = new();
@@ -407,6 +411,21 @@ public partial class DataSetupViewModel : ObservableObject, IDisposable
         MadMaxSubText = result?.BestProvider != null
             ? _loc.Format(StringKeys.Settings.Performance.MadMaxDetected, result.GpuName ?? "", result.BestProvider)
             : _loc[StringKeys.Settings.Performance.MadMaxUnavailable];
+
+        // Auto-suggestion based on system resources
+        if (result?.SuggestedMode is { } mode)
+        {
+            RecommendedMode = mode;
+            HasRecommendation = true;
+            RecommendedBadgeText = $"{_loc[StringKeys.Settings.Performance.RecommendedBadge]}: {mode}";
+            RecommendedReasonText = _loc.Format(
+                StringKeys.Settings.Performance.RecommendedReason,
+                result.SuggestionReason ?? "");
+        }
+        else
+        {
+            HasRecommendation = false;
+        }
     }
 
     private void UpdateActiveEpDisplay()

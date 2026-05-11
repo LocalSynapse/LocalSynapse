@@ -101,6 +101,18 @@
                                 Command="{Binding ChangePerformanceModeCommand}" CommandParameter="MadMax"
                                 Margin="0,0,8,4" />
                     </WrapPanel>
+                    <!-- Recommended mode badge -->
+                    <TextBlock Text="{Binding RecommendedBadgeText}"
+                               IsVisible="{Binding HasRecommendation}"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource AccentBrush}"
+                               Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding RecommendedReasonText}"
+                               IsVisible="{Binding HasRecommendation}"
+                               FontSize="11"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Margin="0,0,0,4" />
                     <Border Classes="StatCard">
                         <TextBlock Text="{Binding PerformanceModeTech}"
                                    FontSize="{StaticResource FontSizeXs}"

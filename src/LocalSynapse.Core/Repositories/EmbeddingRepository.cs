@@ -107,6 +107,57 @@ public sealed class EmbeddingRepository : IEmbeddingRepository
         }, ct);
     }
 
+    /// <summary>임베딩 목록을 단일 트랜잭션으로 벌크 Upsert한다.</summary>
+    public Task<int> BulkUpsertEmbeddingsAsync(
+        IReadOnlyList<(string fileId, int chunkId, string modelId, float[] vector)> items,
+        CancellationToken ct = default)
+    {
+        if (items.Count == 0) return Task.FromResult(0);
+
+        return Task.Run(() =>
+        {
+            ct.ThrowIfCancellationRequested();
+            using var conn = _connectionFactory.CreateConnection();
+            using var tx = conn.BeginTransaction();
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                INSERT INTO embeddings (file_id, chunk_id, vector, vector_dim, model_id, created_at)
+                VALUES ($fileId, $chunkId, $vector, $vectorDim, $modelId, $createdAt)
+                ON CONFLICT(file_id, chunk_id, model_id) DO UPDATE SET
+                    vector     = excluded.vector,
+                    vector_dim = excluded.vector_dim,
+                    created_at = excluded.created_at";
+
+            var pFileId = cmd.Parameters.Add("$fileId", SqliteType.Text);
+            var pChunkId = cmd.Parameters.Add("$chunkId", SqliteType.Integer);
+            var pVector = cmd.Parameters.Add("$vector", SqliteType.Blob);
+            var pVectorDim = cmd.Parameters.Add("$vectorDim", SqliteType.Integer);
+            var pModelId = cmd.Parameters.Add("$modelId", SqliteType.Text);
+            var pCreatedAt = cmd.Parameters.Add("$createdAt", SqliteType.Text);
+            cmd.Prepare();
+
+            var now = DateTime.UtcNow.ToString("o");
+            var count = 0;
+
+            foreach (var (fileId, chunkId, modelId, vector) in items)
+            {
+                ct.ThrowIfCancellationRequested();
+                pFileId.Value = fileId;
+                pChunkId.Value = chunkId;
+                pVector.Value = VectorToBlob(vector);
+                pVectorDim.Value = vector.Length;
+                pModelId.Value = modelId;
+                pCreatedAt.Value = now;
+                cmd.ExecuteNonQuery();
+                count++;
+            }
+
+            tx.Commit();
+            return count;
+        }, ct);
+    }
+
     /// <summary>파일 ID 목록에 해당하는 임베딩과 청크 텍스트를 반환한다.</summary>
     public Task<List<EmbeddingWithChunk>> GetEmbeddingsByFileIdsAsync(
         string[] fileIds, string modelId, CancellationToken ct = default)
