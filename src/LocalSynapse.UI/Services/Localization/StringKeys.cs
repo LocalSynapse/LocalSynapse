@@ -298,4 +298,48 @@ public static class StringKeys
         public const string AddFolder = "Welcome.AddFolder";
         public const string Start = "Welcome.Start";
     }
+
+    /// <summary>Always-On background mode strings (v2.13.0).</summary>
+    public static class AlwaysOn
+    {
+        // Settings
+        public const string GroupTitle = "AlwaysOn.GroupTitle";
+        public const string HotkeyLabel = "AlwaysOn.HotkeyLabel";
+        public const string HotkeyEnabled = "AlwaysOn.HotkeyEnabled";
+        public const string MinimizeToTray = "AlwaysOn.MinimizeToTray";
+        public const string AutoStart = "AlwaysOn.AutoStart";
+        public const string HotkeyError = "AlwaysOn.HotkeyError";
+
+        // Tray menu
+        public const string TrayQuickSearch = "AlwaysOn.Tray.QuickSearch";
+        public const string TrayIndexingIdle = "AlwaysOn.Tray.IndexingIdle";
+        public const string TrayIndexingRunning = "AlwaysOn.Tray.IndexingRunning";
+        public const string TrayPause = "AlwaysOn.Tray.Pause";
+        public const string TrayResume = "AlwaysOn.Tray.Resume";
+        public const string TraySettings = "AlwaysOn.Tray.Settings";
+        public const string TrayQuit = "AlwaysOn.Tray.Quit";
+
+        // Toasts
+        public const string FirstCloseTitle = "AlwaysOn.FirstClose.Title";
+        public const string FirstCloseBody = "AlwaysOn.FirstClose.Body";
+        public const string HotkeyFallbackTitle = "AlwaysOn.HotkeyFallback.Title";
+        public const string HotkeyFallbackBody = "AlwaysOn.HotkeyFallback.Body";
+
+        // macOS first-close modal
+        public const string MacFirstCloseTitle = "AlwaysOn.MacFirstClose.Title";
+        public const string MacFirstCloseBody = "AlwaysOn.MacFirstClose.Body";
+        public const string MacFirstCloseConfirm = "AlwaysOn.MacFirstClose.Confirm";
+
+        // Onboarding (fresh)
+        public const string OnboardFreshTitle = "AlwaysOn.Onboard.Fresh.Title";
+        public const string OnboardFreshBody = "AlwaysOn.Onboard.Fresh.Body";
+        public const string OnboardFreshAutoStart = "AlwaysOn.Onboard.Fresh.AutoStart";
+        public const string OnboardFreshConfirm = "AlwaysOn.Onboard.Fresh.Confirm";
+
+        // Onboarding (upgrade)
+        public const string OnboardUpgradeTitle = "AlwaysOn.Onboard.Upgrade.Title";
+        public const string OnboardUpgradeBody = "AlwaysOn.Onboard.Upgrade.Body";
+        public const string OnboardUpgradeAutoStart = "AlwaysOn.Onboard.Upgrade.AutoStart";
+        public const string OnboardUpgradeConfirm = "AlwaysOn.Onboard.Upgrade.Confirm";
+    }
 }

@@ -54,6 +54,18 @@ public sealed class FileScanner : IFileScanner
         public void SetGpuDetectionCache(string? bestProvider, string? gpuName) { }
         public (string? status, string? activeEp, string? detail) GetEpRuntimeStatus() => (null, null, null);
         public void SetEpRuntimeStatus(string? status, string? activeEp, string? detail) { }
+        public string? GetHotkeyCombo() => null;
+        public void SetHotkeyCombo(string? combo) { }
+        public bool GetHotkeyEnabled() => true;
+        public void SetHotkeyEnabled(bool enabled) { }
+        public bool GetMinimizeToTrayOnClose() => true;
+        public void SetMinimizeToTrayOnClose(bool enabled) { }
+        public bool GetShowFirstCloseToast() => true;
+        public void SetShowFirstCloseToast(bool show) { }
+        public bool? GetAutoStartEnabled() => null;
+        public void SetAutoStartEnabled(bool enabled) { }
+        public string? GetLastSeenVersion() => null;
+        public void SetLastSeenVersion(string version) { }
     }
 
     /// <summary>Scan all fixed drives and upsert file metadata to DB.</summary>

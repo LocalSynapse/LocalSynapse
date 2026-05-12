@@ -54,22 +54,47 @@ public partial class SettingsViewModel : ObservableObject
 
     // First run notice removed (WO-SEC0)
 
+    // ── Background & Hotkey (v2.13.0) ──
+    private readonly GlobalHotkeyService? _hotkeyService;
+    private readonly AutoStartService? _autoStartService;
+    [ObservableProperty] private int _selectedHotkeyIndex;
+    [ObservableProperty] private bool _isHotkeyEnabled;
+    [ObservableProperty] private bool _isMinimizeToTrayOnClose;
+    [ObservableProperty] private bool _isAutoStartEnabled;
+    [ObservableProperty] private string _hotkeyErrorMessage = "";
+    [ObservableProperty] private bool _showHotkeyError;
+    private bool _suppressHotkeyChange;
+
     /// <summary>SettingsViewModel 생성자.</summary>
     public SettingsViewModel(
         ISettingsStore settings,
         ILocalizationService loc,
-        UpdateCheckService updateCheck)
+        UpdateCheckService updateCheck,
+        GlobalHotkeyService hotkeyService,
+        AutoStartService autoStartService)
     {
         _settings = settings;
         _loc = loc;
         _updateCheck = updateCheck;
+        _hotkeyService = hotkeyService;
+        _autoStartService = autoStartService;
 
         Language = _loc.Current;
         UpdateSelectionFlags();
         DataFolder = settings.GetDataFolder();
         _loc.LanguageChanged += OnLanguageChanged;
 
-
+        // Load Always-On settings
+        _suppressHotkeyChange = true;
+        IsHotkeyEnabled = settings.GetHotkeyEnabled();
+        IsMinimizeToTrayOnClose = settings.GetMinimizeToTrayOnClose();
+        IsAutoStartEnabled = settings.GetAutoStartEnabled() ?? false;
+        // Find the current combo in presets
+        var currentCombo = settings.GetHotkeyCombo() ?? GlobalHotkeyService.GetPlatformDefault();
+        var presets = GlobalHotkeyService.GetPresets();
+        _selectedHotkeyIndex = Array.FindIndex(presets, p => p.combo == currentCombo);
+        if (_selectedHotkeyIndex < 0) _selectedHotkeyIndex = 0;
+        _suppressHotkeyChange = false;
 
         LoadVersionInfo();
     }
@@ -190,4 +215,43 @@ public partial class SettingsViewModel : ObservableObject
 
     // GotIt / ManageInSecurity commands removed (WO-SEC0)
 
+    // ── Always-On property change handlers ──
+
+    partial void OnSelectedHotkeyIndexChanged(int value)
+    {
+        if (_suppressHotkeyChange || _hotkeyService == null) return;
+        var presets = GlobalHotkeyService.GetPresets();
+        if (value < 0 || value >= presets.Length) return;
+        var error = _hotkeyService.ChangeCombo(presets[value].combo);
+        if (error != null)
+        {
+            HotkeyErrorMessage = error;
+            ShowHotkeyError = true;
+        }
+        else
+        {
+            ShowHotkeyError = false;
+        }
+    }
+
+    partial void OnIsHotkeyEnabledChanged(bool value)
+    {
+        if (_suppressHotkeyChange || _hotkeyService == null) return;
+        _settings.SetHotkeyEnabled(value);
+        if (value) _hotkeyService.Enable();
+        else _hotkeyService.Disable();
+    }
+
+    partial void OnIsMinimizeToTrayOnCloseChanged(bool value)
+    {
+        if (_suppressHotkeyChange) return;
+        _settings.SetMinimizeToTrayOnClose(value);
+    }
+
+    partial void OnIsAutoStartEnabledChanged(bool value)
+    {
+        if (_suppressHotkeyChange || _autoStartService == null) return;
+        if (value) _autoStartService.Enable();
+        else _autoStartService.Disable();
+    }
 }

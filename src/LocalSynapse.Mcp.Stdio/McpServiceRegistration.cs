@@ -18,6 +18,9 @@ internal static class McpServiceRegistration
     /// <summary>LocalSynapse Core + Search 서비스를 등록한다.</summary>
     public static void AddLocalSynapseServices(IServiceCollection services)
     {
+        // ── Runtime Mode ──
+        services.AddSingleton(typeof(Core.Models.RuntimeMode), Core.Models.RuntimeMode.Mcp);
+
         // ── Core ──
         services.AddSingleton<ISettingsStore, SettingsStore>();
         services.AddSingleton<SqliteConnectionFactory>();

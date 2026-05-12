@@ -18,7 +18,14 @@ public static class Program
     {
         if (args.Length > 0 && args[0].Equals("mcp", StringComparison.OrdinalIgnoreCase))
         {
-            // MCP stdio server mode
+            // MCP stdio server mode — single-instance per mode
+            using var guard = new Services.SingleInstanceGuard(Core.Models.RuntimeMode.Mcp);
+            if (!guard.IsFirstInstance)
+            {
+                Console.Error.WriteLine("Another LocalSynapse MCP instance is already running.");
+                Environment.ExitCode = 1;
+                return;
+            }
             RunMcpServer(args).GetAwaiter().GetResult();
         }
         else if (args.Length > 0 && args[0].Equals("dump", StringComparison.OrdinalIgnoreCase))
@@ -32,7 +39,18 @@ public static class Program
         }
         else
         {
-            // GUI mode
+            // GUI mode — single-instance + --minimized support
+            using var guard = new Services.SingleInstanceGuard(Core.Models.RuntimeMode.Ui);
+            if (!guard.IsFirstInstance)
+            {
+                Services.SingleInstanceGuard.SignalExistingInstance(Core.Models.RuntimeMode.Ui);
+                return;
+            }
+
+            App.SingleInstanceGuard = guard;
+            App.StartMinimized = Array.Exists(args, a =>
+                a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));
+            guard.StartListener();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
     }
@@ -106,6 +124,7 @@ public static class Program
 
         // DI — no RunMigrations (DB isolation per spec §1.8). await using for disposal.
         var sc = new ServiceCollection();
+        sc.AddSingleton(typeof(Core.Models.RuntimeMode), Core.Models.RuntimeMode.Dump);
         Services.DI.ServiceCollectionExtensions.AddLocalSynapseServices(sc);
         await using var sp = sc.BuildServiceProvider();
         var extractor = sp.GetRequiredService<IContentExtractor>();

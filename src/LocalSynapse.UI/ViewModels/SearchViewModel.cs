@@ -116,7 +116,7 @@ public sealed class SearchResultFile
 /// Search page ViewModel with 4-section layout, 19-type Smart Notes badges,
 /// bilingual ko/en support, and "show more" interactive expand/collapse.
 /// </summary>
-public partial class SearchViewModel : ObservableObject
+public partial class SearchViewModel : ObservableObject, IDisposable
 {
     private readonly IHybridSearch _hybridSearch;
     private readonly IBm25Search _bm25Search;
@@ -1145,4 +1145,11 @@ public partial class SearchViewModel : ObservableObject
         < 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
         _ => $"{bytes / (1024.0 * 1024 * 1024):F1} GB",
     };
+
+    /// <summary>Dispose timers to prevent leaks on minimize-to-tray or shutdown.</summary>
+    public void Dispose()
+    {
+        _bannerTimer?.Dispose();
+        _debounceTimer?.Dispose();
+    }
 }

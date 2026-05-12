@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>LocalSynapse.UI</RootNamespace>
     <AssemblyName>LocalSynapse</AssemblyName>
-    <Version>2.12.0</Version>
+    <Version>2.13.0</Version>
     <ApplicationIcon>..\..\assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>

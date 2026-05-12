@@ -165,6 +165,78 @@
                 </StackPanel>
             </Border>
 
+            <!-- Background & Hotkey -->
+            <Border Classes="Card" Margin="0">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <PathIcon Width="18" Height="18"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Data="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z" />
+                        <TextBlock Text="{i18n:Tr Key=AlwaysOn.GroupTitle}"
+                                   FontSize="{StaticResource FontSizeM}"
+                                   FontWeight="Medium" />
+                    </StackPanel>
+                    <StackPanel Spacing="8">
+                        <!-- Hotkey dropdown -->
+                        <Border Classes="StatCard">
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right"
+                                          SelectedIndex="{Binding SelectedHotkeyIndex}"
+                                          MinWidth="180"
+                                          FontSize="{StaticResource FontSizeXs}"
+                                          Name="HotkeyComboBox" />
+                                <TextBlock Text="{i18n:Tr Key=AlwaysOn.HotkeyLabel}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                        <!-- Hotkey error message -->
+                        <TextBlock Text="{Binding HotkeyErrorMessage}"
+                                   IsVisible="{Binding ShowHotkeyError}"
+                                   FontSize="{StaticResource FontSizeXs}"
+                                   Foreground="Red"
+                                   Margin="0,-4,0,0" />
+                        <!-- Enable Hotkey toggle -->
+                        <Border Classes="StatCard">
+                            <DockPanel>
+                                <ToggleSwitch DockPanel.Dock="Right"
+                                              IsChecked="{Binding IsHotkeyEnabled}"
+                                              OnContent="" OffContent="" />
+                                <TextBlock Text="{i18n:Tr Key=AlwaysOn.HotkeyEnabled}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                        <!-- Minimize to Tray toggle -->
+                        <Border Classes="StatCard">
+                            <DockPanel>
+                                <ToggleSwitch DockPanel.Dock="Right"
+                                              IsChecked="{Binding IsMinimizeToTrayOnClose}"
+                                              OnContent="" OffContent="" />
+                                <TextBlock Text="{i18n:Tr Key=AlwaysOn.MinimizeToTray}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                        <!-- Auto-start toggle -->
+                        <Border Classes="StatCard">
+                            <DockPanel>
+                                <ToggleSwitch DockPanel.Dock="Right"
+                                              IsChecked="{Binding IsAutoStartEnabled}"
+                                              OnContent="" OffContent="" />
+                                <TextBlock Text="{i18n:Tr Key=AlwaysOn.AutoStart}"
+                                           FontSize="{StaticResource FontSizeXs}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Links -->
             <Border Classes="Card" Margin="0">
                 <StackPanel Spacing="12">

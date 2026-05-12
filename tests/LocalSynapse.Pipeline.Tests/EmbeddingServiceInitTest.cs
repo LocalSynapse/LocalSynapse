@@ -84,6 +84,19 @@ public class EmbeddingServiceInitTest
         public (string? status, string? activeEp, string? detail) GetEpRuntimeStatus() => _ep;
         public void SetEpRuntimeStatus(string? status, string? activeEp, string? detail)
             => _ep = (status, activeEp, detail);
+
+        public string? GetHotkeyCombo() => null;
+        public void SetHotkeyCombo(string? combo) { }
+        public bool GetHotkeyEnabled() => true;
+        public void SetHotkeyEnabled(bool enabled) { }
+        public bool GetMinimizeToTrayOnClose() => true;
+        public void SetMinimizeToTrayOnClose(bool enabled) { }
+        public bool GetShowFirstCloseToast() => true;
+        public void SetShowFirstCloseToast(bool show) { }
+        public bool? GetAutoStartEnabled() => null;
+        public void SetAutoStartEnabled(bool enabled) { }
+        public string? GetLastSeenVersion() => null;
+        public void SetLastSeenVersion(string version) { }
     }
 
     private sealed class StubGpuDetect

@@ -120,6 +120,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateTo(PageType page)
     {
+        var wasWelcome = CurrentPage == PageType.Welcome;
         CurrentPage = page;
         OnPropertyChanged(nameof(ShowNavRail));
         if (page != PageType.Welcome)
@@ -136,6 +137,29 @@ public partial class MainViewModel : ObservableObject
             PageType.Welcome => _services.GetService(typeof(WelcomeViewModel)),
             _ => null
         };
+
+        // Fresh-install onboarding: show dialog after Welcome → Search transition
+        if (wasWelcome && page == PageType.Search)
+        {
+            var welcomeVm = _services.GetService(typeof(WelcomeViewModel)) as WelcomeViewModel;
+            if (welcomeVm?.ShowAlwaysOnOnboarding == true)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                {
+                    var settings = _services.GetService(typeof(ISettingsStore)) as ISettingsStore;
+                    var hotkey = _services.GetService(typeof(GlobalHotkeyService)) as GlobalHotkeyService;
+                    var autoStart = _services.GetService(typeof(AutoStartService)) as AutoStartService;
+                    if (settings == null || hotkey == null || autoStart == null) return;
+
+                    var vm = new AlwaysOnOnboardingViewModel(settings, hotkey, autoStart, isUpgrade: false);
+                    var dialog = new Views.AlwaysOnOnboardingDialog { DataContext = vm };
+                    var mainWindow = (Avalonia.Application.Current?.ApplicationLifetime
+                        as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+                    if (mainWindow != null)
+                        await dialog.ShowDialog(mainWindow);
+                });
+            }
+        }
     }
 
     /// <summary>배너 닫기. DismissedVersion 저장.</summary>

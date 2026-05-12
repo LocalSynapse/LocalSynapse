@@ -146,6 +146,17 @@ public partial class WelcomeViewModel : ObservableObject
         }
 
         _orchestrator.RequestImmediateCycle();
+
+        // Mark version as seen + flag for onboarding dialog after navigation
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        _settingsStore.SetLastSeenVersion(version != null
+            ? $"{version.Major}.{version.Minor}.{version.Build}"
+            : "2.13.0");
+        ShowAlwaysOnOnboarding = true;
+
         WeakReferenceMessenger.Default.Send(new NavigateMessage(PageType.Search));
     }
+
+    /// <summary>Set to true after scan scope selection to trigger onboarding dialog.</summary>
+    public bool ShowAlwaysOnOnboarding { get; private set; }
 }

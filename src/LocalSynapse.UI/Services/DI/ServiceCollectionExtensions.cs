@@ -25,6 +25,9 @@ public static class ServiceCollectionExtensions
     /// <summary>Register all Agent services.</summary>
     public static IServiceCollection AddLocalSynapseServices(this IServiceCollection services)
     {
+        // ── Runtime Mode ──
+        services.AddSingleton(typeof(Core.Models.RuntimeMode), Core.Models.RuntimeMode.Ui);
+
         // ── Core ──
         services.AddSingleton<ISettingsStore, SettingsStore>();
         services.AddSingleton<SqliteConnectionFactory>();
@@ -86,6 +89,22 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<UpdateCheckService>();
         services.AddSingleton<UpdateInstallerService>();
 
+        // ── Always-On (v2.13.0) ──
+        services.AddSingleton<TrayIconService>();
+        services.AddSingleton<Interfaces.IGlobalHotkeyProvider>(sp =>
+        {
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows))
+                return new Platform.WindowsHotkeyProvider();
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.OSX))
+                return new Platform.MacOsHotkeyProvider();
+            // Unsupported platform: return a no-op provider
+            return new Platform.WindowsHotkeyProvider();
+        });
+        services.AddSingleton<GlobalHotkeyService>();
+        services.AddSingleton<AutoStartService>();
+
         // ── ViewModels ──
         // MainViewModel: Singleton (one navigation state for app lifetime)
         services.AddSingleton<MainViewModel>(sp => new MainViewModel(
@@ -115,7 +134,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SettingsViewModel>(sp => new SettingsViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<ILocalizationService>(),
-            sp.GetRequiredService<UpdateCheckService>()));
+            sp.GetRequiredService<UpdateCheckService>(),
+            sp.GetRequiredService<GlobalHotkeyService>(),
+            sp.GetRequiredService<AutoStartService>()));
         services.AddSingleton<SecurityViewModel>(sp => new SecurityViewModel(
             sp.GetRequiredService<ISettingsStore>(),
             sp.GetRequiredService<UpdateCheckService>()));

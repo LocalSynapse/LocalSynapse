@@ -267,6 +267,48 @@ internal static class LocalizationRegistry
             [StringKeys.Banner.InstallError.Checksum] = new() { ["en"] = "Downloaded file is corrupted. Please retry.", ["ko"] = "다운로드한 파일이 손상되었습니다. 다시 시도하세요.", ["fr"] = "Le fichier téléchargé est corrompu. Veuillez réessayer.", ["de"] = "Heruntergeladene Datei ist beschädigt. Bitte erneut versuchen.", ["zh"] = "下载的文件已损坏。请重试。" },
             [StringKeys.Banner.InstallError.Disk] = new() { ["en"] = "Not enough disk space (~100 MB needed).", ["ko"] = "디스크 공간 부족 (~100 MB 필요).", ["fr"] = "Espace disque insuffisant (~100 Mo requis).", ["de"] = "Nicht genug Speicherplatz (~100 MB benötigt).", ["zh"] = "磁盘空间不足（需要约 100 MB）。" },
 
+            // ── Always-On (v2.13.0) ──
+
+            // Settings
+            [StringKeys.AlwaysOn.GroupTitle] = new() { ["en"] = "Background & Hotkey", ["ko"] = "백그라운드 및 단축키", ["fr"] = "Arrière-plan et raccourci", ["de"] = "Hintergrund & Hotkey", ["zh"] = "后台与快捷键" },
+            [StringKeys.AlwaysOn.HotkeyLabel] = new() { ["en"] = "Global Hotkey", ["ko"] = "글로벌 단축키", ["fr"] = "Raccourci global", ["de"] = "Globaler Hotkey", ["zh"] = "全局快捷键" },
+            [StringKeys.AlwaysOn.HotkeyEnabled] = new() { ["en"] = "Enable Hotkey", ["ko"] = "단축키 활성화", ["fr"] = "Activer le raccourci", ["de"] = "Hotkey aktivieren", ["zh"] = "启用快捷键" },
+            [StringKeys.AlwaysOn.MinimizeToTray] = new() { ["en"] = "Minimize to Tray on Close", ["ko"] = "닫기 시 트레이로 최소화", ["fr"] = "Minimiser dans la barre lors de la fermeture", ["de"] = "Beim Schließen in Taskleiste minimieren", ["zh"] = "关闭时最小化到托盘" },
+            [StringKeys.AlwaysOn.AutoStart] = new() { ["en"] = "Start with System", ["ko"] = "시스템 시작 시 자동 실행", ["fr"] = "Démarrer avec le système", ["de"] = "Mit System starten", ["zh"] = "开机自动启动" },
+            [StringKeys.AlwaysOn.HotkeyError] = new() { ["en"] = "This shortcut is in use by another application", ["ko"] = "이 단축키는 다른 앱에서 사용 중입니다", ["fr"] = "Ce raccourci est utilisé par une autre application", ["de"] = "Diese Tastenkombination wird von einer anderen Anwendung verwendet", ["zh"] = "此快捷键已被其他应用占用" },
+
+            // Tray menu
+            [StringKeys.AlwaysOn.TrayQuickSearch] = new() { ["en"] = "Quick Search", ["ko"] = "빠른 검색", ["fr"] = "Recherche rapide", ["de"] = "Schnellsuche", ["zh"] = "快速搜索" },
+            [StringKeys.AlwaysOn.TrayIndexingIdle] = new() { ["en"] = "Indexing: Idle", ["ko"] = "인덱싱: 대기", ["fr"] = "Indexation : Inactif", ["de"] = "Indexierung: Ruhend", ["zh"] = "索引：空闲" },
+            [StringKeys.AlwaysOn.TrayIndexingRunning] = new() { ["en"] = "Indexing: Running", ["ko"] = "인덱싱: 실행 중", ["fr"] = "Indexation : En cours", ["de"] = "Indexierung: Läuft", ["zh"] = "索引：运行中" },
+            [StringKeys.AlwaysOn.TrayPause] = new() { ["en"] = "Pause Indexing", ["ko"] = "인덱싱 일시정지", ["fr"] = "Mettre en pause", ["de"] = "Indexierung pausieren", ["zh"] = "暂停索引" },
+            [StringKeys.AlwaysOn.TrayResume] = new() { ["en"] = "Resume Indexing", ["ko"] = "인덱싱 재개", ["fr"] = "Reprendre l'indexation", ["de"] = "Indexierung fortsetzen", ["zh"] = "恢复索引" },
+            [StringKeys.AlwaysOn.TraySettings] = new() { ["en"] = "Settings", ["ko"] = "설정", ["fr"] = "Paramètres", ["de"] = "Einstellungen", ["zh"] = "设置" },
+            [StringKeys.AlwaysOn.TrayQuit] = new() { ["en"] = "Quit", ["ko"] = "종료", ["fr"] = "Quitter", ["de"] = "Beenden", ["zh"] = "退出" },
+
+            // Toasts
+            [StringKeys.AlwaysOn.FirstCloseTitle] = new() { ["en"] = "LocalSynapse is still running", ["ko"] = "LocalSynapse가 계속 실행 중입니다", ["fr"] = "LocalSynapse est toujours actif", ["de"] = "LocalSynapse läuft weiter", ["zh"] = "LocalSynapse 仍在运行" },
+            [StringKeys.AlwaysOn.FirstCloseBody] = new() { ["en"] = "The app has been minimized to the system tray. Click the tray icon to open it again.", ["ko"] = "앱이 시스템 트레이로 최소화되었습니다. 트레이 아이콘을 클릭하면 다시 열 수 있습니다.", ["fr"] = "L'application a été réduite dans la barre système. Cliquez sur l'icône pour la rouvrir.", ["de"] = "Die App wurde in die Taskleiste minimiert. Klicken Sie auf das Symbol, um sie erneut zu öffnen.", ["zh"] = "应用已最小化到系统托盘。点击托盘图标可重新打开。" },
+            [StringKeys.AlwaysOn.HotkeyFallbackTitle] = new() { ["en"] = "Hotkey Changed", ["ko"] = "단축키 변경됨", ["fr"] = "Raccourci modifié", ["de"] = "Hotkey geändert", ["zh"] = "快捷键已更改" },
+            [StringKeys.AlwaysOn.HotkeyFallbackBody] = new() { ["en"] = "Hotkey registered as {0} ({1} was unavailable)", ["ko"] = "단축키가 {0}(으)로 등록됨 ({1}을(를) 사용할 수 없음)", ["fr"] = "Raccourci enregistré comme {0} ({1} n'était pas disponible)", ["de"] = "Hotkey als {0} registriert ({1} war nicht verfügbar)", ["zh"] = "快捷键已注册为 {0}（{1} 不可用）" },
+
+            // macOS first-close modal
+            [StringKeys.AlwaysOn.MacFirstCloseTitle] = new() { ["en"] = "Minimized to Menu Bar", ["ko"] = "메뉴 막대로 최소화됨", ["fr"] = "Réduit dans la barre de menus", ["de"] = "In Menüleiste minimiert", ["zh"] = "已最小化到菜单栏" },
+            [StringKeys.AlwaysOn.MacFirstCloseBody] = new() { ["en"] = "LocalSynapse has been minimized to the menu bar. Click the menu bar icon to reopen.", ["ko"] = "LocalSynapse가 메뉴 막대로 최소화되었습니다. 메뉴 막대 아이콘을 클릭하면 다시 열 수 있습니다.", ["fr"] = "LocalSynapse a été réduit dans la barre de menus. Cliquez sur l'icône pour rouvrir.", ["de"] = "LocalSynapse wurde in die Menüleiste minimiert. Klicken Sie auf das Symbol, um es erneut zu öffnen.", ["zh"] = "LocalSynapse 已最小化到菜单栏。点击菜单栏图标可重新打开。" },
+            [StringKeys.AlwaysOn.MacFirstCloseConfirm] = new() { ["en"] = "Got it", ["ko"] = "확인", ["fr"] = "Compris", ["de"] = "Verstanden", ["zh"] = "知道了" },
+
+            // Onboarding (fresh)
+            [StringKeys.AlwaysOn.OnboardFreshTitle] = new() { ["en"] = "LocalSynapse runs in the background", ["ko"] = "LocalSynapse는 백그라운드에서 실행됩니다", ["fr"] = "LocalSynapse s'exécute en arrière-plan", ["de"] = "LocalSynapse läuft im Hintergrund", ["zh"] = "LocalSynapse 在后台运行" },
+            [StringKeys.AlwaysOn.OnboardFreshBody] = new() { ["en"] = "Press the hotkey from anywhere to instantly search your files. The app stays in the system tray — closing the window doesn't quit.", ["ko"] = "어디서든 단축키를 눌러 파일을 즉시 검색하세요. 앱은 시스템 트레이에 상주합니다 — 창을 닫아도 종료되지 않습니다.", ["fr"] = "Appuyez sur le raccourci depuis n'importe où pour rechercher instantanément. L'application reste dans la barre système — fermer la fenêtre ne quitte pas.", ["de"] = "Drücken Sie den Hotkey von überall, um sofort zu suchen. Die App bleibt in der Taskleiste — das Schließen des Fensters beendet sie nicht.", ["zh"] = "在任何位置按下快捷键即可立即搜索文件。应用驻留在系统托盘中——关闭窗口不会退出。" },
+            [StringKeys.AlwaysOn.OnboardFreshAutoStart] = new() { ["en"] = "Start LocalSynapse when I log in", ["ko"] = "로그인 시 LocalSynapse 자동 시작", ["fr"] = "Démarrer LocalSynapse à la connexion", ["de"] = "LocalSynapse beim Anmelden starten", ["zh"] = "登录时启动 LocalSynapse" },
+            [StringKeys.AlwaysOn.OnboardFreshConfirm] = new() { ["en"] = "Got it", ["ko"] = "확인", ["fr"] = "Compris", ["de"] = "Verstanden", ["zh"] = "知道了" },
+
+            // Onboarding (upgrade)
+            [StringKeys.AlwaysOn.OnboardUpgradeTitle] = new() { ["en"] = "What's new in v2.13.0", ["ko"] = "v2.13.0의 새로운 기능", ["fr"] = "Nouveautés de la v2.13.0", ["de"] = "Neuerungen in v2.13.0", ["zh"] = "v2.13.0 新功能" },
+            [StringKeys.AlwaysOn.OnboardUpgradeBody] = new() { ["en"] = "LocalSynapse now runs in the background. The close button minimizes to the system tray instead of quitting. Use the hotkey to search from anywhere, or click the tray icon.", ["ko"] = "LocalSynapse가 이제 백그라운드에서 실행됩니다. 닫기 버튼은 종료 대신 시스템 트레이로 최소화합니다. 단축키로 어디서든 검색하거나, 트레이 아이콘을 클릭하세요.", ["fr"] = "LocalSynapse fonctionne désormais en arrière-plan. Le bouton de fermeture minimise dans la barre système au lieu de quitter. Utilisez le raccourci pour rechercher depuis n'importe où.", ["de"] = "LocalSynapse läuft jetzt im Hintergrund. Der Schließen-Button minimiert in die Taskleiste statt zu beenden. Nutzen Sie den Hotkey für die Suche von überall.", ["zh"] = "LocalSynapse 现在在后台运行。关闭按钮会最小化到系统托盘而不是退出。使用快捷键可在任何位置搜索。" },
+            [StringKeys.AlwaysOn.OnboardUpgradeAutoStart] = new() { ["en"] = "Start LocalSynapse when I log in", ["ko"] = "로그인 시 LocalSynapse 자동 시작", ["fr"] = "Démarrer LocalSynapse à la connexion", ["de"] = "LocalSynapse beim Anmelden starten", ["zh"] = "登录时启动 LocalSynapse" },
+            [StringKeys.AlwaysOn.OnboardUpgradeConfirm] = new() { ["en"] = "Got it", ["ko"] = "확인", ["fr"] = "Compris", ["de"] = "Verstanden", ["zh"] = "知道了" },
+
         };
     }
 }

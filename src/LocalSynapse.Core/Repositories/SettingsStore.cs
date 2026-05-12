@@ -157,6 +157,70 @@ public sealed class SettingsStore : ISettingsStore
     }
 
     // ═══════════════════════════════════════════════════════════════════
+    //  Always-On settings (v2.13.0)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <inheritdoc />
+    public string? GetHotkeyCombo() => _settings.HotkeyCombo;
+
+    /// <inheritdoc />
+    public void SetHotkeyCombo(string? combo)
+    {
+        _settings.HotkeyCombo = combo;
+        WriteSettingsAtomic(_settings);
+    }
+
+    /// <inheritdoc />
+    public bool GetHotkeyEnabled() => _settings.HotkeyEnabled ?? true;
+
+    /// <inheritdoc />
+    public void SetHotkeyEnabled(bool enabled)
+    {
+        _settings.HotkeyEnabled = enabled;
+        WriteSettingsAtomic(_settings);
+    }
+
+    /// <inheritdoc />
+    public bool GetMinimizeToTrayOnClose() => _settings.MinimizeToTrayOnClose ?? true;
+
+    /// <inheritdoc />
+    public void SetMinimizeToTrayOnClose(bool enabled)
+    {
+        _settings.MinimizeToTrayOnClose = enabled;
+        WriteSettingsAtomic(_settings);
+    }
+
+    /// <inheritdoc />
+    public bool GetShowFirstCloseToast() => _settings.ShowFirstCloseToast ?? true;
+
+    /// <inheritdoc />
+    public void SetShowFirstCloseToast(bool show)
+    {
+        _settings.ShowFirstCloseToast = show;
+        WriteSettingsAtomic(_settings);
+    }
+
+    /// <inheritdoc />
+    public bool? GetAutoStartEnabled() => _settings.AutoStartEnabled;
+
+    /// <inheritdoc />
+    public void SetAutoStartEnabled(bool enabled)
+    {
+        _settings.AutoStartEnabled = enabled;
+        WriteSettingsAtomic(_settings);
+    }
+
+    /// <inheritdoc />
+    public string? GetLastSeenVersion() => _settings.LastSeenVersion;
+
+    /// <inheritdoc />
+    public void SetLastSeenVersion(string version)
+    {
+        _settings.LastSeenVersion = version;
+        WriteSettingsAtomic(_settings);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
     //  Private helpers
     // ═══════════════════════════════════════════════════════════════════
 
@@ -260,6 +324,14 @@ internal sealed class SettingsFile
     public string? IndexingPerformanceMode { get; set; }
     public GpuDetectionCache? GpuDetection { get; set; }
     public EpRuntimeStatus? EpRuntime { get; set; }
+
+    // ── Always-On (v2.13.0) ──
+    public string? HotkeyCombo { get; set; }
+    public bool? HotkeyEnabled { get; set; }
+    public bool? MinimizeToTrayOnClose { get; set; }
+    public bool? ShowFirstCloseToast { get; set; }
+    public bool? AutoStartEnabled { get; set; }
+    public string? LastSeenVersion { get; set; }
 }
 
 /// <summary>GPU 감지 결과 캐시 (settings.json 내 저장).</summary>

@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LocalSynapse.UI.ViewModels"
+        xmlns:i18n="using:LocalSynapse.UI.Markup"
+        x:Class="LocalSynapse.UI.Views.AlwaysOnOnboardingDialog"
+        x:DataType="vm:AlwaysOnOnboardingViewModel"
+        Title="LocalSynapse"
+        Width="440" Height="320"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="BorderOnly">
+
+    <Border Padding="32" Background="{StaticResource SurfaceBrush}">
+        <StackPanel Spacing="16" VerticalAlignment="Center">
+            <!-- Title -->
+            <TextBlock FontSize="{StaticResource FontSizeL}"
+                       FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}">
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="{}{0}">
+                        <Binding Path="IsUpgrade" />
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+
+            <!-- We use code-behind to set localized text since MultiBinding with bool switch is complex -->
+            <TextBlock Name="TitleBlock"
+                       FontSize="{StaticResource FontSizeL}"
+                       FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}" />
+
+            <!-- Body -->
+            <TextBlock Name="BodyBlock"
+                       FontSize="{StaticResource FontSizeS}"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       LineHeight="22" />
+
+            <!-- Hotkey display -->
+            <Border Background="{StaticResource SurfaceAltBrush}"
+                    CornerRadius="6"
+                    Padding="12,8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="⌨"
+                               FontSize="{StaticResource FontSizeM}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding HotkeyDisplay}"
+                               FontSize="{StaticResource FontSizeM}"
+                               FontWeight="Medium"
+                               FontFamily="{StaticResource FontMono}"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource AccentBrush}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Auto-start checkbox -->
+            <CheckBox Name="AutoStartCheck"
+                      IsChecked="{Binding IsAutoStartChecked}"
+                      FontSize="{StaticResource FontSizeS}" />
+
+            <!-- Confirm button -->
+            <Button Name="ConfirmButton"
+                    Command="{Binding ConfirmCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    FontWeight="Medium"
+                    Padding="12,10"
+                    Classes="accent" />
+        </StackPanel>
+    </Border>
+</Window>
