@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using LocalSynapse.UI.Services.Localization;
 using LocalSynapse.UI.ViewModels;
@@ -52,5 +53,15 @@ public partial class AlwaysOnOnboardingDialog : Window
             vm.ConfirmCommand.Execute(null);
         }
         base.OnClosing(e);
+    }
+
+    /// <summary>Got it button click — runs the confirm command then closes the dialog.</summary>
+    private void OnConfirmClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is AlwaysOnOnboardingViewModel vm && !vm.IsConfirmed)
+        {
+            vm.ConfirmCommand.Execute(null);
+        }
+        Close();
     }
 }
