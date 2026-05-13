@@ -77,6 +77,7 @@ src/
 | Microsoft.Extensions.DependencyInjection | Mcp.Stdio | DI container |
 | ModelContextProtocol | Mcp, UI | MCP C# SDK (official) |
 | Microsoft.Extensions.Hosting | Mcp, Mcp.Stdio, UI | Generic Host for MCP stdio server |
+| FluentAssertions | tests/LocalSynapse.Core.Tests | 6.12.2 — Expressive assertions for TDD tests (v3.0.0 §9.3 decision). |
 
 Do NOT add packages without approval.
 
