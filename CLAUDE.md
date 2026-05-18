@@ -258,3 +258,65 @@ diff-plan 작성 중 spec의 약점, 버그, 또는 더 나은 대안을 발견�
 ### Phase 번호 체계
 Phase 번호는 `/recon 1a` 형식으로 사용.
 1a, 1b, 1c... → 2a, 2b... 순서로 진행.
+
+---
+
+## Repository Structure & Git Conventions
+
+### Current state (until v3.0.0 release day)
+
+Single public repo: `github.com/LocalSynapse/LocalSynapse`. Apache 2.0 licensed. All commits and pushes are public-visible.
+
+### Planned transition (v3.0.0 release day)
+
+Repo splits into two:
+- **`LocalSynapse/LocalSynapse`** — Public, release-distribution only. README, LICENSE, NOTICE, Releases page.
+- **`LocalSynapse/LocalSynapse-private`** *(working name)* — Private, all active development.
+
+Existing fork network preserves v2.x source per Apache 2.0 §4. No archive repo created.
+
+### Commit hygiene (applies NOW, every commit)
+
+Every commit message body, code comment, PR description, release note, and `.iss` comment is assumed public-visible. Until v3.0.0 release day this is literally true; after the transition, all release-side artifacts (notes, README, public commits to the release repo) remain public. This means:
+
+1. **No `docs/plans/` path references.** Commit bodies, code comments, and PR descriptions must be self-contained. Mechanisms are explained inline next to the code, not by pointing to private docs.
+2. **No private-doc existence leaks.** Phrases like "see private spec", "as planned in the recon doc", "per the diff plan" are forbidden. The existence of private planning artifacts is itself non-public.
+3. **No spec section identifiers** (`§6.5`, `§1.3`, etc.) in any public-facing text. These reveal the existence and structure of private specs.
+4. **No internal task IDs** (`P1.2`, `T-NN`, `A-NN`, `D-EX3`, etc.) in any public-facing text. These reveal the existence of an internal phase structure. User-facing language only.
+5. **No enum member enumeration** in commit bodies. Listing all values of an enum in a commit body discloses the full state space; reference the enum by name only.
+6. **User-perspective framing.** Commit subject and body describe what changes for the user or for the codebase, not what task ID was completed.
+7. **English-only** for all public-visible text per the release language policy.
+
+### Pre-push self-check
+
+Before every push to any branch tracked by `origin/main`:
+
+```bash
+# 1. Confirm no docs/plans/ references in the diff being pushed
+git log origin/main..HEAD -p | grep -iE "docs/plans|recon|diff.?plan|spec.?(rev|section)|§[0-9]" || echo "OK: no private-doc references"
+
+# 2. Confirm no internal task IDs in commit messages being pushed
+git log origin/main..HEAD --format=%B | grep -iE "\bP[0-9]+\.[0-9]+\b|\bT-[0-9]+\b|\bA-[0-9]+\b|\bD-EX[0-9]+\b" || echo "OK: no internal task IDs"
+
+# 3. Confirm origin/main sync state in both directions
+git fetch origin
+git log --oneline origin/main..HEAD
+git log --oneline HEAD..origin/main
+# Both should be reviewed; surprises here have caused near-misses before
+```
+
+If any check produces output (other than the "OK:" line), STOP and amend the offending commit(s) before pushing.
+
+### Force-push and history rewrite
+
+Force-pushing to `main` or any shared branch is prohibited. Public git history is treated as immutable. The amend-before-push workflow exists to catch policy violations before they enter history. If a violation reaches `origin/main`, it stays — do not attempt history rewrite on the public repo.
+
+### Post-transition (after v3.0.0 release day)
+
+After repo structure transition, this document moves to the private repo. The public repo at that point contains only release artifacts and a minimal README; no source-level commit hygiene applies to it (its only commits are release-trigger metadata and README edits). However, **all conventions above continue to apply to the private repo** because release notes, public commits to the release repo, and any artifact metadata still cross the public boundary.
+
+### Why this matters
+
+Per the 2026-05-18 sensitivity audit: zero real secrets are exposed in current public source, but business design (license cache schema, fail-open policy, grace period logic, threshold values, gating conditions) was disclosed through unconstrained commit body content and is now permanent on public git history. The conventions above prevent further such disclosure going forward.
+
+This is the operational embodiment of the principle: "public logic stays public; Ryan-designed thresholds, conditions, and flows go private."
