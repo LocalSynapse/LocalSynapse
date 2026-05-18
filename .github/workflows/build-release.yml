@@ -90,6 +90,13 @@ jobs:
           path: publish/artifacts/
 
   build-macos:
+    # Skip macOS builds on patch releases to stay within Free plan
+    # Actions budget. Major releases (vX.Y.0) build Windows and macOS;
+    # patches (vX.Y.Z where Z > 0) build Windows only.
+    # macOS runners are billed at 10x the minute multiplier on private
+    # repos, so restricting them to majors keeps busy-month usage under
+    # the 2,000-minute Free plan budget.
+    if: endsWith(github.ref, '.0')
     runs-on: macos-latest
     strategy:
       matrix:
@@ -182,11 +189,13 @@ jobs:
           name: windows-build
           path: artifacts/windows
       - name: Download macOS Apple Silicon artifacts
+        if: endsWith(github.ref, '.0')
         uses: actions/download-artifact@v4
         with:
           name: macos-build-AppleSilicon
           path: artifacts/macos-arm64
       - name: Download macOS Intel artifacts
+        if: endsWith(github.ref, '.0')
         uses: actions/download-artifact@v4
         with:
           name: macos-build-Intel
@@ -194,6 +203,7 @@ jobs:
       - name: List all artifacts
         run: find artifacts -type f | sort
       - name: Combine macOS SHA256SUMS files
+        if: endsWith(github.ref, '.0')
         run: |
           mkdir -p artifacts/macos-combined
           cat artifacts/macos-arm64/SHA256SUMS-macOS.txt \
