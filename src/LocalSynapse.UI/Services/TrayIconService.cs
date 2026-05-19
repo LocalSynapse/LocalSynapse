@@ -56,13 +56,12 @@ public sealed class TrayIconService : IDisposable
             IsVisible = true,
         };
 
-        // Load tray icon from the multi-layer ICO so Windows can pick the small
-        // (16/32/48) size variant directly. Loading a 256x256 PNG forces Windows
-        // to downscale aggressively for the tray slot and produces a nearly-blank
-        // bitmap; reading from .ico avoids that path.
+        // avares:// authority is the assembly name (LocalSynapse), not the
+        // project name (LocalSynapse.UI). The wrong authority makes AssetLoader
+        // throw and the icon silently falls through to blank.
         try
         {
-            var uri = new Uri("avares://LocalSynapse.UI/Assets/app-icon.ico");
+            var uri = new Uri("avares://LocalSynapse/Assets/app-icon.ico");
             var assets = Avalonia.Platform.AssetLoader.Open(uri);
             _trayIcon.Icon = new WindowIcon(assets);
         }
