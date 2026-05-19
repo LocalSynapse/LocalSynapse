@@ -132,7 +132,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IDocumentFamilyService>(),
             sp.GetRequiredService<ILocalizationService>(),
             sp.GetRequiredService<IModelInstaller>(),
-            sp.GetRequiredService<TelemetryCounterService>()));
+            sp.GetRequiredService<TelemetryCounterService>(),
+            sp.GetRequiredService<ISettingsStore>()));
         services.AddSingleton<McpConfigService>();
         services.AddTransient<McpViewModel>();
         services.AddSingleton<SettingsViewModel>(sp => new SettingsViewModel(

@@ -130,6 +130,7 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     private readonly IDocumentFamilyService _familyService;
     private readonly ILocalizationService _loc;
     private readonly IModelInstaller _modelInstaller;
+    private readonly ISettingsStore _settings;
     private System.Threading.Timer? _bannerTimer;
 
     // Search-as-you-type debounce
@@ -166,6 +167,16 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _showModeBadge;
     [ObservableProperty] private string _modeBadgeText = "";
     [ObservableProperty] private IBrush? _modeBadgeBackground;
+
+    // ── Search mode selector (v2.11.0) ──
+    [ObservableProperty] private bool _isFastSelected;
+    [ObservableProperty] private bool _isSmartSelected;
+    [ObservableProperty] private bool _isSmartEnabled = true;
+    [ObservableProperty] private string _smartDisabledHint = "";
+    [ObservableProperty] private bool _showSmartFallbackBanner;
+    [ObservableProperty] private string _smartFallbackBannerText = "";
+    private bool _suppressModeChange;
+    private const double SmartModeMinimumPercentage = 0.80;
 
     // Filter — string tokens are the source of truth; *Option properties wrap for ComboBox SelectedItem binding
     [ObservableProperty] private string _activeTypeFilter = "All";
@@ -308,7 +319,8 @@ public partial class SearchViewModel : ObservableObject, IDisposable
         IDocumentFamilyService familyService,
         ILocalizationService loc,
         IModelInstaller modelInstaller,
-        TelemetryCounterService telemetry)
+        TelemetryCounterService telemetry,
+        ISettingsStore settings)
     {
         _telemetry = telemetry;
         _hybridSearch = hybridSearch;
@@ -324,6 +336,18 @@ public partial class SearchViewModel : ObservableObject, IDisposable
         Stamps = _stampRepo.GetCurrent();
         _loc.LanguageChanged += OnLanguageChanged;
         _modelInstaller = modelInstaller;
+        _settings = settings;
+
+        // Initialize mode selection from persisted setting (default: smart).
+        _suppressModeChange = true;
+        var persistedMode = _settings.GetSearchMode();
+        IsSmartSelected = persistedMode == "smart";
+        IsFastSelected = persistedMode == "fast";
+        if (!IsSmartSelected && !IsFastSelected)
+        {
+            IsSmartSelected = true; // fallback to default
+        }
+        _suppressModeChange = false;
 
         _bannerTimer = new System.Threading.Timer(_ =>
             Avalonia.Threading.Dispatcher.UIThread.Post(RefreshBannerState),
@@ -339,6 +363,7 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     private void RefreshBannerState()
     {
         Stamps = _stampRepo.GetCurrent();
+        UpdateSmartModeAvailability();
 
         if (!Stamps.ScanComplete)
         {
@@ -407,6 +432,88 @@ public partial class SearchViewModel : ObservableObject, IDisposable
         }
         // Always re-apply filter to refresh "더 보기/Show less" text
         ApplyTypeAndDateFilter();
+    }
+
+    /// <summary>
+    /// Recomputes Smart-mode availability from the current pipeline stamp.
+    /// Polled every 3 seconds by the existing banner timer. Handles two
+    /// transitions: (a) coverage crosses below 80% mid-session while user has
+    /// Smart persisted → auto-fall back to Fast with a banner; (b) coverage
+    /// crosses back above 80% → re-enable the Smart radio without auto-switching.
+    /// </summary>
+    private void UpdateSmartModeAvailability()
+    {
+        var stamp = Stamps;
+        double coverage = stamp.EmbeddableChunks > 0
+            ? (double)stamp.EmbeddedChunks / stamp.EmbeddableChunks
+            : 0.0;
+        var available = coverage >= SmartModeMinimumPercentage;
+        IsSmartEnabled = available;
+        var percent = (int)Math.Round(coverage * 100);
+        SmartDisabledHint = _loc.Format(StringKeys.SearchMode.SmartDisabled, percent);
+
+        // Auto-fallback: persisted Smart but coverage dropped below threshold.
+        if (!available && _settings.GetSearchMode() == "smart")
+        {
+            // Don't recursively trigger HandleModeChangeAsync — flip the selection
+            // and persist directly. The active query will pick up the change on the
+            // next debounce or explicit re-trigger; the banner explains the state.
+            _suppressModeChange = true;
+            IsFastSelected = true;
+            IsSmartSelected = false;
+            _suppressModeChange = false;
+            _settings.SetSearchMode("fast");
+            SmartFallbackBannerText = _loc[StringKeys.SearchMode.SmartFallbackBanner];
+            ShowSmartFallbackBanner = true;
+        }
+        else if (available && ShowSmartFallbackBanner)
+        {
+            // Coverage recovered — clear the banner but leave the selection alone.
+            ShowSmartFallbackBanner = false;
+        }
+    }
+
+    // ── Mode selector (v2.11.0) ──
+    //
+    // Two RadioButtons bind to IsFastSelected / IsSmartSelected. The partial
+    // change methods drive the mode-change logic, with a suppress flag to
+    // prevent re-entrance when the inverse property is updated.
+
+    partial void OnIsFastSelectedChanged(bool value)
+    {
+        if (_suppressModeChange) return;
+        if (!value) return; // unchecking is a side-effect of the other one being checked
+        _suppressModeChange = true;
+        IsSmartSelected = false;
+        _suppressModeChange = false;
+        _ = HandleModeChangeAsync("fast");
+    }
+
+    partial void OnIsSmartSelectedChanged(bool value)
+    {
+        if (_suppressModeChange) return;
+        if (!value) return;
+        _suppressModeChange = true;
+        IsFastSelected = false;
+        _suppressModeChange = false;
+        _ = HandleModeChangeAsync("smart");
+    }
+
+    private async Task HandleModeChangeAsync(string newMode)
+    {
+        // Sequence: cancel any in-flight search BEFORE persisting the mode, then
+        // persist, then re-issue. Cancel-before-persist prevents the old-mode
+        // search from rendering its results under the new-mode badge.
+        if (!string.IsNullOrWhiteSpace(Query))
+        {
+            try { _searchCts?.Cancel(); } catch (ObjectDisposedException) { }
+        }
+        _settings.SetSearchMode(newMode);
+
+        if (!string.IsNullOrWhiteSpace(Query))
+        {
+            await ExecuteSearchAsync(Query, SearchTriggerSource.ModeChange);
+        }
     }
 
     // ── Search-as-you-type ──
@@ -494,11 +601,12 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             ApplyTypeAndDateFilter();
             var catMs = catSw.ElapsedMilliseconds;
 
-            // Search mode badge. Labels are temporarily English; Step 1.E.7 replaces
-            // them with localization-key lookups once the keys are registered.
+            // Search mode badge — localized label of the strategy that actually ran.
             var mode = response.Mode;
             ShowModeBadge = true;
-            ModeBadgeText = mode == SearchMode.Smart ? "Smart" : "Fast";
+            ModeBadgeText = mode == SearchMode.Smart
+                ? _loc[StringKeys.SearchMode.SmartLabel]
+                : _loc[StringKeys.SearchMode.FastLabel];
             ModeBadgeBackground = GetBrush(mode == SearchMode.Smart ? "SuccessLightBrush" : "BgMutedBrush");
 
             // Cache for language-change rebuild
