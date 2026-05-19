@@ -22,6 +22,16 @@ public interface IEmbeddingRepository
     /// </summary>
     IAsyncEnumerable<EmbeddingRecord> EnumerateAllEmbeddingsAsync(
         string modelId, int batchSize = 500, CancellationToken ct = default);
+
+    // ── v2.11.0 ──
+    // ⚠️ CLAUDE.md Interfaces/ 수정 예외 승인 (2026-05-19): additive-only.
+
+    /// <summary>
+    /// (file_id, chunk_id) 튜플 집합에 해당하는 임베딩을 일괄 조회한다.
+    /// 후보 청크 단위 재순위(cascade rerank)에 사용한다. 누락된 튜플은 결과에서 빠진다.
+    /// </summary>
+    Task<List<EmbeddingRecord>> GetEmbeddingsByChunkIdsAsync(
+        (string fileId, int chunkId)[] keys, string modelId, CancellationToken ct = default);
 }
 
 public sealed class ChunkForEmbedding

@@ -148,13 +148,15 @@ public sealed class Bm25SearchService : IBm25Search
         var materialized = new List<(
             string fileId, string filename, string path, string extension,
             string folderPath, string? content, double bm25Score, string modifiedAt, bool isDirectory,
-            double filenameRank, double contentRank, double folderRank
+            double filenameRank, double contentRank, double folderRank, int chunkIndex
         )>();
 
         using (var conn = _connectionFactory.CreateConnection())
         using (var cmd = conn.CreateCommand())
         {
             // bm25 weights: chunk_id(0), file_id(0), text(1.0), filename(3.0), folder_path(1.0)
+            // chunk_index appended at position 12 so existing positional reads at
+            // indices 8-11 keep their offsets (no column-shift refactor needed).
             cmd.CommandText = @"
                 SELECT
                     f.id, f.filename, f.path, f.extension, f.folder_path,
@@ -162,7 +164,8 @@ public sealed class Bm25SearchService : IBm25Search
                     bm25(chunks_fts, 0, 0, 1.0, 3.0, 1.0) AS rank,
                     bm25(chunks_fts, 0, 0, 0, 1.0, 0) AS filename_rank,
                     bm25(chunks_fts, 0, 0, 1.0, 0, 0) AS content_rank,
-                    bm25(chunks_fts, 0, 0, 0, 0, 1.0) AS folder_rank
+                    bm25(chunks_fts, 0, 0, 0, 0, 1.0) AS folder_rank,
+                    fc.chunk_index
                 FROM chunks_fts
                 JOIN file_chunks fc ON chunks_fts.chunk_id = fc.id
                 JOIN files f ON fc.file_id = f.id
@@ -188,7 +191,8 @@ public sealed class Bm25SearchService : IBm25Search
                     !r.IsDBNull(7) && r.GetInt32(7) == 1,
                     r.GetDouble(9),   // filename_rank (음수 원본 — MatchSource 판별용)
                     r.GetDouble(10),  // content_rank
-                    r.GetDouble(11)   // folder_rank
+                    r.GetDouble(11),  // folder_rank
+                    r.GetInt32(12)    // chunk_index (cascade rerank lookup key)
                 ));
             }
         } // reader + cmd + connection all disposed here
@@ -232,6 +236,7 @@ public sealed class Bm25SearchService : IBm25Search
             raw.Add((new Bm25Hit
             {
                 FileId = m.fileId,
+                ChunkId = m.chunkIndex,
                 Filename = m.filename,
                 Path = m.path,
                 Extension = m.extension,

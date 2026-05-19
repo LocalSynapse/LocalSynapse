@@ -188,6 +188,9 @@ public sealed class DenseSearchServiceTest
             => Task.FromResult(new List<EmbeddingWithChunk>());
         public Task DeleteAllEmbeddingsAsync(string modelId, CancellationToken ct = default)
             => Task.CompletedTask;
+        public Task<List<EmbeddingRecord>> GetEmbeddingsByChunkIdsAsync(
+            (string fileId, int chunkId)[] keys, string modelId, CancellationToken ct = default)
+            => Task.FromResult(new List<EmbeddingRecord>());
     }
 
     private sealed class FakeFileRepository : IFileRepository

@@ -166,6 +166,9 @@ public class PipelineOrchestratorStateTest
         public async IAsyncEnumerable<EmbeddingRecord> EnumerateAllEmbeddingsAsync(
             string modelId, int batchSize = 500, [EnumeratorCancellation] CancellationToken ct = default)
         { await Task.CompletedTask; yield break; }
+        public Task<List<EmbeddingRecord>> GetEmbeddingsByChunkIdsAsync(
+            (string fileId, int chunkId)[] keys, string modelId, CancellationToken ct = default)
+            => Task.FromResult(new List<EmbeddingRecord>());
     }
 
     private sealed class StubPipelineStampRepository : IPipelineStampRepository

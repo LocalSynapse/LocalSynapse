@@ -200,6 +200,54 @@ public sealed class EmbeddingRepository : IEmbeddingRepository
         }, ct);
     }
 
+    /// <summary>
+    /// (file_id, chunk_id) 튜플 집합에 해당하는 임베딩을 일괄 조회한다.
+    /// Cascade rerank의 후보 청크 임베딩 일괄 페치용. 누락 튜플은 결과 미포함.
+    /// </summary>
+    public Task<List<EmbeddingRecord>> GetEmbeddingsByChunkIdsAsync(
+        (string fileId, int chunkId)[] keys, string modelId, CancellationToken ct = default)
+    {
+        return Task.Run(() =>
+        {
+            ct.ThrowIfCancellationRequested();
+            var results = new List<EmbeddingRecord>();
+            if (keys.Length == 0) return results;
+
+            using var conn = _connectionFactory.CreateConnection();
+            using var cmd = conn.CreateCommand();
+
+            // SQLite < 3.39.0 lacks multi-column IN; use OR-form. At ~200 keys this is
+            // ~400 parameters, well under the ~32766 SQLite parameter limit.
+            var conditions = new string[keys.Length];
+            for (int i = 0; i < keys.Length; i++)
+            {
+                conditions[i] = $"(file_id = $f{i} AND chunk_id = $c{i})";
+                cmd.Parameters.AddWithValue($"$f{i}", keys[i].fileId);
+                cmd.Parameters.AddWithValue($"$c{i}", keys[i].chunkId);
+            }
+            cmd.Parameters.AddWithValue("$modelId", modelId);
+
+            cmd.CommandText = $@"
+                SELECT file_id, chunk_id, vector
+                FROM embeddings
+                WHERE model_id = $modelId
+                  AND ({string.Join(" OR ", conditions)})";
+
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                ct.ThrowIfCancellationRequested();
+                results.Add(new EmbeddingRecord
+                {
+                    FileId  = r.GetString(0),
+                    ChunkId = r.GetInt32(1),
+                    Vector  = BlobToVector((byte[])r.GetValue(2)),
+                });
+            }
+            return results;
+        }, ct);
+    }
+
     /// <summary>지정 모델의 모든 임베딩을 삭제한다.</summary>
     public Task DeleteAllEmbeddingsAsync(string modelId, CancellationToken ct = default)
     {
