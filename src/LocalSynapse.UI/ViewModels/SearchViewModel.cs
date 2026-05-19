@@ -563,7 +563,12 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrWhiteSpace(query)) return;
         var trimmed = query.Trim();
-        if (trimmed == _activeSearchQuery && HasSearched) return;
+        // Mode changes must always re-issue, even for the same query — different
+        // strategy dispatches produce different results. Without this carve-out,
+        // toggling mode after a completed search would silently keep the prior
+        // mode's results under the new badge.
+        if (trimmed == _activeSearchQuery && HasSearched && source != SearchTriggerSource.ModeChange)
+            return;
 
         // Race-safe CTS replacement. A newer search cancels any older in-flight
         // search and renders alone. Without this, a slow first search would

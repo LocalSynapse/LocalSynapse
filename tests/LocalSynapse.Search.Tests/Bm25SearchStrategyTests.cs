@@ -27,6 +27,18 @@ public sealed class Bm25SearchStrategyTests : IDisposable
     }
 
     [Fact]
+    public void SearchModeEnum_SerializesToStableStrings()
+    {
+        // MCP search_files tool serializes response.Mode.ToString() into its
+        // JSON output. External callers branch on the string. A rename of any
+        // enum member without coordinating with consumers would break them
+        // silently — this test locks the contract.
+        Assert.Equal("Fast", SearchMode.Fast.ToString());
+        Assert.Equal("Smart", SearchMode.Smart.ToString());
+        Assert.Equal("Deep", SearchMode.Deep.ToString());
+    }
+
+    [Fact]
     public async Task SearchAsync_ReturnsFastModeResponse()
     {
         var response = await _sut.SearchAsync("budget", new SearchOptions { TopK = 10 });
