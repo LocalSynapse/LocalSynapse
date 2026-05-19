@@ -1,7 +1,3 @@
-// Suppress IDenseSearch / DenseSearchService obsolete warnings until Step 1.G
-// rewires DI to the ISearchStrategy registrations.
-#pragma warning disable CS0618
-
 using LocalSynapse.Core.Database;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Repositories;
@@ -77,7 +73,8 @@ public static class ServiceCollectionExtensions
             var embSvc = sp.GetRequiredService<EmbeddingService>();
             return new EmbeddingBridgeAdapter(embSvc);
         });
-        services.AddSingleton<IDenseSearch, DenseSearchService>();
+        services.AddSingleton<ISearchStrategy, Bm25SearchStrategy>();
+        services.AddSingleton<ISearchStrategy, CascadeSearchStrategy>();
         services.AddSingleton<IHybridSearch, HybridSearchService>();
         services.AddSingleton<IDocumentFamilyService, DocumentFamilyService>();
         services.AddSingleton<ISnippetExtractor, SnippetExtractor>();

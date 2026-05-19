@@ -1,7 +1,3 @@
-// Suppress IDenseSearch / DenseSearchService obsolete warnings until Step 1.G
-// rewires DI to the ISearchStrategy registrations.
-#pragma warning disable CS0618
-
 using Microsoft.Extensions.DependencyInjection;
 using LocalSynapse.Core.Database;
 using LocalSynapse.Core.Interfaces;
@@ -42,9 +38,11 @@ internal static class McpServiceRegistration
             sp.GetRequiredService<SqliteConnectionFactory>(),
             sp.GetRequiredService<SearchClickService>()));
         services.AddSingleton<IBm25Search>(sp => sp.GetRequiredService<Bm25SearchService>());
-        services.AddSingleton<IDenseSearch, EmptyDenseSearch>();
-        // Placeholder for M2 dense search — NullEmbeddingBridge disables dense path
+        // Headless MCP cannot run dense rerank (no embedding bridge available),
+        // so only the keyword strategy is registered. The orchestrator's
+        // TryGetValue + Fast fallback handles a persisted "smart" mode gracefully.
         services.AddSingleton<IEmbeddingBridge, NullEmbeddingBridge>();
+        services.AddSingleton<ISearchStrategy, Bm25SearchStrategy>();
         services.AddSingleton<IHybridSearch, HybridSearchService>();
     }
 }
