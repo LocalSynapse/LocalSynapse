@@ -1,133 +1,101 @@
 using System.Diagnostics;
+using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Search.Interfaces;
-
-// Suppress IDenseSearch obsolete warning until Step 1.D refactor replaces this
-// orchestrator with the ISearchStrategy-based dispatcher.
-#pragma warning disable CS0618
 
 namespace LocalSynapse.Search.Services;
 
 /// <summary>
-/// BM25 + Dense 하이브리드 검색 서비스.
-/// Phase 2c 이후 Dense search는 EmptyDenseSearch로 비활성화되어 사실상 FtsOnly 모드로 동작한다.
-/// Phase 3에서 Dense search 재설계 예정. IsAvailable=true인 IDenseSearch 구현이 주입되면 Hybrid 모드 자동 활성화.
+/// Orchestrates search dispatch by mode. Holds one strategy per registered mode
+/// and resolves the user's persisted choice on every SearchAsync call.
+/// QuickSearch (filename-only) bypasses strategy dispatch and goes straight to
+/// the BM25 service.
 /// </summary>
 public sealed class HybridSearchService : IHybridSearch
 {
+    private readonly IReadOnlyDictionary<SearchMode, ISearchStrategy> _strategies;
     private readonly IBm25Search _bm25;
-    private readonly IDenseSearch _dense;
+    private readonly ISettingsStore _settings;
+    private SearchMode _lastDispatched = SearchMode.Fast;
 
-    /// <summary>현재 검색 모드.</summary>
-    public SearchMode CurrentMode => _dense.IsAvailable ? SearchMode.Smart : SearchMode.Fast;
+    /// <inheritdoc />
+    public SearchMode CurrentMode => _lastDispatched;
 
     /// <summary>HybridSearchService 생성자.</summary>
-    public HybridSearchService(IBm25Search bm25, IDenseSearch dense)
+    public HybridSearchService(
+        IEnumerable<ISearchStrategy> strategies,
+        IBm25Search bm25,
+        ISettingsStore settings)
     {
+        _strategies = strategies.ToDictionary(s => s.Mode);
         _bm25 = bm25;
-        _dense = dense;
+        _settings = settings;
     }
 
-    /// <summary>하이브리드 검���을 실행한다.</summary>
+    /// <inheritdoc />
     public async Task<SearchResponse> SearchAsync(string query, SearchOptions options, CancellationToken ct = default)
     {
-        var sw = Stopwatch.StartNew();
-        var cleaned = NaturalQueryParser.RemoveStopwords(query);
-
-        // BM25 + Dense 병렬 시작
-        var bm25Task = Task.Run(() => _bm25.Search(cleaned, options), ct);
-        var denseAvailable = _dense.IsAvailable;
-
-        Task<IReadOnlyList<DenseHit>>? denseTask = denseAvailable
-            ? _dense.SearchAsync(query, options, ct)
-            : null;
-
-        // BM25 결과 대기
-        var bm25Results = await bm25Task;
-        ct.ThrowIfCancellationRequested();
-
-        IReadOnlyList<HybridHit> hybridHits;
-
-        if (denseAvailable && denseTask is not null)
-        {
-            try
-            {
-                var denseResults = await denseTask;
-                ct.ThrowIfCancellationRequested();
-
-                if (denseResults.Count > 0)
-                {
-                    hybridHits = RrfFusion.Combine(bm25Results, denseResults, options);
-                }
-                else
-                {
-                    hybridHits = MapBm25ToHybrid(bm25Results);
-                }
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                Debug.WriteLine($"[HybridSearch] Dense fallback: {ex.Message}");
-                hybridHits = MapBm25ToHybrid(bm25Results);
-            }
-        }
-        else
-        {
-            hybridHits = MapBm25ToHybrid(bm25Results);
-        }
-
-        sw.Stop();
-
-        return new SearchResponse
-        {
-            Query = query,
-            Mode = CurrentMode,
-            Items = hybridHits.ToList(),
-            Stats = new SearchStats
-            {
-                Bm25Count = bm25Results.Count,
-                DenseCount = denseAvailable ? hybridHits.Count(h => h.DenseScore > 0) : 0,
-                TotalCandidates = bm25Results.Count,
-                FinalCount = hybridHits.Count,
-                DurationMs = (int)sw.ElapsedMilliseconds,
-            }
-        };
+        var requested = ParseMode(_settings.GetSearchMode());
+        var strategy = ResolveStrategy(requested);
+        _lastDispatched = strategy.Mode;
+        return await strategy.SearchAsync(query, options, ct);
     }
 
-    /// <summary>빠른 파일명 검색을 실행한다.</summary>
+    /// <inheritdoc />
     public Task<SearchResponse> QuickSearchAsync(string query, int limit = 20, CancellationToken ct = default)
     {
         var bm25Results = _bm25.QuickSearch(query, limit);
-        var hybridHits = MapBm25ToHybrid(bm25Results);
+        var items = bm25Results.Select(b => new HybridHit
+        {
+            FileId       = b.FileId,
+            Filename     = b.Filename,
+            Path         = b.Path,
+            Extension    = b.Extension,
+            FolderPath   = b.FolderPath,
+            HybridScore  = b.Score,
+            Bm25Score    = b.Score,
+            DenseScore   = 0,
+            MatchedTerms = b.MatchedTerms,
+            ModifiedAt   = b.ModifiedAt,
+            IsDirectory  = b.IsDirectory,
+            MatchSource  = b.MatchSource,
+        }).ToList();
 
         return Task.FromResult(new SearchResponse
         {
             Query = query,
-            Mode = SearchMode.Fast,
-            Items = hybridHits.ToList(),
+            Mode  = SearchMode.Fast,
+            Items = items,
             Stats = new SearchStats
             {
-                Bm25Count = bm25Results.Count,
-                FinalCount = hybridHits.Count,
-            }
+                Bm25Count  = bm25Results.Count,
+                FinalCount = items.Count,
+            },
         });
     }
 
-    private static IReadOnlyList<HybridHit> MapBm25ToHybrid(IReadOnlyList<Bm25Hit> bm25Results)
+    /// <summary>
+    /// Resolves a SearchMode to a registered strategy. Falls back to Fast when
+    /// the requested mode is not registered (Mcp.Stdio registers only Fast; a
+    /// user with persisted SearchMode="smart" lands here without crashing).
+    /// </summary>
+    private ISearchStrategy ResolveStrategy(SearchMode requested)
     {
-        return bm25Results.Select(b => new HybridHit
+        if (_strategies.TryGetValue(requested, out var s)) return s;
+        if (_strategies.TryGetValue(SearchMode.Fast, out var fast))
         {
-            FileId = b.FileId,
-            Filename = b.Filename,
-            Path = b.Path,
-            Extension = b.Extension,
-            FolderPath = b.FolderPath,
-            HybridScore = b.Score,
-            Bm25Score = b.Score,
-            DenseScore = 0,
-            MatchedTerms = b.MatchedTerms,
-            ModifiedAt = b.ModifiedAt,
-            IsDirectory = b.IsDirectory,
-            MatchSource = b.MatchSource,
-        }).ToList();
+            Debug.WriteLine($"[HybridSearch] {requested} not registered; falling back to Fast.");
+            return fast;
+        }
+        // No Fast registered either — fall back to the first registered strategy.
+        return _strategies.Values.First();
     }
+
+    private static SearchMode ParseMode(string raw) => raw?.ToLowerInvariant() switch
+    {
+        "fast"  => SearchMode.Fast,
+        "smart" => SearchMode.Smart,
+        "deep"  => SearchMode.Deep,
+        _       => SearchMode.Smart, // default
+    };
 }

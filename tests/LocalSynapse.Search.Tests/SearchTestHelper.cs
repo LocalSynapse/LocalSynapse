@@ -181,6 +181,7 @@ internal sealed class TempSettingsStore : ISettingsStore
     public void SetAutoStartEnabled(bool enabled) { }
     public string? GetLastSeenVersion() => null;
     public void SetLastSeenVersion(string version) { }
-    public string GetSearchMode() => "smart";
-    public void SetSearchMode(string mode) { }
+    private string _searchMode = "smart";
+    public string GetSearchMode() => _searchMode;
+    public void SetSearchMode(string mode) => _searchMode = mode;
 }
