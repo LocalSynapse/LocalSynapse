@@ -173,4 +173,43 @@ public class SettingsStoreTests
         Assert.Null(activeEp);
         Assert.Null(detail);
     }
+
+    [Fact]
+    public void SettingsStore_SearchMode_DefaultsToSmart()
+    {
+        using var temp = new TempDbFixture();
+        var jsonPath = System.IO.Path.Combine(temp.DataFolder, "settings.json");
+        if (File.Exists(jsonPath)) File.Delete(jsonPath);
+
+        var store = new SettingsStore(temp.DataFolder);
+        Assert.Equal("smart", store.GetSearchMode());
+    }
+
+    [Fact]
+    public void SettingsStore_SearchMode_RoundTrips()
+    {
+        using var temp = new TempDbFixture();
+
+        var store = new SettingsStore(temp.DataFolder);
+        store.SetSearchMode("fast");
+        Assert.Equal("fast", store.GetSearchMode());
+
+        // Persistence — new instance reads from JSON.
+        var store2 = new SettingsStore(temp.DataFolder);
+        Assert.Equal("fast", store2.GetSearchMode());
+    }
+
+    [Fact]
+    public void SettingsStore_SearchMode_PersistsKeyWithPascalCase()
+    {
+        using var temp = new TempDbFixture();
+
+        var store = new SettingsStore(temp.DataFolder);
+        store.SetSearchMode("smart");
+
+        var jsonPath = System.IO.Path.Combine(temp.DataFolder, "settings.json");
+        var content = File.ReadAllText(jsonPath);
+        Assert.Contains("\"SearchMode\":", content);
+        Assert.DoesNotContain("\"searchMode\":", content);
+    }
 }
