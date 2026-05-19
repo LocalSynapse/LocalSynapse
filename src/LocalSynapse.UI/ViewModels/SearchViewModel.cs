@@ -494,11 +494,12 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             ApplyTypeAndDateFilter();
             var catMs = catSw.ElapsedMilliseconds;
 
-            // Search mode badge
+            // Search mode badge. Labels are temporarily English; Step 1.E.7 replaces
+            // them with localization-key lookups once the keys are registered.
             var mode = response.Mode;
             ShowModeBadge = true;
-            ModeBadgeText = mode == SearchMode.Hybrid ? "Hybrid" : "FTS";
-            ModeBadgeBackground = GetBrush(mode == SearchMode.Hybrid ? "SuccessLightBrush" : "BgMutedBrush");
+            ModeBadgeText = mode == SearchMode.Smart ? "Smart" : "Fast";
+            ModeBadgeBackground = GetBrush(mode == SearchMode.Smart ? "SuccessLightBrush" : "BgMutedBrush");
 
             // Cache for language-change rebuild
             _lastResponse = response;

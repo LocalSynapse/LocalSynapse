@@ -1,6 +1,10 @@
 using LocalSynapse.Core.Models;
 using LocalSynapse.Search.Interfaces;
 
+// Suppress IDenseSearch obsolete warning. This file is deleted in Step 1.D
+// once the orchestrator switches to ISearchStrategy.
+#pragma warning disable CS0618
+
 namespace LocalSynapse.Search.Services;
 
 /// <summary>

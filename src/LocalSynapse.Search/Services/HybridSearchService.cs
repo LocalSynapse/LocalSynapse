@@ -2,6 +2,10 @@ using System.Diagnostics;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Search.Interfaces;
 
+// Suppress IDenseSearch obsolete warning until Step 1.D refactor replaces this
+// orchestrator with the ISearchStrategy-based dispatcher.
+#pragma warning disable CS0618
+
 namespace LocalSynapse.Search.Services;
 
 /// <summary>
@@ -15,7 +19,7 @@ public sealed class HybridSearchService : IHybridSearch
     private readonly IDenseSearch _dense;
 
     /// <summary>현재 검색 모드.</summary>
-    public SearchMode CurrentMode => _dense.IsAvailable ? SearchMode.Hybrid : SearchMode.FtsOnly;
+    public SearchMode CurrentMode => _dense.IsAvailable ? SearchMode.Smart : SearchMode.Fast;
 
     /// <summary>HybridSearchService 생성자.</summary>
     public HybridSearchService(IBm25Search bm25, IDenseSearch dense)
@@ -98,7 +102,7 @@ public sealed class HybridSearchService : IHybridSearch
         return Task.FromResult(new SearchResponse
         {
             Query = query,
-            Mode = SearchMode.FtsOnly,
+            Mode = SearchMode.Fast,
             Items = hybridHits.ToList(),
             Stats = new SearchStats
             {

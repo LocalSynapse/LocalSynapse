@@ -66,6 +66,8 @@ public sealed class FileScanner : IFileScanner
         public void SetAutoStartEnabled(bool enabled) { }
         public string? GetLastSeenVersion() => null;
         public void SetLastSeenVersion(string version) { }
+        public string GetSearchMode() => "smart";
+        public void SetSearchMode(string mode) { }
     }
 
     /// <summary>Scan all fixed drives and upsert file metadata to DB.</summary>

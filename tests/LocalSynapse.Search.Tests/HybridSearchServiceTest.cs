@@ -1,3 +1,8 @@
+// Suppress IDenseSearch obsolete warning in test fake. Step 1.D will replace
+// FakeDenseSearch with ISearchStrategy-based fakes when the orchestrator is
+// refactored to consume strategies.
+#pragma warning disable CS0618
+
 using Xunit;
 using LocalSynapse.Core.Models;
 using LocalSynapse.Search.Interfaces;
@@ -20,12 +25,12 @@ public sealed class HybridSearchServiceTest : IDisposable
     public void Dispose() => _db.Dispose();
 
     [Fact]
-    public async Task SearchAsync_FtsOnlyMode_WhenDenseUnavailable()
+    public async Task SearchAsync_FastMode_WhenDenseUnavailable()
     {
         var options = new SearchOptions { TopK = 10 };
         var response = await _sut.SearchAsync("budget", options);
 
-        Assert.Equal(SearchMode.FtsOnly, response.Mode);
+        Assert.Equal(SearchMode.Fast, response.Mode);
     }
 
     [Fact]

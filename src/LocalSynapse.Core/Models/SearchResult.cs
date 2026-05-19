@@ -3,6 +3,7 @@ namespace LocalSynapse.Core.Models;
 public sealed class Bm25Hit
 {
     public required string FileId { get; set; }
+    public int ChunkId { get; set; }
     public required string Filename { get; set; }
     public required string Path { get; set; }
     public required string Extension { get; set; }
@@ -76,4 +77,16 @@ public sealed class SearchStats
     public int DurationMs { get; set; }
 }
 
-public enum SearchMode { Hybrid, FtsOnly }
+/// <summary>
+/// Search dispatch mode chosen by the user via the segmented selector below the
+/// search box. The orchestrator dispatches to the strategy whose Mode matches.
+/// </summary>
+public enum SearchMode
+{
+    /// <summary>BM25 only. Fast, lexical, embedding-independent.</summary>
+    Fast,
+    /// <summary>BM25 + semantic rerank over the BM25 candidate set.</summary>
+    Smart,
+    /// <summary>Reserved for full-corpus ANN dense search. Not registered in v2.11.0.</summary>
+    Deep,
+}

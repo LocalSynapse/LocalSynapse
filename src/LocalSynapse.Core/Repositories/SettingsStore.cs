@@ -221,6 +221,30 @@ public sealed class SettingsStore : ISettingsStore
     }
 
     // ═══════════════════════════════════════════════════════════════════
+    //  Search mode (v2.11.0)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <inheritdoc />
+    public string GetSearchMode()
+    {
+        lock (_settingsLock)
+        {
+            return _settings.SearchMode ?? "smart";
+        }
+    }
+
+    /// <inheritdoc />
+    public void SetSearchMode(string mode)
+    {
+        lock (_settingsLock)
+        {
+            if (_settings.SearchMode == mode) return;
+            _settings.SearchMode = mode;
+            WriteSettingsAtomic(_settings);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
     //  Private helpers
     // ═══════════════════════════════════════════════════════════════════
 
@@ -332,6 +356,9 @@ internal sealed class SettingsFile
     public bool? ShowFirstCloseToast { get; set; }
     public bool? AutoStartEnabled { get; set; }
     public string? LastSeenVersion { get; set; }
+
+    // ── Search mode (v2.11.0) ──
+    public string? SearchMode { get; set; }
 }
 
 /// <summary>GPU 감지 결과 캐시 (settings.json 내 저장).</summary>

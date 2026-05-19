@@ -11,6 +11,7 @@ namespace LocalSynapse.Search.Services;
 /// 쿼리 텍스트를 IEmbeddingBridge로 벡터화하고,
 /// DB의 임베딩과 유사도를 계산하여 Top-K를 반환한다.
 /// </summary>
+[Obsolete("Replaced by CascadeSearchStrategy in v2.11.0. Retained for Deep mode reactivation in v2.12.0.")]
 public sealed class DenseSearchService : IDenseSearch
 {
     private readonly IEmbeddingBridge _embeddingBridge;

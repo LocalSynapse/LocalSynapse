@@ -1,3 +1,8 @@
+// Suppress DenseSearchService obsolete warning. This test file is retained for
+// the v2.12.0 Deep mode reactivation; v2.11.0 keeps it green but unused at
+// runtime since the cascade strategy replaces DenseSearchService in production.
+#pragma warning disable CS0618
+
 using Xunit;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Models;

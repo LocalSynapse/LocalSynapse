@@ -1,3 +1,7 @@
+// Suppress IDenseSearch / DenseSearchService obsolete warnings until Step 1.G
+// rewires DI to the ISearchStrategy registrations.
+#pragma warning disable CS0618
+
 using LocalSynapse.Core.Database;
 using LocalSynapse.Core.Interfaces;
 using LocalSynapse.Core.Repositories;

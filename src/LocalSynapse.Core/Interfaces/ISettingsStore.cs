@@ -65,4 +65,12 @@ public interface ISettingsStore
     string? GetLastSeenVersion();
     /// <summary>Sets the last seen version after onboarding dialog is dismissed.</summary>
     void SetLastSeenVersion(string version);
+
+    // ── Search mode (v2.11.0) ──
+    // ⚠️ CLAUDE.md Interfaces/ 수정 예외 승인 (2026-05-19): additive-only, 기존 메서드 변경 없음.
+
+    /// <summary>Returns the persisted search mode token ("fast" | "smart"). Default: "smart".</summary>
+    string GetSearchMode();
+    /// <summary>Persists the search mode token.</summary>
+    void SetSearchMode(string mode);
 }
