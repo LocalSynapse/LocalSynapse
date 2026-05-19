@@ -342,4 +342,15 @@ public static class StringKeys
         public const string OnboardUpgradeAutoStart = "AlwaysOn.Onboard.Upgrade.AutoStart";
         public const string OnboardUpgradeConfirm = "AlwaysOn.Onboard.Upgrade.Confirm";
     }
+
+    /// <summary>Search mode selector strings (v2.11.0).</summary>
+    public static class SearchMode
+    {
+        public const string FastLabel              = "SearchMode.Fast.Label";
+        public const string SmartLabel             = "SearchMode.Smart.Label";
+        public const string FastDescription        = "SearchMode.Fast.Description";
+        public const string SmartDescription       = "SearchMode.Smart.Description";
+        public const string SmartDisabled          = "SearchMode.Smart.Disabled";
+        public const string SmartFallbackBanner    = "SearchMode.Smart.FallbackBanner";
+    }
 }

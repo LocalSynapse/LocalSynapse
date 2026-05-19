@@ -309,6 +309,13 @@ internal static class LocalizationRegistry
             [StringKeys.AlwaysOn.OnboardUpgradeAutoStart] = new() { ["en"] = "Start LocalSynapse when I log in", ["ko"] = "로그인 시 LocalSynapse 자동 시작", ["fr"] = "Démarrer LocalSynapse à la connexion", ["de"] = "LocalSynapse beim Anmelden starten", ["zh"] = "登录时启动 LocalSynapse" },
             [StringKeys.AlwaysOn.OnboardUpgradeConfirm] = new() { ["en"] = "Got it", ["ko"] = "확인", ["fr"] = "Compris", ["de"] = "Verstanden", ["zh"] = "知道了" },
 
+            // Search mode (v2.11.0)
+            [StringKeys.SearchMode.FastLabel] = new() { ["en"] = "Fast", ["ko"] = "빠른 검색", ["fr"] = "Rapide", ["de"] = "Schnell", ["zh"] = "快速" },
+            [StringKeys.SearchMode.SmartLabel] = new() { ["en"] = "Smart", ["ko"] = "스마트 검색", ["fr"] = "Intelligent", ["de"] = "Smart", ["zh"] = "智能" },
+            [StringKeys.SearchMode.FastDescription] = new() { ["en"] = "Keyword search only", ["ko"] = "키워드 검색만 사용", ["fr"] = "Recherche par mots-clés uniquement", ["de"] = "Nur Stichwortsuche", ["zh"] = "仅关键字搜索" },
+            [StringKeys.SearchMode.SmartDescription] = new() { ["en"] = "Keyword + AI semantic ranking", ["ko"] = "키워드 + AI 의미 기반 정렬", ["fr"] = "Mots-clés + classement sémantique IA", ["de"] = "Stichwort + KI-semantische Sortierung", ["zh"] = "关键字 + AI 语义排序" },
+            [StringKeys.SearchMode.SmartDisabled] = new() { ["en"] = "Requires embedding ({0}% complete)", ["ko"] = "임베딩 필요 (현재 {0}% 완료)", ["fr"] = "Nécessite l'incorporation ({0}% terminé)", ["de"] = "Erfordert Einbettung ({0}% abgeschlossen)", ["zh"] = "需要嵌入（已完成 {0}%）" },
+            [StringKeys.SearchMode.SmartFallbackBanner] = new() { ["en"] = "Smart mode unavailable — embedding rebuilding. Using Fast.", ["ko"] = "스마트 모드 사용 불가 — 임베딩 재구성 중. 빠른 검색 사용.", ["fr"] = "Mode Intelligent indisponible — reconstruction de l'incorporation. Utilisation du mode Rapide.", ["de"] = "Smart-Modus nicht verfügbar — Einbettung wird neu erstellt. Schnell-Modus aktiv.", ["zh"] = "智能模式不可用 — 嵌入正在重建。使用快速模式。" },
         };
     }
 }
