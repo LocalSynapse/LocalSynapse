@@ -85,7 +85,7 @@
                         <!-- Search button -->
                         <Button Grid.Column="3" Classes="BtnPrimary"
                                 Content="{i18n:Tr Key=Search.Button}"
-                                Command="{Binding SearchCommand}"
+                                Command="{Binding SearchFromButtonCommand}"
                                 VerticalAlignment="Stretch"
                                 Padding="20,0" />
                     </Grid>

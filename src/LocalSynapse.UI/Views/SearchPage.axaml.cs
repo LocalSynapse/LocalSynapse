@@ -20,7 +20,7 @@ public partial class SearchPage : UserControl
     {
         if (e.Key == Key.Enter && DataContext is SearchViewModel vm)
         {
-            vm.SearchCommand.Execute(null);
+            vm.SearchFromEnterCommand.Execute(null);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape && DataContext is SearchViewModel vm2)
@@ -78,7 +78,7 @@ public partial class SearchPage : UserControl
         if (sender is Button btn && btn.Tag is string query && DataContext is SearchViewModel vm)
         {
             vm.Query = query;
-            vm.SearchCommand.Execute(null);
+            vm.SearchFromButtonCommand.Execute(null);
         }
     }
 

@@ -135,8 +135,7 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     // Search-as-you-type debounce
     private System.Threading.Timer? _debounceTimer;
     private string _activeSearchQuery = "";
-    private int _searchInFlight;
-    private int _searchVersion;
+    private CancellationTokenSource? _searchCts;
     private const int DebounceMs = 250;
 
     // ── i18n ──
@@ -427,33 +426,48 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var version = _searchVersion;
+        var pending = value.Trim();
         _debounceTimer = new System.Threading.Timer(_ =>
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
-                if (_searchVersion == version)
-                    _ = ExecuteSearchAsync();
+                _ = ExecuteSearchAsync(pending, SearchTriggerSource.Debounce);
             });
         }, null, DebounceMs, Timeout.Infinite);
     }
 
-    /// <summary>Full search execution.</summary>
+    /// <summary>Run search triggered by Enter key in the search box.</summary>
     [RelayCommand]
-    private async Task SearchAsync()
+    private async Task SearchFromEnter()
     {
         _debounceTimer?.Dispose();
-        Interlocked.Increment(ref _searchVersion);
-        await ExecuteSearchAsync();
+        await ExecuteSearchAsync(Query, SearchTriggerSource.EnterKey);
     }
 
-    private async Task ExecuteSearchAsync()
+    /// <summary>Run search triggered by the search button or an example query chip.</summary>
+    [RelayCommand]
+    private async Task SearchFromButton()
     {
-        if (string.IsNullOrWhiteSpace(Query)) return;
-        var trimmed = Query.Trim();
+        _debounceTimer?.Dispose();
+        await ExecuteSearchAsync(Query, SearchTriggerSource.SearchButton);
+    }
+
+    private async Task ExecuteSearchAsync(string query, SearchTriggerSource source)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return;
+        var trimmed = query.Trim();
         if (trimmed == _activeSearchQuery && HasSearched) return;
 
-        if (Interlocked.CompareExchange(ref _searchInFlight, 1, 0) != 0) return;
+        // Race-safe CTS replacement. A newer search cancels any older in-flight
+        // search and renders alone. Without this, a slow first search would
+        // block the second via a boolean guard and the user's later query would
+        // be silently dropped — the symptom reported pre-v2.11.0 where pressing
+        // Enter quickly after typing produced only QuickSearch results.
+        var fresh = new CancellationTokenSource();
+        var oldCts = Interlocked.Exchange(ref _searchCts, fresh);
+        try { oldCts?.Cancel(); } catch (ObjectDisposedException) { }
+        oldCts?.Dispose();
+        var ct = fresh.Token;
 
         _clickService.OnNewSearch(trimmed);
 
@@ -466,11 +480,13 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             var sw = Stopwatch.StartNew();
 
             var hybridSw = Stopwatch.StartNew();
-            var response = await _hybridSearch.SearchAsync(_activeSearchQuery, new SearchOptions { TopK = 200 });
+            var response = await _hybridSearch.SearchAsync(trimmed, new SearchOptions { TopK = 200 }, ct);
+            if (ct.IsCancellationRequested) return;
             var hybridMs = hybridSw.ElapsedMilliseconds;
 
             var quickSw = Stopwatch.StartNew();
-            var quickHits = _bm25Search.QuickSearch(_activeSearchQuery, 200);
+            var quickHits = _bm25Search.QuickSearch(trimmed, 200);
+            if (ct.IsCancellationRequested) return;
             var quickMs = quickSw.ElapsedMilliseconds;
 
             var catSw = Stopwatch.StartNew();
@@ -487,7 +503,7 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             // Cache for language-change rebuild
             _lastResponse = response;
             _lastQuickHits = quickHits;
-            _lastQuery = _activeSearchQuery;
+            _lastQuery = trimmed;
 
             sw.Stop();
             SearchTime = $"{sw.Elapsed.TotalSeconds:F1}s";
@@ -499,7 +515,8 @@ public partial class SearchViewModel : ObservableObject, IDisposable
                 response.Items.Count);
 
             LocalSynapse.Core.Diagnostics.SpeedDiagLog.Log("SEARCH_UI",
-                "query", _activeSearchQuery,
+                "query", trimmed,
+                "source", source.ToString(),
                 "hybrid_ms", hybridMs,
                 "quick_ms", quickMs,
                 "categorize_ms", catMs,
@@ -509,14 +526,20 @@ public partial class SearchViewModel : ObservableObject, IDisposable
 
             Stamps = _stampRepo.GetCurrent();
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // expected — newer search has superseded this one
+        }
         catch (Exception ex)
         {
             Debug.WriteLine($"[SearchVM] Search error: {ex.Message}");
         }
         finally
         {
-            IsSearching = false;
-            Interlocked.Exchange(ref _searchInFlight, 0);
+            // Only clear the searching indicator if we are still the active CTS.
+            // If we were superseded, the newer search already set IsSearching=true.
+            if (!ct.IsCancellationRequested)
+                IsSearching = false;
         }
     }
 
@@ -1151,5 +1174,7 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     {
         _bannerTimer?.Dispose();
         _debounceTimer?.Dispose();
+        try { _searchCts?.Cancel(); } catch (ObjectDisposedException) { }
+        _searchCts?.Dispose();
     }
 }
