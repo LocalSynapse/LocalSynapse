@@ -56,10 +56,13 @@ public sealed class TrayIconService : IDisposable
             IsVisible = true,
         };
 
-        // Load icon from embedded resource
+        // Load tray icon from the multi-layer ICO so Windows can pick the small
+        // (16/32/48) size variant directly. Loading a 256x256 PNG forces Windows
+        // to downscale aggressively for the tray slot and produces a nearly-blank
+        // bitmap; reading from .ico avoids that path.
         try
         {
-            var uri = new Uri("avares://LocalSynapse.UI/Assets/app-icon-256.png");
+            var uri = new Uri("avares://LocalSynapse.UI/Assets/app-icon.ico");
             var assets = Avalonia.Platform.AssetLoader.Open(uri);
             _trayIcon.Icon = new WindowIcon(assets);
         }
