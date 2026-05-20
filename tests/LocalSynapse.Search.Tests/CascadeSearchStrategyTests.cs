@@ -33,15 +33,16 @@ public sealed class CascadeSearchStrategyTests : IDisposable
     [Fact]
     public async Task SearchAsync_NoQueryEmbedding_FallsBackToBm25Ranking()
     {
-        // EmptyBridge returns an empty vector — cascade emits a Smart-shaped
-        // response built from the BM25 ranking with no dense rerank applied.
+        // EmptyBridge returns an empty vector — cascade falls back to BM25-only.
+        // Response is labeled Fast because that's what actually ran (matches the
+        // user-visible "Smart unavailable — using Fast" banner copy).
         // Output count must equal BM25 input count (no drop).
         var sut = MakeStrategy(new EmptyBridge());
 
         var direct = _bm25.Search("budget", new SearchOptions { TopK = 10 });
         var response = await sut.SearchAsync("budget", new SearchOptions { TopK = 10 });
 
-        Assert.Equal(SearchMode.Smart, response.Mode);
+        Assert.Equal(SearchMode.Fast, response.Mode);
         Assert.Equal(direct.Count, response.Items.Count);
     }
 
@@ -56,8 +57,13 @@ public sealed class CascadeSearchStrategyTests : IDisposable
     }
 
     [Fact]
-    public async Task SearchAsync_CachesResultsForRepeatedCalls()
+    public async Task SearchAsync_DoesNotCacheFallbackResponse()
     {
+        // EmptyBridge takes the BM25-only fallback path. That path deliberately
+        // skips caching so the next search retries the embedding call —
+        // important so a transient model-load delay doesn't pin Fast results
+        // for 30 seconds once the model is healthy. The bridge is therefore
+        // called on every invocation, not just the first.
         var bridge = new EmptyBridge();
         var sut = MakeStrategy(bridge);
 
@@ -66,11 +72,8 @@ public sealed class CascadeSearchStrategyTests : IDisposable
         await sut.SearchAsync("budget", new SearchOptions { TopK = 10 });
         var secondCallCount = bridge.CallCount;
 
-        // Cache hit on the second call — the embedding bridge should not be
-        // re-invoked. (EmptyBridge returns an empty vector but the cascade still
-        // takes the BM25-only path; either way, the bridge call counter should
-        // stop incrementing once the response is cached.)
-        Assert.Equal(firstCallCount, secondCallCount);
+        Assert.Equal(1, firstCallCount);
+        Assert.Equal(2, secondCallCount);
     }
 
     private CascadeSearchStrategy MakeStrategy(IEmbeddingBridge bridge)

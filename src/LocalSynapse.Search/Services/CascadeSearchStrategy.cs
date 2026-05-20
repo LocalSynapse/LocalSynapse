@@ -87,6 +87,8 @@ public sealed class CascadeSearchStrategy : ISearchStrategy
 
         if (bm25Hits.Count == 0)
         {
+            // Empty BM25 is not a fallback — the Smart strategy was dispatched
+            // and ran; it just got zero candidates. Badge stays "Smart".
             return new SearchResponse
             {
                 Query = query,
@@ -96,16 +98,39 @@ public sealed class CascadeSearchStrategy : ISearchStrategy
             };
         }
 
-        // 2. Query embedding (single forward pass)
+        // 2. Query embedding (single forward pass).
+        // Two guarded paths around the model call:
+        //   - !IsReady — skip the call entirely; we'd just take the same throw
+        //     path inside EmbeddingService.GenerateEmbeddingAsync.
+        //   - exception during inference — model file truncated, OOM, GPU
+        //     provider mid-reload. Catch and fall through.
+        // In both cases the BM25 candidates are already on hand, so we emit
+        // them as a Fast-shaped response. The result is NOT cached so the next
+        // search retries the embedding path once the model is healthy.
+        if (!_embeddingBridge.IsReady)
+        {
+            return BuildBm25OnlyResponse(query, bm25Hits, sw);
+        }
+
         var embedSw = Stopwatch.StartNew();
-        var queryVector = await _embeddingBridge.GenerateEmbeddingAsync(query, ct);
+        float[] queryVector;
+        try
+        {
+            queryVector = await _embeddingBridge.GenerateEmbeddingAsync(query, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Cascade] Query embedding failed: {ex.Message}. Falling back to BM25-only.");
+            return BuildBm25OnlyResponse(query, bm25Hits, sw);
+        }
         var embedMs = embedSw.ElapsedMilliseconds;
         if (queryVector.Length == 0)
         {
-            // No query embedding available — emit BM25 result as Smart-shaped response.
-            var fallback = BuildBm25OnlyResponse(query, bm25Hits, sw);
-            _cache[cacheKey] = (DateTime.UtcNow, fallback);
-            return fallback;
+            return BuildBm25OnlyResponse(query, bm25Hits, sw);
         }
         ct.ThrowIfCancellationRequested();
 
@@ -213,7 +238,10 @@ public sealed class CascadeSearchStrategy : ISearchStrategy
         return new SearchResponse
         {
             Query = query,
-            Mode  = SearchMode.Smart,
+            // Fall-back path: actual dispatch ended up keyword-only, so the
+            // badge should say "Fast" not "Smart". Matches the user-visible
+            // SmartFallbackBanner copy ("Smart mode unavailable — using Fast.").
+            Mode  = SearchMode.Fast,
             Items = items,
             Stats = new SearchStats
             {
