@@ -175,6 +175,8 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _smartDisabledHint = "";
     [ObservableProperty] private bool _showSmartFallbackBanner;
     [ObservableProperty] private string _smartFallbackBannerText = "";
+    [ObservableProperty] private bool _showSmartProgress;
+    [ObservableProperty] private string _smartProgressText = "";
     private bool _suppressModeChange;
     // Tracks which strategy actually produced the on-screen results. Compared
     // against the persisted mode by the periodic availability check to detect
@@ -396,16 +398,26 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             BannerHasAction = true;
             ShowBanner = true;
         }
-        else if (!Stamps.EmbeddingComplete)
+        else
         {
-            BannerText = $"Building semantic index... {Stamps.EmbeddingPercent:F0}%";
-            BannerBackground = GetBrush("AccentLightBrush");
-            BannerHasAction = false;
-            ShowBanner = true;
+            // Embedding still building is surfaced inline next to the Smart radio
+            // (see SmartProgressText) rather than in the top banner. The banner
+            // is reserved for states that don't have a dedicated UI affordance.
+            ShowBanner = false;
+        }
+
+        // Inline progress for Smart mode while embedding is still building.
+        // Visible whenever embedding is incomplete AND the model is installed
+        // (so the message is actually meaningful — no model means a different
+        // call-to-action upstream).
+        if (!Stamps.EmbeddingComplete && _modelInstaller.IsModelInstalled("bge-m3"))
+        {
+            SmartProgressText = $"Building semantic index for smart mode... {Stamps.EmbeddingPercent:F0}%";
+            ShowSmartProgress = true;
         }
         else
         {
-            ShowBanner = false;
+            ShowSmartProgress = false;
         }
     }
 

@@ -23,6 +23,12 @@
         <Style Selector="RadioButton.CompactRadio">
             <Setter Property="Padding" Value="6,0,0,0" />
             <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+        </Style>
+        <!-- Selected state: bold + accent color so the active mode reads at a glance. -->
+        <Style Selector="RadioButton.CompactRadio:checked">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
         </Style>
         <!-- Suppress TextBox focus decoration — parent Border.SearchBar handles it -->
         <Style Selector="TextBox#SearchBox">
@@ -64,10 +70,10 @@
         <!-- A. SEARCH BAR                                  -->
         <!-- ═══════════════════════════════════════════════ -->
         <Border DockPanel.Dock="Top" Background="{StaticResource BgSurfaceBrush}"
-                Padding="20,16,20,12"
+                Padding="20,12,20,6"
                 BorderBrush="{StaticResource BorderDefaultBrush}"
                 BorderThickness="0,0,0,1">
-            <StackPanel Spacing="10">
+            <StackPanel Spacing="6">
                 <Border Classes="SearchBar">
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                         <!-- Search icon -->
@@ -136,7 +142,9 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Mode selector (left) -->
+                    <!-- Mode selector (left) — Smart radio is followed by an
+                         inline progress label while the embedding index is still
+                         building. -->
                     <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
                         <RadioButton Classes="CompactRadio" GroupName="SearchMode"
                                      Content="{i18n:Tr Key=SearchMode.Fast.Label}"
@@ -149,6 +157,11 @@
                                      IsEnabled="{Binding IsSmartEnabled}"
                                      FontSize="{StaticResource FontSizeS}"
                                      ToolTip.Tip="{Binding SmartDisabledHint}" />
+                        <TextBlock Text="{Binding SmartProgressText}"
+                                   IsVisible="{Binding ShowSmartProgress}"
+                                   FontSize="{StaticResource FontSizeXs}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   VerticalAlignment="Center" />
                     </StackPanel>
                 </DockPanel>
 
