@@ -12,6 +12,18 @@
     </UserControl.Resources>
 
     <UserControl.Styles>
+        <!-- Compact mode-selector radio: shrink the indicator to match the
+             FontSizeS text height. Default Fluent indicator is ~18px which
+             looks oversized next to small labels. Targets the Ellipse parts
+             inside the RadioButton template. -->
+        <Style Selector="RadioButton.CompactRadio /template/ Ellipse">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+        </Style>
+        <Style Selector="RadioButton.CompactRadio">
+            <Setter Property="Padding" Value="6,0,0,0" />
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
         <!-- Suppress TextBox focus decoration — parent Border.SearchBar handles it -->
         <Style Selector="TextBox#SearchBox">
             <Setter Property="BorderThickness" Value="0" />
@@ -91,21 +103,54 @@
                     </Grid>
                 </Border>
 
-                <!-- Mode selector (v2.11.0) -->
-                <StackPanel Orientation="Horizontal" Spacing="14"
-                            Margin="2,0,0,0" VerticalAlignment="Center">
-                    <RadioButton GroupName="SearchMode"
-                                 Content="{i18n:Tr Key=SearchMode.Fast.Label}"
-                                 IsChecked="{Binding IsFastSelected, Mode=TwoWay}"
-                                 FontSize="{StaticResource FontSizeS}"
-                                 ToolTip.Tip="{i18n:Tr Key=SearchMode.Fast.Description}" />
-                    <RadioButton GroupName="SearchMode"
-                                 Content="{i18n:Tr Key=SearchMode.Smart.Label}"
-                                 IsChecked="{Binding IsSmartSelected, Mode=TwoWay}"
-                                 IsEnabled="{Binding IsSmartEnabled}"
-                                 FontSize="{StaticResource FontSizeS}"
-                                 ToolTip.Tip="{Binding SmartDisabledHint}" />
-                </StackPanel>
+                <!-- Mode selector + library stats on a single row.
+                     Mode selector docks left; library stats dock right when ready. -->
+                <DockPanel Margin="2,0,0,0">
+                    <!-- Library stats (right) -->
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="16"
+                                IsVisible="{Binding Stamps.SearchReady}"
+                                VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Width="{StaticResource StatusDotSize}"
+                                     Height="{StaticResource StatusDotSize}"
+                                     Fill="{StaticResource SuccessBrush}"
+                                     VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                            <TextBlock Text="{i18n:Tr Key=Search.FilesIndexed}"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Width="{StaticResource StatusDotSize}"
+                                     Height="{StaticResource StatusDotSize}"
+                                     Fill="{StaticResource SuccessBrush}"
+                                     VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                            <TextBlock Text="{i18n:Tr Key=Search.Chunks}"
+                                       FontSize="{StaticResource FontSizeS}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Mode selector (left) -->
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <RadioButton Classes="CompactRadio" GroupName="SearchMode"
+                                     Content="{i18n:Tr Key=SearchMode.Fast.Label}"
+                                     IsChecked="{Binding IsFastSelected, Mode=TwoWay}"
+                                     FontSize="{StaticResource FontSizeS}"
+                                     ToolTip.Tip="{i18n:Tr Key=SearchMode.Fast.Description}" />
+                        <RadioButton Classes="CompactRadio" GroupName="SearchMode"
+                                     Content="{i18n:Tr Key=SearchMode.Smart.Label}"
+                                     IsChecked="{Binding IsSmartSelected, Mode=TwoWay}"
+                                     IsEnabled="{Binding IsSmartEnabled}"
+                                     FontSize="{StaticResource FontSizeS}"
+                                     ToolTip.Tip="{Binding SmartDisabledHint}" />
+                    </StackPanel>
+                </DockPanel>
 
                 <!-- Smart fallback banner (auto-fallback when embedding coverage drops mid-session) -->
                 <Border Padding="8,4" CornerRadius="6"
@@ -115,36 +160,6 @@
                                FontSize="{StaticResource FontSizeXs}"
                                Foreground="{StaticResource TextSecondaryBrush}" />
                 </Border>
-
-                <!-- Stats row -->
-                <StackPanel Orientation="Horizontal" Spacing="16"
-                            IsVisible="{Binding Stamps.SearchReady}"
-                            Margin="2,0,0,0">
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <Ellipse Width="{StaticResource StatusDotSize}"
-                                 Height="{StaticResource StatusDotSize}"
-                                 Fill="{StaticResource SuccessBrush}"
-                                 VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding Stamps.TotalFiles, StringFormat='{}{0:N0}'}"
-                                   FontSize="{StaticResource FontSizeS}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
-                        <TextBlock Text="{i18n:Tr Key=Search.FilesIndexed}"
-                                   FontSize="{StaticResource FontSizeS}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <Ellipse Width="{StaticResource StatusDotSize}"
-                                 Height="{StaticResource StatusDotSize}"
-                                 Fill="{StaticResource SuccessBrush}"
-                                 VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding Stamps.TotalChunks, StringFormat='{}{0:N0}'}"
-                                   FontSize="{StaticResource FontSizeS}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
-                        <TextBlock Text="{i18n:Tr Key=Search.Chunks}"
-                                   FontSize="{StaticResource FontSizeS}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
-                    </StackPanel>
-                </StackPanel>
             </StackPanel>
         </Border>
 
