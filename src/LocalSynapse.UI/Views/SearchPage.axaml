@@ -16,9 +16,27 @@
              FontSizeS text height. Default Fluent indicator is ~18px which
              looks oversized next to small labels. Targets the Ellipse parts
              inside the RadioButton template. -->
-        <Style Selector="RadioButton.CompactRadio /template/ Ellipse">
-            <Setter Property="Width" Value="12" />
-            <Setter Property="Height" Value="12" />
+        <!-- Compact radio sizing: outer ring 14 px, inner dot 6 px so the
+             selected state shows a clear ring-with-dot instead of a fully-
+             filled circle. Names match Avalonia 11.x Fluent RadioButton
+             template parts (OuterEllipse / CheckOuterEllipse / CheckGlyph). -->
+        <Style Selector="RadioButton.CompactRadio /template/ Ellipse#OuterEllipse">
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="14" />
+        </Style>
+        <Style Selector="RadioButton.CompactRadio /template/ Ellipse#CheckOuterEllipse">
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="14" />
+        </Style>
+        <Style Selector="RadioButton.CompactRadio /template/ Ellipse#CheckGlyph">
+            <Setter Property="Width" Value="6" />
+            <Setter Property="Height" Value="6" />
+        </Style>
+        <!-- Suppress the dashed keyboard-focus rectangle that wraps the radio
+             when activated by mouse click; the bold+accent label change is the
+             selection cue we want, not a dashed outline. -->
+        <Style Selector="RadioButton.CompactRadio:focus /template/ Rectangle">
+            <Setter Property="IsVisible" Value="False" />
         </Style>
         <Style Selector="RadioButton.CompactRadio">
             <Setter Property="Padding" Value="6,0,0,0" />
