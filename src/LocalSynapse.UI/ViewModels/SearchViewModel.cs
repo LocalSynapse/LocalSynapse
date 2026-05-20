@@ -176,6 +176,12 @@ public partial class SearchViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _showSmartFallbackBanner;
     [ObservableProperty] private string _smartFallbackBannerText = "";
     private bool _suppressModeChange;
+    // Tracks which strategy actually produced the on-screen results. Compared
+    // against the persisted mode by the periodic availability check to detect
+    // a silent flip (Smart→Fast) that must trigger a re-issue. Initialized
+    // from settings in the constructor; updated by ExecuteSearchAsync after
+    // each search completes.
+    private string _lastAppliedSearchMode = "smart";
     private const double SmartModeMinimumPercentage = 0.80;
 
     // Filter — string tokens are the source of truth; *Option properties wrap for ComboBox SelectedItem binding
@@ -348,6 +354,10 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             IsSmartSelected = true; // fallback to default
         }
         _suppressModeChange = false;
+        // Seed the silent-flip detector with the persisted mode. Must happen
+        // after _settings is set and before the banner timer starts, otherwise
+        // the first timer tick can fire a phantom re-issue.
+        _lastAppliedSearchMode = persistedMode == "fast" ? "fast" : "smart";
 
         _bannerTimer = new System.Threading.Timer(_ =>
             Avalonia.Threading.Dispatcher.UIThread.Post(RefreshBannerState),
@@ -456,8 +466,7 @@ public partial class SearchViewModel : ObservableObject, IDisposable
         if (!available && _settings.GetSearchMode() == "smart")
         {
             // Don't recursively trigger HandleModeChangeAsync — flip the selection
-            // and persist directly. The active query will pick up the change on the
-            // next debounce or explicit re-trigger; the banner explains the state.
+            // and persist directly. The banner explains the state to the user.
             _suppressModeChange = true;
             IsFastSelected = true;
             IsSmartSelected = false;
@@ -465,6 +474,25 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             _settings.SetSearchMode("fast");
             SmartFallbackBannerText = _loc[StringKeys.SearchMode.SmartFallbackBanner];
             ShowSmartFallbackBanner = true;
+
+            // Edge-triggered re-issue: only on the first tick after the silent
+            // flip (when _lastAppliedSearchMode is still "smart"). The
+            // ModeChange source bypasses the same-query guard in
+            // ExecuteSearchAsync. Subsequent ticks see _lastAppliedSearchMode
+            // already "fast" and skip — no re-issue loop. The re-search itself
+            // updates _lastAppliedSearchMode from the response's actual Mode.
+            if (_lastAppliedSearchMode != "fast"
+                && HasSearched
+                && !string.IsNullOrWhiteSpace(Query)
+                && _activeSearchQuery == Query.Trim())
+            {
+                _lastAppliedSearchMode = "fast";
+                _ = ExecuteSearchAsync(Query, SearchTriggerSource.ModeChange);
+            }
+            else
+            {
+                _lastAppliedSearchMode = "fast";
+            }
         }
         else if (available && ShowSmartFallbackBanner)
         {
@@ -637,6 +665,11 @@ public partial class SearchViewModel : ObservableObject, IDisposable
                 "total_ms", sw.ElapsedMilliseconds,
                 "hybrid_count", response.Items.Count,
                 "quick_count", quickHits.Count);
+
+            // Steady-state record: which strategy produced the on-screen results.
+            // The silent-flip detector in UpdateSmartModeAvailability compares
+            // against this on each timer tick.
+            _lastAppliedSearchMode = response.Mode == SearchMode.Smart ? "smart" : "fast";
 
             Stamps = _stampRepo.GetCurrent();
         }
