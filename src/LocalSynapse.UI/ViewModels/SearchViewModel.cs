@@ -406,11 +406,12 @@ public partial class SearchViewModel : ObservableObject, IDisposable
             ShowBanner = false;
         }
 
-        // Inline progress for Smart mode while embedding is still building.
-        // Visible whenever embedding is incomplete AND the model is installed
-        // (so the message is actually meaningful — no model means a different
-        // call-to-action upstream).
-        if (!Stamps.EmbeddingComplete && _modelInstaller.IsModelInstalled("bge-m3"))
+        // Inline progress for Smart mode. Visible whenever embedding is not
+        // complete, regardless of model-install state — the user wants a single
+        // affordance for "Smart is not yet usable", not a different message per
+        // pipeline phase. The percentage is 0 % during scan / indexing / pre-
+        // model-install phases and ramps up during the actual embedding build.
+        if (!Stamps.EmbeddingComplete)
         {
             SmartProgressText = $"Building semantic index for smart mode... {Stamps.EmbeddingPercent:F0}%";
             ShowSmartProgress = true;

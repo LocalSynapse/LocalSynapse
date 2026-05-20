@@ -238,10 +238,10 @@ public sealed class CascadeSearchStrategy : ISearchStrategy
         return new SearchResponse
         {
             Query = query,
-            // Fall-back path: actual dispatch ended up keyword-only, so the
-            // badge should say "Fast" not "Smart". Matches the user-visible
-            // SmartFallbackBanner copy ("Smart mode unavailable — using Fast.").
-            Mode  = SearchMode.Fast,
+            // The user picked Smart; we honor their selection on the badge even
+            // when the dense rerank could not run. The progress label next to
+            // the Smart radio explains why the result is BM25-shaped.
+            Mode  = SearchMode.Smart,
             Items = items,
             Stats = new SearchStats
             {

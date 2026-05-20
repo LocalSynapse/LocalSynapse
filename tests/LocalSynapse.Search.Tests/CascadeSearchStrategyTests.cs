@@ -34,15 +34,15 @@ public sealed class CascadeSearchStrategyTests : IDisposable
     public async Task SearchAsync_NoQueryEmbedding_FallsBackToBm25Ranking()
     {
         // EmptyBridge returns an empty vector — cascade falls back to BM25-only.
-        // Response is labeled Fast because that's what actually ran (matches the
-        // user-visible "Smart unavailable — using Fast" banner copy).
-        // Output count must equal BM25 input count (no drop).
+        // Response stays labeled Smart so the badge matches the user's selected
+        // mode; the progress label next to the Smart radio explains why the
+        // ranking is BM25-shaped. Output count must equal BM25 input count.
         var sut = MakeStrategy(new EmptyBridge());
 
         var direct = _bm25.Search("budget", new SearchOptions { TopK = 10 });
         var response = await sut.SearchAsync("budget", new SearchOptions { TopK = 10 });
 
-        Assert.Equal(SearchMode.Fast, response.Mode);
+        Assert.Equal(SearchMode.Smart, response.Mode);
         Assert.Equal(direct.Count, response.Items.Count);
     }
 
