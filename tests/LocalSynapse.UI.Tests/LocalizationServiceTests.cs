@@ -99,13 +99,15 @@ public class LocalizationServiceTests
     [Fact]
     public void EmptyOrNullLanguage_FallsBackToSystemDetection()
     {
-        // ""/null → DetectSystemLanguage() 진입 → 시스템 언어에 따라 "en" 또는 "ko" 반환.
-        // 결과는 환경 의존이므로 두 지원 언어 중 하나여야 함만 검증 (CLAUDE.md §1.3 누적 부채 정리).
+        // ""/null → DetectSystemLanguage() 진입 → 시스템 언어에 따라 지원 언어 중 하나 반환.
+        // 결과는 환경 의존이므로 LocalizationService.SupportedLocales 전체를 허용 (W1 fix).
+        // LocalizationService.cs:20 기준 5개: en, ko, fr, de, zh.
+        var supported = new[] { "en", "ko", "fr", "de", "zh" };
         foreach (var input in new[] { "", (string?)null })
         {
             var store = new FakeSettingsStore { Language = input ?? "" };
             var svc = new LocalizationService(store);
-            Assert.Contains(svc.Current, new[] { "en", "ko" });
+            Assert.Contains(svc.Current, supported);
         }
     }
 
