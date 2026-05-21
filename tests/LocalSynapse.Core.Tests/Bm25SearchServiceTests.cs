@@ -10,6 +10,19 @@ namespace LocalSynapse.Core.Tests;
 public class Bm25SearchServiceTests
 {
     // ═══════════════════════════════════════════════════════════════════
+    //  Golden master queries — shared by the verifier and the staging
+    //  generator so they cannot drift out of sync. Extending the suite is
+    //  a single-line change here; the JSON file must be re-promoted via
+    //  GenerateGoldenMaster_Staging after adding a query.
+    // ═══════════════════════════════════════════════════════════════════
+    private static readonly string[] GoldenQueries =
+    {
+        "report",
+        "budget 2024",
+        "plan",
+    };
+
+    // ═══════════════════════════════════════════════════════════════════
     //  Test seed
     // ═══════════════════════════════════════════════════════════════════
 
@@ -150,7 +163,7 @@ public class Bm25SearchServiceTests
         var golden = JsonSerializer.Deserialize<Dictionary<string, string[]>>(
             File.ReadAllText(goldenPath))!;
 
-        foreach (var q in new[] { "report", "budget 2024", "plan" })
+        foreach (var q in GoldenQueries)
         {
             bm25.ClearCache();
             var hits = bm25.Search(q, new SearchOptions { TopK = 10, ChunksPerFile = 4 });
@@ -176,7 +189,7 @@ public class Bm25SearchServiceTests
         var bm25 = new Bm25SearchService(temp.Factory, clickSvc);
 
         var result = new Dictionary<string, string[]>();
-        foreach (var q in new[] { "report", "budget 2024", "plan" })
+        foreach (var q in GoldenQueries)
         {
             bm25.ClearCache();
             var hits = bm25.Search(q, new SearchOptions { TopK = 10, ChunksPerFile = 4 });
