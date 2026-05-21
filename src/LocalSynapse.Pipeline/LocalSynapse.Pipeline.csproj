@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>LocalSynapse.Pipeline</RootNamespace>
+    <NoWarn>$(NoWarn);NU1902</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\LocalSynapse.Core\LocalSynapse.Core.csproj" />

@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalSynapse.Pipeline.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalSynapse.Search.Tests", "tests\LocalSynapse.Search.Tests\LocalSynapse.Search.Tests.csproj", "{E04C2E8B-74DE-42DE-92D2-EDAE74FC75D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalSynapse.Mcp.Tests", "tests\LocalSynapse.Mcp.Tests\LocalSynapse.Mcp.Tests.csproj", "{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -157,6 +159,18 @@ Global
 		{E04C2E8B-74DE-42DE-92D2-EDAE74FC75D0}.Release|x64.Build.0 = Release|Any CPU
 		{E04C2E8B-74DE-42DE-92D2-EDAE74FC75D0}.Release|x86.ActiveCfg = Release|Any CPU
 		{E04C2E8B-74DE-42DE-92D2-EDAE74FC75D0}.Release|x86.Build.0 = Release|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Debug|x64.Build.0 = Debug|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Debug|x86.Build.0 = Debug|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Release|x64.ActiveCfg = Release|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Release|x64.Build.0 = Release|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Release|x86.ActiveCfg = Release|Any CPU
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -167,5 +181,6 @@ Global
 		{6F4C67BF-234F-4ABF-9BBB-A0DE2694E810} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{F78A16CF-E1D6-44A7-96D9-E25013E2B645} = {BECCC255-D695-4770-9B01-AC9E0FC24F8B}
 		{E04C2E8B-74DE-42DE-92D2-EDAE74FC75D0} = {BECCC255-D695-4770-9B01-AC9E0FC24F8B}
+		{90FFC014-AF65-48EE-9CF5-15A4F8E9D4C3} = {BECCC255-D695-4770-9B01-AC9E0FC24F8B}
 	EndGlobalSection
 EndGlobal

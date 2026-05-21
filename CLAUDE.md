@@ -151,7 +151,61 @@ Gate 4: Test First
   Tests must be red (failing) before implementation starts.
   Tests must turn green (passing) after implementation.
   Minimum: 2 tests per new public method (happy path + error case).
+  PLUS: if the new feature lives in a search-indexing area (see §S below),
+  add at least one scenario to the area's golden master in the same PR.
 ```
+
+### §S — Search-Indexing Pipeline Touch Rule
+
+The scan → parse → chunk → embed → BM25/Dense/Cascade flow is the product's
+core. Regressions here are user-visible and hard to detect by code review
+alone. Any PR that modifies any file under these paths MUST prove
+non-regression against the relevant golden master suites:
+
+```
+src/LocalSynapse.Pipeline/**/*.cs
+src/LocalSynapse.Search/**/*.cs
+src/LocalSynapse.Core/Repositories/Chunk*.cs
+src/LocalSynapse.Core/Repositories/File*.cs
+src/LocalSynapse.Core/Repositories/Embedding*.cs
+src/LocalSynapse.Mcp/Tools/*.cs
+src/LocalSynapse.Core/Models/SearchResponse.cs
+src/LocalSynapse.Core/Models/Bm25Hit.cs
+src/LocalSynapse.Core/Models/HybridHit.cs
+src/LocalSynapse.Core/Models/SearchMode.cs
+```
+
+Required non-regression checks (run via `dotnet test` after the change):
+
+1. **BM25 golden** — `Bm25SearchServiceTests.ExecuteSearch_ProducesSameRanking_AsGoldenMaster` must stay green.
+2. **Dense golden** — fixture-based cosine ≥ 0.999 against pinned embedding vectors must stay green.
+3. **Cascade mode-diff golden** — Fast vs Smart result set diversity must stay above the pinned threshold (Smart must remain distinguishable from Fast).
+4. **MCP contract** — JSON schema snapshot for every MCP tool output must stay green. Adding new fields is allowed; renaming or removing existing fields is a deliberate break and must update the snapshot together with release notes.
+
+### §S.1 — Intentional behavioral change
+
+If the change is intended to alter ranking or mode-diff behavior (for example, tuning RRF K, moving file-level dedup, refreshing MatchSource after rerank, swapping the chunk-selection strategy), follow this sequence:
+
+1. Update the affected golden(s) FIRST with the new expected values (red).
+2. Implement the change (green).
+3. Prove that goldens for adjacent surfaces remained unchanged. Specifically, a change targeting Smart-mode quality must NOT regress the BM25 golden — Fast mode is the silent-fallback path and its quality is contract.
+4. Note the intentional golden update in the commit body and the release notes.
+
+### §S.2 — MCP interface change
+
+- Additive (new fields, new tools): contract test passes — proceed.
+- Rename or remove: contract test fails — verify intent, update snapshot, mention the change in release notes. Never edit the snapshot to silence a test you did not mean to break.
+
+### §S.3 — Golden master absence is itself a defect
+
+When a new area is introduced (for example, the email parsing pipeline), the first PR in that area MUST establish a golden master for that area before any second PR can land. "No golden yet" is not a valid reason to skip — it is the first task.
+
+### §S.4 — Forbidden bypass
+
+Weakening or deleting a golden assertion to make a red test green is forbidden
+in the same spirit as Gate 2's "deleting or skipping tests is FORBIDDEN."
+If a golden assertion is wrong, the fix is to investigate and either update
+the expectation deliberately (per §S.1) or fix the regression.
 
 ### Completion Report Format
 

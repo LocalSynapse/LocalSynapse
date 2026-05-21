@@ -133,6 +133,7 @@ public class Bm25SearchServiceTests
     // ═══════════════════════════════════════════════════════════════════
 
     [Fact]
+    [Trait("Category", "GoldenMaster")]
     public void ExecuteSearch_ProducesSameRanking_AsGoldenMaster()
     {
         using var temp = new TempDbFixture();
