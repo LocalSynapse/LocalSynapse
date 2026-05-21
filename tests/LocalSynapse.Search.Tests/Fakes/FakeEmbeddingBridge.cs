@@ -17,6 +17,14 @@ internal sealed class FakeEmbeddingBridge : IEmbeddingBridge
 
     public FakeEmbeddingBridge(string fixturePath)
     {
+        if (!File.Exists(fixturePath))
+        {
+            throw new FileNotFoundException(
+                $"Dense fixture missing at '{fixturePath}'. " +
+                "Run DenseGoldenVectorTest.GenerateDenseGolden_Staging first and promote " +
+                "TestData/dense-golden-vectors.staging.json to dense-golden-vectors.json.",
+                fixturePath);
+        }
         var json = File.ReadAllText(fixturePath);
         using var doc = JsonDocument.Parse(json);
         _vectors = new Dictionary<string, float[]>(StringComparer.Ordinal);

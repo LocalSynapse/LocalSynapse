@@ -11,6 +11,22 @@ namespace LocalSynapse.Search.Tests;
 /// The fixture starts absent — these facts then return as no-op pass so
 /// the suite can land before the staging run. Once a baseline is measured
 /// and the golden JSON is promoted, the facts begin asserting.
+///
+/// ACTIVATION CHECKLIST (when promoting the fixture for the first time):
+///   1. Implement RunFast and RunSmart bodies (both currently throw
+///      NotImplementedException). They must wire FakeBm25Search,
+///      FakeEmbeddingBridge, FakeEmbeddingRepository, and
+///      FakePipelineStampRepository (configured so cascade IsAvailable
+///      passes the 80% embedding-coverage threshold) into the cascade
+///      strategy and project results to Top-K paths.
+///   2. Run GenerateCascadeGolden_Staging to measure the baseline
+///      jaccard_threshold and write cascade-mode-diff-golden.staging.json.
+///   3. Inspect tau in the staging file — promote only if tau > 0.
+///      (A zero threshold would let the Smart verifier pass for any
+///      result set including empty arrays.)
+///   4. Rename staging file to cascade-mode-diff-golden.json.
+/// Forgetting step 1 while completing steps 2–4 makes the verifier facts
+/// throw NotImplementedException on the next Gate 4 run.
 /// </summary>
 public class CascadeModeDiffTest
 {
