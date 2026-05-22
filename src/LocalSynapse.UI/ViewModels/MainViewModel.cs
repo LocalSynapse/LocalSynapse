@@ -89,12 +89,14 @@ public partial class MainViewModel : ObservableObject
         IsWelcomeCompleted = !isFirstRun;
         NavigateTo(isFirstRun ? PageType.Welcome : PageType.Search);
 
-        // fire-and-forget 업데이트 체크 (첫 실행이면 skip — C3 해결)
+        // Fire-and-forget update check. force:true bypasses the 24h cooldown so
+        // every fresh app launch checks once — users who restart within 24h of
+        // a previous check still see a newly published release immediately.
         _ = Task.Run(async () =>
         {
             try
             {
-                await _updateCheck.CheckAsync();
+                await _updateCheck.CheckAsync(force: true);
                 if (_updateCheck.HasUpdateAvailable)
                 {
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>

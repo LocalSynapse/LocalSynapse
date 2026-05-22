@@ -141,15 +141,18 @@ public sealed class UpdateCheckService
         HasUpdateAvailable = false;
     }
 
-    /// <summary>1일 1회 업데이트 체크 + 통계 ping.</summary>
-    public async Task<UpdateInfo?> CheckAsync(CancellationToken ct = default)
+    /// <summary>Run an update check + statistics ping. When force=true the 24h cooldown
+    /// is bypassed (intended for the once-per-launch call). CheckEnabled=false still
+    /// short-circuits regardless of force.</summary>
+    public async Task<UpdateInfo?> CheckAsync(CancellationToken ct = default, bool force = false)
     {
         // WO-SEC0: first-run gate removed — runs from first launch.
         // If update-check.json doesn't exist yet, create it with defaults (CheckEnabled=true).
         var state = LoadState();
         if (!state.CheckEnabled) return null;
 
-        if (DateTime.TryParse(state.LastCheckAt, out var lastCheck)
+        if (!force
+            && DateTime.TryParse(state.LastCheckAt, out var lastCheck)
             && DateTime.UtcNow - lastCheck < CheckInterval)
             return null;
 
